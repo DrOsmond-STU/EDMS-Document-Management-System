@@ -1,0 +1,40 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: Inter, "Segoe UI", system-ui, -apple-system, sans-serif;
+
+  /* Brand palette — docs/05_BRAND.md Section 3 */
+  --color-brand-primary: #378add;
+  --color-brand-warning: #ef9f27;
+  --color-brand-teal: #0e7c86;
+  --color-brand-violet: #7f77df;
+  --color-brand-danger: #e24b4a;
+  --color-brand-success-text: #1d6e48;
+  --color-brand-success-bg: #e3f1ea;
+  --color-neutral-dark: #2b2f29;
+  --color-neutral-medium: #6b7268;
+  --color-neutral-border: #d7d9d2;
+  --color-neutral-bg: #f0f1ec;
+  --color-chip-bg: #e9eae4;
+  --color-chip-text: #4a4f45;
+
+  /* Classification tokens — docs/05_BRAND.md Section 3.1 */
+  --color-classification-public: #8fa98c;
+  --color-classification-internal: #6b93b0;
+  --color-classification-restricted: #c98a3e;
+  --color-classification-confidential: #b9563f;
+  --color-classification-secret: #7a3b3b;
+  --color-classification-topsecret: #2b2f29;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  color: var(--color-neutral-dark);
+  background-color: #fafaf8;
+  -webkit-font-smoothing: antialiased;
+}
