@@ -1,0 +1,17 @@
+RewriteEngine On
+RewriteBase /
+
+# Proteksi: jangan izinkan akses langsung ke folder internal (berisi config.php)
+RewriteRule ^api/_lib/ - [F,L]
+
+# API: peta /api/state -> api/state.php (dst.), tanpa perlu ubah kode frontend
+RewriteCond %{DOCUMENT_ROOT}/api/$1.php -f
+RewriteRule ^api/(state|dispatch|auth|logout)/?$ api/$1.php [L]
+
+# Berkas/folder yang memang ada (JS, CSS, favicon, api/*.php), sajikan apa adanya
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# Sisanya (rute client-side seperti /documents, /tracking/:id) kembali ke index.html
+RewriteRule ^ index.html [L]
