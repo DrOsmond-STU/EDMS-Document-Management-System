@@ -5,18 +5,35 @@
 
   /* Brand palette — docs/05_BRAND.md Section 3 */
   --color-brand-primary: #378add;
+  --color-brand-primary-dark: #2a6fb3;
+  --color-brand-primary-soft: #eaf3fb;
   --color-brand-warning: #ef9f27;
   --color-brand-teal: #0e7c86;
   --color-brand-violet: #7f77df;
   --color-brand-danger: #e24b4a;
   --color-brand-success-text: #1d6e48;
   --color-brand-success-bg: #e3f1ea;
-  --color-neutral-dark: #2b2f29;
+
+  /* Neutral scale */
+  --color-neutral-dark: #1f2420;
   --color-neutral-medium: #6b7268;
-  --color-neutral-border: #d7d9d2;
-  --color-neutral-bg: #f0f1ec;
+  --color-neutral-soft: #a3a89f;
+  --color-neutral-border: #e2e4dd;
+  --color-neutral-border-strong: #cfd2c9;
+  --color-neutral-bg: #f2f3ee;
+  --color-neutral-bg-soft: #f7f8f4;
   --color-chip-bg: #e9eae4;
   --color-chip-text: #4a4f45;
+
+  /* Surface & app background */
+  --color-app-bg: #f6f7f2;
+  --color-surface: #ffffff;
+  --color-surface-elevated: #ffffff;
+
+  /* Elevation */
+  --shadow-card: 0 1px 2px rgba(20, 24, 20, 0.04), 0 1px 3px rgba(20, 24, 20, 0.03);
+  --shadow-elevated: 0 4px 12px rgba(20, 24, 20, 0.07), 0 2px 4px rgba(20, 24, 20, 0.04);
+  --shadow-popover: 0 12px 28px rgba(20, 24, 20, 0.12), 0 4px 8px rgba(20, 24, 20, 0.06);
 
   /* Classification tokens — docs/05_BRAND.md Section 3.1 */
   --color-classification-public: #8fa98c;
@@ -31,10 +48,89 @@
   box-sizing: border-box;
 }
 
+html,
 body {
   margin: 0;
+  padding: 0;
+}
+
+body {
   font-family: var(--font-sans);
   color: var(--color-neutral-dark);
-  background-color: #fafaf8;
+  background-color: var(--color-app-bg);
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Focus ring — consistent, accessible */
+:focus-visible {
+  outline: 2px solid var(--color-brand-primary);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+button:focus,
+a:focus,
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+}
+
+/* Custom scrollbars — subtle, non-obtrusive */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-neutral-border-strong) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: var(--color-neutral-border-strong);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-neutral-soft);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+/* Subtle enter animation for panels, popovers */
+@keyframes edms-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.edms-animate-in {
+  animation: edms-fade-in 140ms ease-out;
+}
+
+/* Skeleton shimmer (used for loading placeholders) */
+@keyframes edms-shimmer {
+  0% { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+
+.edms-skeleton {
+  background: linear-gradient(90deg, #eef0e9 0%, #f8f9f4 50%, #eef0e9 100%);
+  background-size: 800px 100%;
+  animation: edms-shimmer 1.4s linear infinite;
+  border-radius: 6px;
 }

@@ -19,12 +19,12 @@ export function NotificationBell() {
     <div className="relative">
       <button
         onClick={() => setOpen((o) => !o)}
-        className="relative rounded-full p-2 text-[var(--color-neutral-dark)] hover:bg-[var(--color-neutral-bg)]"
+        className="relative rounded-full p-2 text-[var(--color-neutral-medium)] transition-colors hover:bg-[var(--color-neutral-bg)] hover:text-[var(--color-neutral-dark)]"
         aria-label="Notifikasi"
       >
-        <Bell size={19} />
+        <Bell size={17} />
         {unread.length > 0 && (
-          <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--color-brand-danger)] px-1 text-[10px] font-bold text-white">
+          <span className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--color-brand-danger)] px-1 text-[10px] font-bold text-white ring-2 ring-white">
             {unread.length}
           </span>
         )}
@@ -33,7 +33,7 @@ export function NotificationBell() {
       {open && (
         <>
           <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 z-20 mt-2 w-80 rounded-lg border border-[var(--color-neutral-border)] bg-white shadow-lg">
+          <div className="edms-animate-in absolute right-0 z-20 mt-2 w-80 overflow-hidden rounded-xl border border-[var(--color-neutral-border)] bg-white shadow-[var(--shadow-popover)]">
             <div className="flex items-center justify-between border-b border-[var(--color-neutral-border)] px-3 py-2">
               <span className="text-sm font-semibold">Pusat Notifikasi</span>
               <button
