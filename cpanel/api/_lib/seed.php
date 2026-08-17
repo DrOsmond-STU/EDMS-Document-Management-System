@@ -238,8 +238,37 @@ function edms_build_audit_log(array $documents): array {
     return $log;
 }
 
+/**
+ * Loads the Risk / Audit / Management-Review arrays from `seed_extras.json`
+ * that is emitted from the shared TS seed. Keeping the data in one place
+ * avoids having to hand-port ~500 lines of Bahasa demo copy into PHP.
+ * Falls back to empty arrays if the file is missing so the app still boots.
+ */
+function edms_seed_extras(): array {
+    $path = __DIR__ . '/seed_extras.json';
+    if (!is_readable($path)) {
+        return [
+            'risks' => [],
+            'internalAudits' => [],
+            'externalAudits' => [],
+            'findings' => [],
+            'mgmtReviews' => [],
+        ];
+    }
+    $raw = file_get_contents($path);
+    $decoded = json_decode($raw, true);
+    if (!is_array($decoded)) {
+        return ['risks' => [], 'internalAudits' => [], 'externalAudits' => [], 'findings' => [], 'mgmtReviews' => []];
+    }
+    return array_merge(
+        ['risks' => [], 'internalAudits' => [], 'externalAudits' => [], 'findings' => [], 'mgmtReviews' => []],
+        $decoded,
+    );
+}
+
 function edms_initial_state(): array {
     $documents = edms_build_documents();
+    $extras = edms_seed_extras();
     return [
         'documents' => $documents,
         'revisions' => edms_build_revisions($documents),
@@ -249,5 +278,10 @@ function edms_initial_state(): array {
         'functions' => edms_functions_seed(),
         'standards' => edms_standards_seed(),
         'users' => edms_users_seed(),
+        'risks' => $extras['risks'],
+        'internalAudits' => $extras['internalAudits'],
+        'externalAudits' => $extras['externalAudits'],
+        'findings' => $extras['findings'],
+        'mgmtReviews' => $extras['mgmtReviews'],
     ];
 }

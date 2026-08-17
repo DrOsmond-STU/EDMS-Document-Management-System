@@ -12,6 +12,11 @@ import { Reporting } from './pages/Reporting'
 import { UserManagement } from './pages/UserManagement'
 import { MasterData } from './pages/MasterData'
 import { AuditTrail } from './pages/AuditTrail'
+import { RiskRegister } from './pages/RiskRegister'
+import { InternalAudit } from './pages/InternalAudit'
+import { ExternalAudit } from './pages/ExternalAudit'
+import { Findings } from './pages/Findings'
+import { ManagementReview } from './pages/ManagementReview'
 import { RoadmapPage } from './pages/RoadmapPage'
 
 function App() {
@@ -30,6 +35,11 @@ function App() {
         <Route path="/users" element={<UserManagement />} />
         <Route path="/master-data" element={<MasterData />} />
         <Route path="/audit-trail" element={<AuditTrail />} />
+        <Route path="/risk-register" element={<RiskRegister />} />
+        <Route path="/internal-audit" element={<InternalAudit />} />
+        <Route path="/external-audit" element={<ExternalAudit />} />
+        <Route path="/findings" element={<Findings />} />
+        <Route path="/management-review" element={<ManagementReview />} />
         <Route path="/roadmap/*" element={<RoadmapPage />} />
       </Routes>
     </Layout>

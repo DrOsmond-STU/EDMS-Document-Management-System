@@ -61,6 +61,10 @@ interface AppContextValue {
   setFinalizedContent: (projectId: string, content: string) => void
   advanceStage: (projectId: string) => void
   resetDemoData: () => void
+  /** Escape hatch: raw dispatch for the risk/audit/mgmt-review modules, whose
+   * many action shapes would balloon the wrapper surface above. Prefer the
+   * dedicated helpers for the older document modules. */
+  dispatch: (action: Action) => Promise<void>
 }
 
 const AppContext = createContext<AppContextValue | null>(null)
@@ -180,6 +184,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         dispatch({ type: 'SET_FINALIZED_CONTENT', projectId, content, actor: currentUser.name }),
       advanceStage: (projectId) => dispatch({ type: 'ADVANCE_STAGE', projectId, actor: currentUser.name }),
       resetDemoData: () => dispatch({ type: 'RESET_DEMO_DATA' }),
+      dispatch,
     }
   }, [state, currentUser, role, dispatch])
 

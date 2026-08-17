@@ -1,0 +1,950 @@
+{
+  "risks": [
+    {
+      "id": "rsk-001",
+      "code": "RSK-2026-001",
+      "title": "Kebocoran data pelanggan dari aplikasi internal",
+      "description": "Aplikasi CRM belum menerapkan enkripsi at-rest untuk kolom PII. Potensi kebocoran data pelanggan bila terjadi akses tidak sah pada database.",
+      "category": "security",
+      "functionId": "infosec",
+      "owner": "Intan Permatasari",
+      "standards": [
+        "ISO27001",
+        "ISO31000"
+      ],
+      "inherentLikelihood": 4,
+      "inherentImpact": 5,
+      "treatment": "reduce",
+      "treatmentPlan": "Enkripsi kolom PII (AES-256), audit akses database bulanan, DLP di gateway keluar.",
+      "controls": [
+        {
+          "id": "rc-001a",
+          "description": "Firewall database + whitelist IP aplikasi",
+          "owner": "Wahyu Setiawan",
+          "effectiveness": "strong",
+          "lastTestedAt": "2026-07-05"
+        },
+        {
+          "id": "rc-001b",
+          "description": "Enkripsi kolom PII (kartu identitas, no. telp)",
+          "owner": "Intan Permatasari",
+          "effectiveness": "moderate",
+          "lastTestedAt": "2026-06-10"
+        }
+      ],
+      "residualLikelihood": 2,
+      "residualImpact": 4,
+      "status": "treated",
+      "reviewDate": "2026-09-08",
+      "reviews": [
+        {
+          "id": "rr-001a",
+          "date": "2026-06-25",
+          "reviewer": "Ratna Sari",
+          "note": "Kontrol enkripsi masih partial, disarankan mempercepat rollout ke seluruh service."
+        }
+      ],
+      "createdAt": "2026-04-26",
+      "updatedAt": "2026-06-25",
+      "inherentLevel": "extreme",
+      "residualLevel": "moderate"
+    },
+    {
+      "id": "rsk-002",
+      "code": "RSK-2026-002",
+      "title": "Kegagalan supplier tunggal komponen kritikal",
+      "description": "Bahan baku katalis diperoleh hanya dari satu supplier di luar negeri. Bila terputus, produksi berhenti dalam 14 hari.",
+      "category": "operational",
+      "functionId": "procurement",
+      "owner": "Citra Wulandari",
+      "standards": [
+        "ISO9001",
+        "ISO22301",
+        "ISO31000"
+      ],
+      "inherentLikelihood": 3,
+      "inherentImpact": 5,
+      "treatment": "reduce",
+      "treatmentPlan": "Kualifikasi supplier alternatif regional, safety stock 60 hari, contract SLA dual-source.",
+      "controls": [
+        {
+          "id": "rc-002a",
+          "description": "Safety stock 30 hari bahan katalis",
+          "owner": "Citra Wulandari",
+          "effectiveness": "moderate"
+        },
+        {
+          "id": "rc-002b",
+          "description": "Qualification 2 supplier alternatif (proses berjalan)",
+          "owner": "Citra Wulandari",
+          "effectiveness": "weak"
+        }
+      ],
+      "residualLikelihood": 2,
+      "residualImpact": 4,
+      "status": "treated",
+      "reviewDate": "2026-09-23",
+      "reviews": [],
+      "createdAt": "2026-03-27",
+      "updatedAt": "2026-07-10",
+      "inherentLevel": "high",
+      "residualLevel": "moderate"
+    },
+    {
+      "id": "rsk-003",
+      "code": "RSK-2026-003",
+      "title": "Kecelakaan kerja pada pekerjaan ketinggian",
+      "description": "Aktivitas pemeliharaan pada ketinggian >2 m di area utility berpotensi jatuh dari ketinggian.",
+      "category": "safety",
+      "functionId": "hsse",
+      "owner": "Agus Prasetyo",
+      "standards": [
+        "ISO45001",
+        "SMK3"
+      ],
+      "inherentLikelihood": 4,
+      "inherentImpact": 4,
+      "treatment": "reduce",
+      "treatmentPlan": "Wajib body harness, izin kerja ketinggian, pelatihan work-at-height, inspeksi harian scaffolding.",
+      "controls": [
+        {
+          "id": "rc-003a",
+          "description": "Izin kerja ketinggian (WAH permit)",
+          "owner": "Agus Prasetyo",
+          "effectiveness": "strong",
+          "lastTestedAt": "2026-07-10"
+        },
+        {
+          "id": "rc-003b",
+          "description": "Pelatihan working at height untuk 40 teknisi",
+          "owner": "Novita Handayani",
+          "effectiveness": "strong",
+          "lastTestedAt": "2026-05-26"
+        }
+      ],
+      "residualLikelihood": 2,
+      "residualImpact": 3,
+      "status": "monitored",
+      "reviewDate": "2026-08-24",
+      "reviews": [
+        {
+          "id": "rr-003a",
+          "date": "2026-07-15",
+          "reviewer": "Agus Prasetyo",
+          "note": "Tidak ada insiden 90 hari terakhir. Pertahankan kontrol."
+        }
+      ],
+      "createdAt": "2026-02-25",
+      "updatedAt": "2026-07-15",
+      "inherentLevel": "high",
+      "residualLevel": "moderate"
+    },
+    {
+      "id": "rsk-004",
+      "code": "RSK-2026-004",
+      "title": "Sanksi regulator karena keterlambatan pelaporan LKPM",
+      "description": "Laporan Kegiatan Penanaman Modal (LKPM) triwulan berpotensi terlambat karena data investasi berasal dari beberapa unit.",
+      "category": "compliance",
+      "functionId": "legal",
+      "owner": "Dewi Anggraini",
+      "standards": [
+        "ISO37001",
+        "ISO31000"
+      ],
+      "inherentLikelihood": 3,
+      "inherentImpact": 4,
+      "treatment": "reduce",
+      "treatmentPlan": "Kalender kepatuhan terpusat, reminder D-14/D-7/D-3, checklist data pra-submit.",
+      "controls": [
+        {
+          "id": "rc-004a",
+          "description": "Kalender kepatuhan terpusat di legal",
+          "owner": "Dewi Anggraini",
+          "effectiveness": "strong",
+          "lastTestedAt": "2026-07-20"
+        }
+      ],
+      "residualLikelihood": 1,
+      "residualImpact": 3,
+      "status": "monitored",
+      "reviewDate": "2026-10-13",
+      "reviews": [],
+      "createdAt": "2026-05-26",
+      "updatedAt": "2026-07-20",
+      "inherentLevel": "high",
+      "residualLevel": "low"
+    },
+    {
+      "id": "rsk-005",
+      "code": "RSK-2026-005",
+      "title": "Ketidaksesuaian mutu produk pada batch produksi",
+      "description": "Variabilitas suhu reaktor menyebabkan hasil batch di luar spesifikasi (>1,5% off-spec).",
+      "category": "operational",
+      "functionId": "qa",
+      "owner": "Bayu Kusuma",
+      "standards": [
+        "ISO9001"
+      ],
+      "inherentLikelihood": 3,
+      "inherentImpact": 3,
+      "treatment": "reduce",
+      "treatmentPlan": "Kalibrasi sensor suhu bulanan, SPC chart real-time, review setpoint per shift.",
+      "controls": [
+        {
+          "id": "rc-005a",
+          "description": "Kalibrasi sensor suhu bulanan",
+          "owner": "Doni Firmansyah",
+          "effectiveness": "strong",
+          "lastTestedAt": "2026-06-30"
+        },
+        {
+          "id": "rc-005b",
+          "description": "SPC chart real-time di control room",
+          "owner": "Bayu Kusuma",
+          "effectiveness": "moderate"
+        }
+      ],
+      "residualLikelihood": 2,
+      "residualImpact": 2,
+      "status": "monitored",
+      "reviewDate": "2026-08-14",
+      "reviews": [],
+      "createdAt": "2026-06-10",
+      "updatedAt": "2026-07-17",
+      "inherentLevel": "moderate",
+      "residualLevel": "low"
+    },
+    {
+      "id": "rsk-006",
+      "code": "RSK-2026-006",
+      "title": "Pencemaran air limbah melebihi baku mutu",
+      "description": "Effluent IPAL berpotensi melebihi baku mutu COD/BOD pada saat curah hujan tinggi.",
+      "category": "environmental",
+      "functionId": "hsse",
+      "owner": "Novita Handayani",
+      "standards": [
+        "ISO14001"
+      ],
+      "inherentLikelihood": 3,
+      "inherentImpact": 4,
+      "treatment": "reduce",
+      "treatmentPlan": "Bak equalisasi tambahan, monitoring online COD, SOP by-pass hujan.",
+      "controls": [
+        {
+          "id": "rc-006a",
+          "description": "Monitoring online COD (real-time)",
+          "owner": "Novita Handayani",
+          "effectiveness": "moderate"
+        }
+      ],
+      "residualLikelihood": 2,
+      "residualImpact": 3,
+      "status": "treated",
+      "reviewDate": "2026-08-09",
+      "reviews": [],
+      "createdAt": "2026-05-16",
+      "updatedAt": "2026-07-11",
+      "inherentLevel": "high",
+      "residualLevel": "moderate"
+    },
+    {
+      "id": "rsk-007",
+      "code": "RSK-2026-007",
+      "title": "Serangan phishing terhadap karyawan finance",
+      "description": "Karyawan finance menjadi target phishing bertema faktur / invoice untuk mendapatkan kredensial ERP.",
+      "category": "security",
+      "functionId": "infosec",
+      "owner": "Intan Permatasari",
+      "standards": [
+        "ISO27001"
+      ],
+      "inherentLikelihood": 5,
+      "inherentImpact": 4,
+      "treatment": "reduce",
+      "treatmentPlan": "MFA wajib, phishing simulation kuartalan, DMARC/SPF/DKIM ketat, awareness training.",
+      "controls": [
+        {
+          "id": "rc-007a",
+          "description": "MFA aktif untuk seluruh akun finance",
+          "owner": "Wahyu Setiawan",
+          "effectiveness": "strong",
+          "lastTestedAt": "2026-07-22"
+        },
+        {
+          "id": "rc-007b",
+          "description": "Phishing simulation Q3",
+          "owner": "Intan Permatasari",
+          "effectiveness": "moderate",
+          "lastTestedAt": "2026-06-15"
+        }
+      ],
+      "residualLikelihood": 3,
+      "residualImpact": 3,
+      "status": "treated",
+      "reviewDate": "2026-08-19",
+      "reviews": [
+        {
+          "id": "rr-007a",
+          "date": "2026-06-15",
+          "reviewer": "Intan Permatasari",
+          "note": "Click-rate simulasi terakhir 8%, target 5% — perlu awareness tambahan."
+        }
+      ],
+      "createdAt": "2026-04-16",
+      "updatedAt": "2026-07-22",
+      "inherentLevel": "extreme",
+      "residualLevel": "moderate"
+    },
+    {
+      "id": "rsk-008",
+      "code": "RSK-2026-008",
+      "title": "Fraud pengadaan (konflik kepentingan)",
+      "description": "Potensi konflik kepentingan pada tender vendor jasa engineering tanpa deklarasi COI.",
+      "category": "compliance",
+      "functionId": "procurement",
+      "owner": "Citra Wulandari",
+      "standards": [
+        "ISO37001"
+      ],
+      "inherentLikelihood": 3,
+      "inherentImpact": 5,
+      "treatment": "reduce",
+      "treatmentPlan": "Deklarasi COI wajib per tender, whistleblowing channel, dual approval > 500 juta.",
+      "controls": [
+        {
+          "id": "rc-008a",
+          "description": "Sistem whistleblowing pihak ketiga",
+          "owner": "Yusuf Hidayat",
+          "effectiveness": "strong"
+        },
+        {
+          "id": "rc-008b",
+          "description": "Dual approval pengadaan > IDR 500 juta",
+          "owner": "Yusuf Hidayat",
+          "effectiveness": "strong"
+        }
+      ],
+      "residualLikelihood": 2,
+      "residualImpact": 4,
+      "status": "monitored",
+      "reviewDate": "2026-10-23",
+      "reviews": [],
+      "createdAt": "2026-01-26",
+      "updatedAt": "2026-06-25",
+      "inherentLevel": "high",
+      "residualLevel": "moderate"
+    }
+  ],
+  "internalAudits": [
+    {
+      "id": "ia-001",
+      "code": "IA-2026-001",
+      "title": "Audit Internal Sistem Manajemen Mutu Q1",
+      "scope": "Proses Produksi, QC, dan Warehouse — Plant A",
+      "standards": [
+        "ISO9001"
+      ],
+      "auditeeFunctionIds": [
+        "qa",
+        "ops",
+        "procurement"
+      ],
+      "leadAuditor": "Ratna Sari",
+      "auditors": [
+        "Siti Marlina",
+        "Doni Firmansyah"
+      ],
+      "plannedStartDate": "2026-06-15",
+      "plannedEndDate": "2026-06-17",
+      "actualStartDate": "2026-06-15",
+      "actualEndDate": "2026-06-17",
+      "status": "closed",
+      "objectives": "Menilai efektivitas implementasi ISO 9001:2015 klausul 8 (Operasi) di Plant A.",
+      "checklist": [
+        {
+          "id": "chk-001a",
+          "clauseReference": "ISO 9001 §8.4.1",
+          "question": "Apakah kriteria evaluasi supplier terdefinisi dan diterapkan?",
+          "result": "conform",
+          "note": "Terlihat matriks skoring supplier."
+        },
+        {
+          "id": "chk-001b",
+          "clauseReference": "ISO 9001 §8.5.1",
+          "question": "Apakah kondisi terkendali produksi didokumentasikan?",
+          "result": "nc_minor",
+          "note": "SOP Blending v2.1 belum tersosialisasi ke shift C."
+        },
+        {
+          "id": "chk-001c",
+          "clauseReference": "ISO 9001 §8.7",
+          "question": "Apakah output tidak sesuai dikendalikan?",
+          "result": "ofi",
+          "note": "Register NC ada, namun kolom root cause sering kosong."
+        }
+      ],
+      "findingIds": [
+        "fnd-001",
+        "fnd-002"
+      ],
+      "reportSummary": "2 temuan (1 NC Minor, 1 OFI). Sistem manajemen mutu berjalan efektif, dengan peluang perbaikan pada dokumentasi NC.",
+      "createdAt": "2026-05-26",
+      "updatedAt": "2026-06-25"
+    },
+    {
+      "id": "ia-002",
+      "code": "IA-2026-002",
+      "title": "Audit Internal Keamanan Informasi (ISO 27001)",
+      "scope": "Data Center, Aplikasi ERP & CRM, akses jarak jauh",
+      "standards": [
+        "ISO27001"
+      ],
+      "auditeeFunctionIds": [
+        "it",
+        "infosec"
+      ],
+      "leadAuditor": "Ratna Sari",
+      "auditors": [
+        "Hendra Gunawan"
+      ],
+      "plannedStartDate": "2026-07-10",
+      "plannedEndDate": "2026-07-12",
+      "actualStartDate": "2026-07-10",
+      "actualEndDate": "2026-07-12",
+      "status": "reporting",
+      "objectives": "Menilai implementasi kontrol Annex A ISO/IEC 27001:2022 pada perimeter TI utama.",
+      "checklist": [
+        {
+          "id": "chk-002a",
+          "clauseReference": "ISO 27001 A.8.5",
+          "question": "Apakah otentikasi kuat (MFA) diterapkan untuk akses istimewa?",
+          "result": "nc_minor",
+          "note": "MFA belum aktif untuk 3 akun service."
+        },
+        {
+          "id": "chk-002b",
+          "clauseReference": "ISO 27001 A.8.16",
+          "question": "Apakah monitoring aktivitas keamanan berjalan?",
+          "result": "conform",
+          "note": "SIEM aktif, tim SOC 24/7."
+        }
+      ],
+      "findingIds": [
+        "fnd-003"
+      ],
+      "reportSummary": "Draft laporan disusun. 1 NC Minor terkait MFA akun service.",
+      "createdAt": "2026-06-25",
+      "updatedAt": "2026-07-20"
+    },
+    {
+      "id": "ia-003",
+      "code": "IA-2026-003",
+      "title": "Audit Internal K3 Plant B",
+      "scope": "Unit maintenance, workshop, dan gudang bahan berbahaya",
+      "standards": [
+        "ISO45001",
+        "SMK3"
+      ],
+      "auditeeFunctionIds": [
+        "hsse",
+        "ops",
+        "engineering"
+      ],
+      "leadAuditor": "Ratna Sari",
+      "auditors": [
+        "Agus Prasetyo",
+        "Novita Handayani"
+      ],
+      "plannedStartDate": "2026-08-14",
+      "plannedEndDate": "2026-08-16",
+      "status": "scheduled",
+      "objectives": "Verifikasi kepatuhan SMK3 dan ISO 45001 klausul 8 pada Plant B pasca-modifikasi layout.",
+      "checklist": [],
+      "findingIds": [],
+      "createdAt": "2026-07-05",
+      "updatedAt": "2026-07-23"
+    },
+    {
+      "id": "ia-004",
+      "code": "IA-2026-004",
+      "title": "Audit Internal Anti-Penyuapan (ISO 37001) — Prokurmen",
+      "scope": "Proses tender jasa engineering & material kritikal",
+      "standards": [
+        "ISO37001"
+      ],
+      "auditeeFunctionIds": [
+        "procurement",
+        "legal",
+        "finance"
+      ],
+      "leadAuditor": "Dewi Anggraini",
+      "auditors": [
+        "Ratna Sari"
+      ],
+      "plannedStartDate": "2026-09-08",
+      "plannedEndDate": "2026-09-09",
+      "status": "planned",
+      "objectives": "Verifikasi implementasi kontrol anti-penyuapan di siklus pengadaan.",
+      "checklist": [],
+      "findingIds": [],
+      "createdAt": "2026-07-15",
+      "updatedAt": "2026-07-15"
+    }
+  ],
+  "externalAudits": [
+    {
+      "id": "ea-001",
+      "code": "EA-2026-001",
+      "title": "Surveillance Audit ISO 9001:2015 — Tahun ke-1",
+      "kind": "surveillance",
+      "auditingBody": "PT SGS Indonesia",
+      "standards": [
+        "ISO9001"
+      ],
+      "scope": "Seluruh proses operasional Plant A & Plant B (sertifikasi berlaku 2024-2027).",
+      "contactPerson": "Ratna Sari",
+      "plannedStartDate": "2026-06-30",
+      "plannedEndDate": "2026-07-02",
+      "actualStartDate": "2026-06-30",
+      "actualEndDate": "2026-07-02",
+      "reportReceivedDate": "2026-07-15",
+      "responseDueDate": "2026-08-14",
+      "status": "reporting",
+      "findingIds": [
+        "fnd-004",
+        "fnd-005"
+      ],
+      "certificateReference": "SGS-QMS-2024-04278",
+      "createdAt": "2026-04-26",
+      "updatedAt": "2026-07-15"
+    },
+    {
+      "id": "ea-002",
+      "code": "EA-2026-002",
+      "title": "Audit Sertifikasi ISO 45001:2018",
+      "kind": "certification",
+      "auditingBody": "PT TÜV Rheinland Indonesia",
+      "standards": [
+        "ISO45001"
+      ],
+      "scope": "Sistem Manajemen K3 seluruh operasi PT Semesta.",
+      "contactPerson": "Agus Prasetyo",
+      "plannedStartDate": "2026-09-18",
+      "plannedEndDate": "2026-09-20",
+      "status": "scheduled",
+      "findingIds": [],
+      "createdAt": "2026-07-10",
+      "updatedAt": "2026-07-10"
+    },
+    {
+      "id": "ea-003",
+      "code": "EA-2026-003",
+      "title": "Audit Kepatuhan Lingkungan — DLH",
+      "kind": "regulator",
+      "auditingBody": "Dinas Lingkungan Hidup Provinsi",
+      "standards": [
+        "ISO14001"
+      ],
+      "scope": "IPAL, emisi cerobong, pengelolaan LB3.",
+      "contactPerson": "Novita Handayani",
+      "plannedStartDate": "2026-08-09",
+      "plannedEndDate": "2026-08-09",
+      "status": "scheduled",
+      "findingIds": [],
+      "createdAt": "2026-07-20",
+      "updatedAt": "2026-07-20"
+    },
+    {
+      "id": "ea-004",
+      "code": "EA-2026-004",
+      "title": "Customer Audit — PT Astra Semesta",
+      "kind": "customer",
+      "auditingBody": "PT Astra Semesta",
+      "standards": [
+        "ISO9001"
+      ],
+      "scope": "Kesiapan sebagai supplier tier-1 komponen katalis.",
+      "contactPerson": "Bayu Kusuma",
+      "plannedStartDate": "2026-05-16",
+      "plannedEndDate": "2026-05-17",
+      "actualStartDate": "2026-05-16",
+      "actualEndDate": "2026-05-17",
+      "reportReceivedDate": "2026-05-26",
+      "responseDueDate": "2026-06-25",
+      "status": "closed",
+      "findingIds": [
+        "fnd-006"
+      ],
+      "createdAt": "2026-03-27",
+      "updatedAt": "2026-06-25"
+    }
+  ],
+  "findings": [
+    {
+      "id": "fnd-001",
+      "code": "FND-2026-001",
+      "auditId": "ia-001",
+      "auditSource": "internal",
+      "clauseReference": "ISO 9001 §8.5.1",
+      "standards": [
+        "ISO9001"
+      ],
+      "type": "nc_minor",
+      "title": "SOP Blending v2.1 belum tersosialisasi ke shift C",
+      "description": "Selama observasi shift malam, 3 dari 5 operator tidak mengetahui pembaruan langkah verifikasi kadar katalis.",
+      "evidence": "Wawancara operator (Sdr. A, B, C) + rekaman logbook shift C tanpa checklist v2.1.",
+      "rootCause": "Distribusi SOP v2.1 hanya melalui email pagi hari; shift C jarang membuka email di jam kerja.",
+      "functionId": "ops",
+      "owner": "Bayu Kusuma",
+      "raisedBy": "Ratna Sari",
+      "raisedDate": "2026-06-17",
+      "dueDate": "2026-08-16",
+      "status": "closed",
+      "capa": [
+        {
+          "id": "capa-001a",
+          "kind": "corrective",
+          "description": "Briefing SOP v2.1 pada semua shift + tanda tangan hadir.",
+          "owner": "Bayu Kusuma",
+          "dueDate": "2026-07-05",
+          "status": "completed",
+          "completedAt": "2026-07-03"
+        },
+        {
+          "id": "capa-001b",
+          "kind": "preventive",
+          "description": "Standardisasi distribusi SOP via papan pengumuman digital + acknowledgment.",
+          "owner": "Wahyu Setiawan",
+          "dueDate": "2026-07-20",
+          "status": "completed",
+          "completedAt": "2026-07-18"
+        }
+      ],
+      "verifications": [
+        {
+          "id": "ver-001a",
+          "date": "2026-07-22",
+          "verifier": "Ratna Sari",
+          "method": "observation",
+          "effective": true,
+          "note": "Observasi 2 shift, 100% operator mengetahui perubahan."
+        }
+      ],
+      "closedAt": "2026-07-24",
+      "closureNote": "Efektivitas CAPA terverifikasi. Temuan ditutup."
+    },
+    {
+      "id": "fnd-002",
+      "code": "FND-2026-002",
+      "auditId": "ia-001",
+      "auditSource": "internal",
+      "clauseReference": "ISO 9001 §8.7",
+      "standards": [
+        "ISO9001"
+      ],
+      "type": "ofi",
+      "title": "Kolom root cause pada register NC sering kosong",
+      "description": "Register NC memiliki kolom akar masalah, namun 40% baris hanya berisi tindakan koreksi tanpa analisis.",
+      "evidence": "Sampling 20 baris register NC Q4 2025.",
+      "functionId": "qa",
+      "owner": "Siti Marlina",
+      "raisedBy": "Ratna Sari",
+      "raisedDate": "2026-06-17",
+      "dueDate": "2026-09-03",
+      "status": "capa_in_progress",
+      "capa": [
+        {
+          "id": "capa-002a",
+          "kind": "preventive",
+          "description": "Pelatihan RCA (5-Why & Ishikawa) untuk PIC NC di tiap unit.",
+          "owner": "Siti Marlina",
+          "dueDate": "2026-08-09",
+          "status": "in_progress"
+        }
+      ],
+      "verifications": []
+    },
+    {
+      "id": "fnd-003",
+      "code": "FND-2026-003",
+      "auditId": "ia-002",
+      "auditSource": "internal",
+      "clauseReference": "ISO 27001 A.8.5",
+      "standards": [
+        "ISO27001"
+      ],
+      "type": "nc_minor",
+      "title": "MFA belum aktif untuk 3 akun service dengan akses istimewa",
+      "description": "Akun svc-ci, svc-backup, dan svc-monitor belum menggunakan MFA/otentikasi kuat.",
+      "evidence": "Ekspor konfigurasi IdP tanggal 2026-07-10.",
+      "rootCause": "Skrip lawas menggunakan basic auth; migrasi ke workload identity belum selesai.",
+      "functionId": "it",
+      "owner": "Hendra Gunawan",
+      "raisedBy": "Ratna Sari",
+      "raisedDate": "2026-07-12",
+      "dueDate": "2026-08-24",
+      "status": "root_cause_analysis",
+      "capa": [],
+      "verifications": []
+    },
+    {
+      "id": "fnd-004",
+      "code": "FND-2026-004",
+      "auditId": "ea-001",
+      "auditSource": "external",
+      "clauseReference": "ISO 9001 §7.5.3",
+      "standards": [
+        "ISO9001"
+      ],
+      "type": "nc_minor",
+      "title": "Distribusi dokumen terkendali tidak konsisten di gudang",
+      "description": "Ditemukan 1 salinan SOP Kalibrasi versi lama (v1.0) masih terpasang di area kalibrasi gudang B.",
+      "evidence": "Foto & serial dokumen fisik.",
+      "functionId": "ops",
+      "owner": "Lestari Wijaya",
+      "raisedBy": "SGS Auditor — R. Wardana",
+      "raisedDate": "2026-07-02",
+      "dueDate": "2026-09-01",
+      "status": "capa_in_progress",
+      "capa": [
+        {
+          "id": "capa-004a",
+          "kind": "corrective",
+          "description": "Penarikan seluruh salinan hard-copy SOP lama, ganti dengan versi v2.0.",
+          "owner": "Lestari Wijaya",
+          "dueDate": "2026-07-20",
+          "status": "completed",
+          "completedAt": "2026-07-19"
+        },
+        {
+          "id": "capa-004b",
+          "kind": "preventive",
+          "description": "Automasi document controller: notifikasi ke area saat SOP diperbarui.",
+          "owner": "Dewi Anggraini",
+          "dueDate": "2026-08-14",
+          "status": "in_progress"
+        }
+      ],
+      "verifications": []
+    },
+    {
+      "id": "fnd-005",
+      "code": "FND-2026-005",
+      "auditId": "ea-001",
+      "auditSource": "external",
+      "clauseReference": "ISO 9001 §9.1.1",
+      "standards": [
+        "ISO9001"
+      ],
+      "type": "ofi",
+      "title": "KPI monitoring produk on-time delivery belum tersegmentasi",
+      "description": "KPI OTD hanya total; belum tersegmentasi per lini pelanggan, sehingga sulit tindak lanjut yang tepat.",
+      "evidence": "Dashboard KPI Q4 2025.",
+      "functionId": "ops",
+      "owner": "Lestari Wijaya",
+      "raisedBy": "SGS Auditor — R. Wardana",
+      "raisedDate": "2026-07-02",
+      "dueDate": "2026-09-23",
+      "status": "open",
+      "capa": [],
+      "verifications": []
+    },
+    {
+      "id": "fnd-006",
+      "code": "FND-2026-006",
+      "auditId": "ea-004",
+      "auditSource": "external",
+      "clauseReference": "ISO 9001 §8.5.1",
+      "standards": [
+        "ISO9001"
+      ],
+      "type": "nc_minor",
+      "title": "Traceability lot katalis ke customer belum end-to-end",
+      "description": "Terdapat gap ~2 minggu antara lot produksi dan dispatch ke customer tanpa nomor traceability tunggal.",
+      "evidence": "Sampling 5 delivery ke customer.",
+      "rootCause": "Nomor lot ganda: produksi & warehouse tidak saling merefer.",
+      "functionId": "ops",
+      "owner": "Bayu Kusuma",
+      "raisedBy": "Astra Auditor — Ir. H. Susanto",
+      "raisedDate": "2026-05-17",
+      "dueDate": "2026-06-25",
+      "status": "closed",
+      "capa": [
+        {
+          "id": "capa-006a",
+          "kind": "corrective",
+          "description": "Migrasi ke 1 skema nomor lot end-to-end (ERP).",
+          "owner": "Bayu Kusuma",
+          "dueDate": "2026-06-15",
+          "status": "completed",
+          "completedAt": "2026-06-13"
+        }
+      ],
+      "verifications": [
+        {
+          "id": "ver-006a",
+          "date": "2026-06-20",
+          "verifier": "Astra Auditor — Ir. H. Susanto",
+          "method": "document_review",
+          "effective": true,
+          "note": "Sample 10 delivery: traceability lengkap."
+        }
+      ],
+      "closedAt": "2026-06-23",
+      "closureNote": "Diterima customer. Sertifikat approved supplier diterbitkan."
+    }
+  ],
+  "mgmtReviews": [
+    {
+      "id": "mr-001",
+      "code": "MR-2026-001",
+      "title": "Tinjauan Manajemen Semester 1 — 2026",
+      "meetingDate": "2026-07-05",
+      "standards": [
+        "ISO9001",
+        "ISO14001",
+        "ISO45001",
+        "ISO27001"
+      ],
+      "chairperson": "Fajar Nugroho",
+      "attendees": [
+        "Bayu Kusuma",
+        "Agus Prasetyo",
+        "Intan Permatasari",
+        "Yusuf Hidayat",
+        "Wahyu Setiawan",
+        "Dewi Anggraini",
+        "Ratna Sari"
+      ],
+      "status": "held",
+      "agenda": "Tinjauan efektivitas seluruh sistem manajemen semester 1, evaluasi tindak lanjut audit & CAPA, keputusan alokasi sumber daya.",
+      "inputs": [
+        {
+          "id": "mri-001",
+          "category": "previous_actions",
+          "summary": "8 dari 10 tindak lanjut tinjauan sebelumnya selesai (80%).",
+          "reference": "MR-2025-002"
+        },
+        {
+          "id": "mri-002",
+          "category": "audit_results",
+          "summary": "Audit internal Q1 (IA-2026-001) menghasilkan 1 NC Minor + 1 OFI, semua sudah tertangani.",
+          "reference": "IA-2026-001"
+        },
+        {
+          "id": "mri-003",
+          "category": "nonconformities_capa",
+          "summary": "Total NC berjalan: 3 (1 major closed, 2 minor in-progress)."
+        },
+        {
+          "id": "mri-004",
+          "category": "customer_feedback",
+          "summary": "NPS pelanggan naik dari 42 → 51 pasca perbaikan OTD."
+        },
+        {
+          "id": "mri-005",
+          "category": "risk_effectiveness",
+          "summary": "Risiko keamanan informasi (RSK-2026-001) turun ke Sedang setelah kontrol enkripsi tambahan.",
+          "reference": "RSK-2026-001"
+        },
+        {
+          "id": "mri-006",
+          "category": "process_performance",
+          "summary": "On-Time Delivery Q1 = 94,1% (target 95%). Perlu perbaikan."
+        },
+        {
+          "id": "mri-007",
+          "category": "improvement_opportunities",
+          "summary": "Peluang integrasi register risiko dengan register temuan audit untuk visibilitas end-to-end."
+        },
+        {
+          "id": "mri-008",
+          "category": "resource_adequacy",
+          "summary": "Tim compliance kurang 1 orang; usulan rekrutmen Q3."
+        }
+      ],
+      "decisions": [
+        {
+          "id": "mrd-001",
+          "topic": "Sumber daya compliance",
+          "decision": "Setuju rekrutmen 1 Compliance Analyst untuk mulai Juli 2026.",
+          "rationale": "Beban kerja kepatuhan meningkat karena ekspansi standar ISO 22301."
+        },
+        {
+          "id": "mrd-002",
+          "topic": "OTD",
+          "decision": "Bentuk task force lintas fungsi (Ops, Procurement, Planning) untuk closing gap OTD ke 96% dalam 3 bulan."
+        },
+        {
+          "id": "mrd-003",
+          "topic": "Integrasi risk-audit",
+          "decision": "Setuju pengembangan modul integrasi register risiko & temuan audit di EDMS Q3."
+        }
+      ],
+      "actionItems": [
+        {
+          "id": "mra-001",
+          "description": "Publikasi lowongan Compliance Analyst",
+          "owner": "Yusuf Hidayat",
+          "dueDate": "2026-08-24",
+          "status": "in_progress"
+        },
+        {
+          "id": "mra-002",
+          "description": "Task force OTD — laporan mingguan",
+          "owner": "Lestari Wijaya",
+          "dueDate": "2026-09-23",
+          "status": "in_progress"
+        },
+        {
+          "id": "mra-003",
+          "description": "Draft desain integrasi risk-audit di EDMS",
+          "owner": "Wahyu Setiawan",
+          "dueDate": "2026-09-08",
+          "status": "open"
+        },
+        {
+          "id": "mra-004",
+          "description": "Sosialisasi hasil tinjauan ke seluruh manajer lini",
+          "owner": "Ratna Sari",
+          "dueDate": "2026-07-15",
+          "status": "completed",
+          "completedAt": "2026-07-13",
+          "closureNote": "Sosialisasi berjalan via townhall internal."
+        }
+      ],
+      "minutesUrl": "Notulen-MR-2026-001.pdf",
+      "createdAt": "2026-06-25",
+      "updatedAt": "2026-07-10"
+    },
+    {
+      "id": "mr-002",
+      "code": "MR-2026-002",
+      "title": "Tinjauan Manajemen Semester 2 — 2026 (Rencana)",
+      "meetingDate": "2026-09-23",
+      "standards": [
+        "ISO9001",
+        "ISO14001",
+        "ISO45001",
+        "ISO27001"
+      ],
+      "chairperson": "Fajar Nugroho",
+      "attendees": [
+        "Bayu Kusuma",
+        "Agus Prasetyo",
+        "Intan Permatasari",
+        "Yusuf Hidayat",
+        "Wahyu Setiawan",
+        "Dewi Anggraini",
+        "Ratna Sari"
+      ],
+      "status": "scheduled",
+      "agenda": "Rencana tinjauan pasca surveillance audit ISO 9001 dan setelah audit sertifikasi ISO 45001.",
+      "inputs": [],
+      "decisions": [],
+      "actionItems": [],
+      "createdAt": "2026-07-10",
+      "updatedAt": "2026-07-10"
+    }
+  ]
+}

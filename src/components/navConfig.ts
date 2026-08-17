@@ -24,6 +24,10 @@ import {
   Plug,
   Cog,
   ClipboardList,
+  ClipboardCheck,
+  ClipboardEdit,
+  Building2,
+  Presentation,
 } from 'lucide-react'
 
 export interface NavItem {
@@ -69,7 +73,16 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { label: 'Compliance Matrix', path: '/roadmap/compliance-matrix', icon: ShieldCheck, roadmap: true },
       { label: 'Legal Register', path: '/roadmap/legal-register', icon: Scale, roadmap: true },
-      { label: 'Register Risiko', path: '/roadmap/risk-register', icon: AlertTriangle, roadmap: true },
+      { label: 'Register Risiko', path: '/risk-register', icon: AlertTriangle },
+    ],
+  },
+  {
+    label: 'Audit & Review',
+    items: [
+      { label: 'Audit Internal', path: '/internal-audit', icon: ClipboardCheck },
+      { label: 'Audit Eksternal', path: '/external-audit', icon: Building2 },
+      { label: 'Register Temuan & CAPA', path: '/findings', icon: ClipboardEdit },
+      { label: 'Tinjauan Manajemen', path: '/management-review', icon: Presentation },
     ],
   },
   {

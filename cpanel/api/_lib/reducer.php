@@ -350,6 +350,445 @@ function edms_reducer(array $state, array $action): array {
         return $state;
     }
 
+    // -----------------------------------------------------------------
+    // Risk management
+    // -----------------------------------------------------------------
+    if ($type === 'CREATE_RISK') {
+        $input = $action['input'];
+        $actor = $action['actor'];
+        $now = edms_today();
+        $risk = [
+            'id' => 'rsk-' . edms_now_ms(),
+            'code' => edms_next_code_for($state['risks'] ?? [], 'RSK'),
+            'title' => $input['title'],
+            'description' => $input['description'],
+            'category' => $input['category'],
+            'functionId' => $input['functionId'],
+            'owner' => $input['owner'],
+            'standards' => $input['standards'] ?? [],
+            'inherentLikelihood' => (int) $input['inherentLikelihood'],
+            'inherentImpact' => (int) $input['inherentImpact'],
+            'inherentLevel' => edms_risk_level_for((int) $input['inherentLikelihood'], (int) $input['inherentImpact']),
+            'treatment' => $input['treatment'],
+            'treatmentPlan' => $input['treatmentPlan'],
+            'controls' => [],
+            'residualLikelihood' => (int) $input['residualLikelihood'],
+            'residualImpact' => (int) $input['residualImpact'],
+            'residualLevel' => edms_risk_level_for((int) $input['residualLikelihood'], (int) $input['residualImpact']),
+            'status' => 'assessed',
+            'reviewDate' => $input['reviewDate'] ?? null,
+            'reviews' => [],
+            'createdAt' => $now,
+            'updatedAt' => $now,
+        ];
+        $state['risks'] = array_merge([$risk], $state['risks'] ?? []);
+        $state['auditLog'] = array_merge(
+            [edms_make_audit($actor, 'create', 'Risk', $risk['id'], 'Menambahkan risiko "' . $risk['title'] . '" (' . $risk['code'] . ')')],
+            $state['auditLog'],
+        );
+        return $state;
+    }
+
+    if ($type === 'UPDATE_RISK_STATUS') {
+        $now = edms_today();
+        $title = '';
+        foreach ($state['risks'] as &$r) {
+            if ($r['id'] === $action['riskId']) {
+                $title = $r['title'];
+                $r['status'] = $action['status'];
+                $r['updatedAt'] = $now;
+            }
+        }
+        unset($r);
+        $state['auditLog'] = array_merge(
+            [edms_make_audit($action['actor'], 'status_change', 'Risk', $action['riskId'], 'Status risiko "' . $title . '" → ' . $action['status'])],
+            $state['auditLog'],
+        );
+        return $state;
+    }
+
+    if ($type === 'ADD_RISK_CONTROL') {
+        $now = edms_today();
+        $title = '';
+        foreach ($state['risks'] as &$r) {
+            if ($r['id'] === $action['riskId']) {
+                $title = $r['title'];
+                $r['controls'][] = array_merge(['id' => 'rc-' . edms_now_ms()], $action['control']);
+                $r['updatedAt'] = $now;
+            }
+        }
+        unset($r);
+        $state['auditLog'] = array_merge(
+            [edms_make_audit($action['actor'], 'create', 'RiskControl', $action['riskId'], 'Menambahkan kontrol untuk risiko "' . $title . '"')],
+            $state['auditLog'],
+        );
+        return $state;
+    }
+
+    if ($type === 'ADD_RISK_REVIEW') {
+        $now = edms_today();
+        $title = '';
+        foreach ($state['risks'] as &$r) {
+            if ($r['id'] === $action['riskId']) {
+                $title = $r['title'];
+                $review = array_merge(['id' => 'rr-' . edms_now_ms()], $action['review']);
+                array_unshift($r['reviews'], $review);
+                $r['status'] = 'monitored';
+                $r['updatedAt'] = $now;
+            }
+        }
+        unset($r);
+        $state['auditLog'] = array_merge(
+            [edms_make_audit($action['actor'], 'view', 'Risk', $action['riskId'], 'Meninjau risiko "' . $title . '"')],
+            $state['auditLog'],
+        );
+        return $state;
+    }
+
+    // -----------------------------------------------------------------
+    // Internal / external audit
+    // -----------------------------------------------------------------
+    if ($type === 'CREATE_INTERNAL_AUDIT') {
+        $input = $action['input'];
+        $now = edms_today();
+        $audit = [
+            'id' => 'ia-' . edms_now_ms(),
+            'code' => edms_next_code_for($state['internalAudits'] ?? [], 'IA'),
+            'title' => $input['title'],
+            'scope' => $input['scope'],
+            'standards' => $input['standards'] ?? [],
+            'auditeeFunctionIds' => $input['auditeeFunctionIds'] ?? [],
+            'leadAuditor' => $input['leadAuditor'],
+            'auditors' => $input['auditors'] ?? [],
+            'plannedStartDate' => $input['plannedStartDate'],
+            'plannedEndDate' => $input['plannedEndDate'],
+            'status' => 'scheduled',
+            'objectives' => $input['objectives'] ?? '',
+            'checklist' => [],
+            'findingIds' => [],
+            'createdAt' => $now,
+            'updatedAt' => $now,
+        ];
+        $state['internalAudits'] = array_merge([$audit], $state['internalAudits'] ?? []);
+        $state['auditLog'] = array_merge(
+            [edms_make_audit($action['actor'], 'create', 'InternalAudit', $audit['id'], 'Menjadwalkan audit internal "' . $audit['title'] . '" (' . $audit['code'] . ')')],
+            $state['auditLog'],
+        );
+        return $state;
+    }
+
+    if ($type === 'CREATE_EXTERNAL_AUDIT') {
+        $input = $action['input'];
+        $now = edms_today();
+        $audit = [
+            'id' => 'ea-' . edms_now_ms(),
+            'code' => edms_next_code_for($state['externalAudits'] ?? [], 'EA'),
+            'title' => $input['title'],
+            'kind' => $input['kind'],
+            'auditingBody' => $input['auditingBody'],
+            'standards' => $input['standards'] ?? [],
+            'scope' => $input['scope'],
+            'contactPerson' => $input['contactPerson'],
+            'plannedStartDate' => $input['plannedStartDate'],
+            'plannedEndDate' => $input['plannedEndDate'],
+            'status' => 'scheduled',
+            'findingIds' => [],
+            'createdAt' => $now,
+            'updatedAt' => $now,
+        ];
+        $state['externalAudits'] = array_merge([$audit], $state['externalAudits'] ?? []);
+        $state['auditLog'] = array_merge(
+            [edms_make_audit($action['actor'], 'create', 'ExternalAudit', $audit['id'], 'Menjadwalkan audit eksternal "' . $audit['title'] . '" (' . $audit['code'] . ')')],
+            $state['auditLog'],
+        );
+        return $state;
+    }
+
+    if ($type === 'UPDATE_AUDIT_STATUS') {
+        $now = edms_today();
+        $label = '';
+        if ($action['auditSource'] === 'internal') {
+            foreach ($state['internalAudits'] as &$a) {
+                if ($a['id'] === $action['auditId']) {
+                    $label = 'IA "' . $a['title'] . '"';
+                    $a['status'] = $action['status'];
+                    $a['updatedAt'] = $now;
+                }
+            }
+            unset($a);
+        } else {
+            foreach ($state['externalAudits'] as &$a) {
+                if ($a['id'] === $action['auditId']) {
+                    $label = 'EA "' . $a['title'] . '"';
+                    $a['status'] = $action['status'];
+                    $a['updatedAt'] = $now;
+                }
+            }
+            unset($a);
+        }
+        $state['auditLog'] = array_merge(
+            [edms_make_audit($action['actor'], 'status_change', $action['auditSource'] === 'internal' ? 'InternalAudit' : 'ExternalAudit', $action['auditId'], 'Status ' . $label . ' → ' . $action['status'])],
+            $state['auditLog'],
+        );
+        return $state;
+    }
+
+    if ($type === 'ADD_FINDING') {
+        $input = $action['input'];
+        $finding = [
+            'id' => 'fnd-' . edms_now_ms(),
+            'code' => edms_next_code_for($state['findings'] ?? [], 'FND'),
+            'auditId' => $input['auditId'],
+            'auditSource' => $input['auditSource'],
+            'clauseReference' => $input['clauseReference'],
+            'standards' => $input['standards'] ?? [],
+            'type' => $input['type'],
+            'title' => $input['title'],
+            'description' => $input['description'],
+            'evidence' => $input['evidence'],
+            'functionId' => $input['functionId'],
+            'owner' => $input['owner'],
+            'raisedBy' => $input['raisedBy'],
+            'raisedDate' => $input['raisedDate'],
+            'dueDate' => $input['dueDate'],
+            'status' => 'open',
+            'capa' => [],
+            'verifications' => [],
+        ];
+        $state['findings'] = array_merge([$finding], $state['findings'] ?? []);
+        if ($input['auditSource'] === 'internal') {
+            foreach ($state['internalAudits'] as &$a) {
+                if ($a['id'] === $input['auditId']) $a['findingIds'][] = $finding['id'];
+            }
+            unset($a);
+        } else {
+            foreach ($state['externalAudits'] as &$a) {
+                if ($a['id'] === $input['auditId']) $a['findingIds'][] = $finding['id'];
+            }
+            unset($a);
+        }
+        $state['auditLog'] = array_merge(
+            [edms_make_audit($action['actor'], 'create', 'Finding', $finding['id'], 'Menambahkan temuan "' . $finding['title'] . '" (' . $finding['code'] . ')')],
+            $state['auditLog'],
+        );
+        return $state;
+    }
+
+    if ($type === 'ADD_CAPA') {
+        $input = $action['input'];
+        foreach ($state['findings'] as &$f) {
+            if ($f['id'] === $input['findingId']) {
+                $capa = [
+                    'id' => 'capa-' . edms_now_ms(),
+                    'kind' => $input['kind'],
+                    'description' => $input['description'],
+                    'owner' => $input['owner'],
+                    'dueDate' => $input['dueDate'],
+                    'status' => 'in_progress',
+                ];
+                $f['capa'][] = $capa;
+                if ($f['status'] === 'open' || $f['status'] === 'root_cause_analysis') {
+                    $f['status'] = 'capa_in_progress';
+                }
+            }
+        }
+        unset($f);
+        $state['auditLog'] = array_merge(
+            [edms_make_audit($action['actor'], 'create', 'Capa', $input['findingId'], 'Menambahkan tindakan ' . ($input['kind'] === 'corrective' ? 'koreksi' : 'preventif'))],
+            $state['auditLog'],
+        );
+        return $state;
+    }
+
+    if ($type === 'COMPLETE_CAPA') {
+        $now = edms_today();
+        foreach ($state['findings'] as &$f) {
+            if ($f['id'] === $action['findingId']) {
+                foreach ($f['capa'] as &$c) {
+                    if ($c['id'] === $action['capaId']) {
+                        $c['status'] = 'completed';
+                        $c['completedAt'] = $now;
+                    }
+                }
+                unset($c);
+            }
+        }
+        unset($f);
+        $state['auditLog'] = array_merge(
+            [edms_make_audit($action['actor'], 'status_change', 'Capa', $action['capaId'], 'Menandai CAPA selesai')],
+            $state['auditLog'],
+        );
+        return $state;
+    }
+
+    if ($type === 'ADD_VERIFICATION') {
+        foreach ($state['findings'] as &$f) {
+            if ($f['id'] === $action['findingId']) {
+                $v = array_merge(['id' => 'ver-' . edms_now_ms()], $action['verification']);
+                array_unshift($f['verifications'], $v);
+                if (!empty($v['effective'])) $f['status'] = 'verification';
+            }
+        }
+        unset($f);
+        $state['auditLog'] = array_merge(
+            [edms_make_audit($action['actor'], 'view', 'Finding', $action['findingId'], 'Verifikasi efektivitas: ' . (empty($action['verification']['effective']) ? 'belum efektif' : 'efektif'))],
+            $state['auditLog'],
+        );
+        return $state;
+    }
+
+    if ($type === 'CLOSE_FINDING') {
+        $now = edms_today();
+        $title = '';
+        foreach ($state['findings'] as &$f) {
+            if ($f['id'] === $action['findingId']) {
+                $title = $f['title'];
+                $f['status'] = 'closed';
+                $f['closedAt'] = $now;
+                $f['closureNote'] = $action['closureNote'];
+            }
+        }
+        unset($f);
+        $state['auditLog'] = array_merge(
+            [edms_make_audit($action['actor'], 'status_change', 'Finding', $action['findingId'], 'Menutup temuan "' . $title . '"')],
+            $state['auditLog'],
+        );
+        return $state;
+    }
+
+    if ($type === 'UPDATE_FINDING_STATUS') {
+        foreach ($state['findings'] as &$f) {
+            if ($f['id'] === $action['findingId']) $f['status'] = $action['status'];
+        }
+        unset($f);
+        $state['auditLog'] = array_merge(
+            [edms_make_audit($action['actor'], 'status_change', 'Finding', $action['findingId'], 'Status temuan → ' . $action['status'])],
+            $state['auditLog'],
+        );
+        return $state;
+    }
+
+    if ($type === 'SET_ROOT_CAUSE') {
+        foreach ($state['findings'] as &$f) {
+            if ($f['id'] === $action['findingId']) {
+                $f['rootCause'] = $action['rootCause'];
+                if ($f['status'] === 'open') $f['status'] = 'root_cause_analysis';
+            }
+        }
+        unset($f);
+        $state['auditLog'] = array_merge(
+            [edms_make_audit($action['actor'], 'view', 'Finding', $action['findingId'], 'Menambahkan akar masalah (root cause)')],
+            $state['auditLog'],
+        );
+        return $state;
+    }
+
+    // -----------------------------------------------------------------
+    // Management review
+    // -----------------------------------------------------------------
+    if ($type === 'CREATE_MGMT_REVIEW') {
+        $input = $action['input'];
+        $now = edms_today();
+        $inputs = [];
+        foreach (($input['inputs'] ?? []) as $i => $it) {
+            $inputs[] = array_merge($it, ['id' => 'mri-' . edms_now_ms() . '-' . $i]);
+        }
+        $review = [
+            'id' => 'mr-' . edms_now_ms(),
+            'code' => edms_next_code_for($state['mgmtReviews'] ?? [], 'MR'),
+            'title' => $input['title'],
+            'meetingDate' => $input['meetingDate'],
+            'standards' => $input['standards'] ?? [],
+            'chairperson' => $input['chairperson'],
+            'attendees' => $input['attendees'] ?? [],
+            'status' => 'scheduled',
+            'agenda' => $input['agenda'] ?? '',
+            'inputs' => $inputs,
+            'decisions' => [],
+            'actionItems' => [],
+            'createdAt' => $now,
+            'updatedAt' => $now,
+        ];
+        $state['mgmtReviews'] = array_merge([$review], $state['mgmtReviews'] ?? []);
+        $state['auditLog'] = array_merge(
+            [edms_make_audit($action['actor'], 'create', 'ManagementReview', $review['id'], 'Menjadwalkan tinjauan manajemen "' . $review['title'] . '" (' . $review['code'] . ')')],
+            $state['auditLog'],
+        );
+        return $state;
+    }
+
+    if ($type === 'ADD_MGMT_DECISION') {
+        $now = edms_today();
+        foreach ($state['mgmtReviews'] as &$r) {
+            if ($r['id'] === $action['reviewId']) {
+                $r['decisions'][] = array_merge(['id' => 'mrd-' . edms_now_ms()], $action['decision']);
+                $r['status'] = 'held';
+                $r['updatedAt'] = $now;
+            }
+        }
+        unset($r);
+        $state['auditLog'] = array_merge(
+            [edms_make_audit($action['actor'], 'create', 'MgmtDecision', $action['reviewId'], 'Mencatat keputusan tinjauan manajemen')],
+            $state['auditLog'],
+        );
+        return $state;
+    }
+
+    if ($type === 'ADD_MGMT_ACTION') {
+        $now = edms_today();
+        foreach ($state['mgmtReviews'] as &$r) {
+            if ($r['id'] === $action['reviewId']) {
+                $r['actionItems'][] = array_merge($action['item'], ['id' => 'mra-' . edms_now_ms(), 'status' => 'open']);
+                $r['updatedAt'] = $now;
+            }
+        }
+        unset($r);
+        $state['auditLog'] = array_merge(
+            [edms_make_audit($action['actor'], 'create', 'MgmtAction', $action['reviewId'], 'Menambahkan tindak lanjut tinjauan manajemen')],
+            $state['auditLog'],
+        );
+        return $state;
+    }
+
+    if ($type === 'CLOSE_MGMT_ACTION') {
+        $now = edms_today();
+        foreach ($state['mgmtReviews'] as &$r) {
+            if ($r['id'] === $action['reviewId']) {
+                foreach ($r['actionItems'] as &$it) {
+                    if ($it['id'] === $action['itemId']) {
+                        $it['status'] = 'completed';
+                        $it['completedAt'] = $now;
+                        $it['closureNote'] = $action['closureNote'] ?? '';
+                    }
+                }
+                unset($it);
+                $r['updatedAt'] = $now;
+            }
+        }
+        unset($r);
+        $state['auditLog'] = array_merge(
+            [edms_make_audit($action['actor'], 'status_change', 'MgmtAction', $action['itemId'], 'Menutup tindak lanjut tinjauan manajemen')],
+            $state['auditLog'],
+        );
+        return $state;
+    }
+
+    if ($type === 'UPDATE_MGMT_REVIEW_STATUS') {
+        $now = edms_today();
+        foreach ($state['mgmtReviews'] as &$r) {
+            if ($r['id'] === $action['reviewId']) {
+                $r['status'] = $action['status'];
+                $r['updatedAt'] = $now;
+            }
+        }
+        unset($r);
+        $state['auditLog'] = array_merge(
+            [edms_make_audit($action['actor'], 'status_change', 'ManagementReview', $action['reviewId'], 'Status tinjauan manajemen → ' . $action['status'])],
+            $state['auditLog'],
+        );
+        return $state;
+    }
+
     if ($type === 'RESET_DEMO_DATA') {
         return edms_initial_state();
     }

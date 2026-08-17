@@ -1,6 +1,24 @@
 import type { ReactNode } from 'react'
 import { Lock } from 'lucide-react'
-import type { ClassificationLevel, DocumentStatus, ValidityStatus } from '../types'
+import type {
+  AuditStatus,
+  ClassificationLevel,
+  DocumentStatus,
+  FindingStatus,
+  FindingType,
+  RiskLevel,
+  ValidityStatus,
+} from '../types'
+import {
+  AUDIT_STATUS_COLOR,
+  AUDIT_STATUS_LABEL,
+  FINDING_STATUS_COLOR,
+  FINDING_STATUS_LABEL,
+  FINDING_TYPE_COLOR,
+  FINDING_TYPE_LABEL,
+  RISK_LEVEL_COLOR,
+  RISK_LEVEL_LABEL,
+} from '../types'
 import {
   CLASSIFICATION_COLOR,
   CLASSIFICATION_HAS_LOCK,
@@ -52,4 +70,24 @@ export function StandardChip({ code }: { code: string }) {
       {code}
     </span>
   )
+}
+
+export function RiskLevelBadge({ level }: { level: RiskLevel }) {
+  const c = RISK_LEVEL_COLOR[level]
+  return <BasePill bg={c.bg} text={c.text}>{RISK_LEVEL_LABEL[level]}</BasePill>
+}
+
+export function AuditStatusBadge({ status }: { status: AuditStatus }) {
+  const c = AUDIT_STATUS_COLOR[status]
+  return <BasePill bg={c.bg} text={c.text}>{AUDIT_STATUS_LABEL[status]}</BasePill>
+}
+
+export function FindingTypeBadge({ type }: { type: FindingType }) {
+  const c = FINDING_TYPE_COLOR[type]
+  return <BasePill bg={c.bg} text={c.text}>{FINDING_TYPE_LABEL[type]}</BasePill>
+}
+
+export function FindingStatusBadge({ status }: { status: FindingStatus }) {
+  const c = FINDING_STATUS_COLOR[status]
+  return <BasePill bg={c.bg} text={c.text}>{FINDING_STATUS_LABEL[status]}</BasePill>
 }
