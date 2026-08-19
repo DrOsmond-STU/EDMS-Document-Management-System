@@ -17,6 +17,16 @@ import { InternalAudit } from './pages/InternalAudit'
 import { ExternalAudit } from './pages/ExternalAudit'
 import { Findings } from './pages/Findings'
 import { ManagementReview } from './pages/ManagementReview'
+import { FolderVirtualPage } from './pages/FolderVirtual'
+import { RecordsRegisterPage } from './pages/RecordsRegister'
+import { RetentionArchivePage } from './pages/RetentionArchive'
+import { ComplianceMatrixPage } from './pages/ComplianceMatrix'
+import { LegalRegisterPage } from './pages/LegalRegister'
+import { KnowledgeDiscoveryPage } from './pages/KnowledgeDiscovery'
+import { AIAssistantPage } from './pages/AIAssistant'
+import { DiscussionPage } from './pages/Discussion'
+import { IntegrationPage } from './pages/Integration'
+import { SysAdminPage } from './pages/SysAdmin'
 import { RoadmapPage } from './pages/RoadmapPage'
 
 function App() {
@@ -40,6 +50,16 @@ function App() {
         <Route path="/external-audit" element={<ExternalAudit />} />
         <Route path="/findings" element={<Findings />} />
         <Route path="/management-review" element={<ManagementReview />} />
+        <Route path="/folders" element={<FolderVirtualPage />} />
+        <Route path="/records" element={<RecordsRegisterPage />} />
+        <Route path="/retention" element={<RetentionArchivePage />} />
+        <Route path="/compliance-matrix" element={<ComplianceMatrixPage />} />
+        <Route path="/legal-register" element={<LegalRegisterPage />} />
+        <Route path="/knowledge-discovery" element={<KnowledgeDiscoveryPage />} />
+        <Route path="/ai-assistant" element={<AIAssistantPage />} />
+        <Route path="/collaboration" element={<DiscussionPage />} />
+        <Route path="/integration" element={<IntegrationPage />} />
+        <Route path="/sysadmin" element={<SysAdminPage />} />
         <Route path="/roadmap/*" element={<RoadmapPage />} />
       </Routes>
     </Layout>

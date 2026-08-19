@@ -1,7 +1,5 @@
 // Mirrors the information architecture in docs/03_DESIGN.md Section 2.
-// `roadmap: true` items are not implemented in this build — they route to a
-// short explainer instead of a dead link, matching the docs' own guidance to
-// keep the full IA visible rather than hiding scope.
+// All items are implemented modules. Use `roadmap: true` for placeholder items only.
 
 import type { LucideIcon } from 'lucide-react'
 import {
@@ -51,7 +49,7 @@ export const NAV_GROUPS: NavGroup[] = [
     label: 'Document Repository',
     items: [
       { label: 'Register Dokumen', path: '/documents', icon: FolderOpen },
-      { label: 'Folder Virtual & Kategori', path: '/roadmap/folders', icon: FolderTree, roadmap: true },
+      { label: 'Folder Virtual & Kategori', path: '/folders', icon: FolderTree },
     ],
   },
   {
@@ -64,15 +62,15 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     label: 'Records Management',
     items: [
-      { label: 'Records Register', path: '/roadmap/records', icon: Archive, roadmap: true },
-      { label: 'Retention & Archive', path: '/roadmap/retention', icon: Timer, roadmap: true },
+      { label: 'Records Register', path: '/records', icon: Archive },
+      { label: 'Retention & Archive', path: '/retention', icon: Timer },
     ],
   },
   {
     label: 'Governance & Compliance',
     items: [
-      { label: 'Compliance Matrix', path: '/roadmap/compliance-matrix', icon: ShieldCheck, roadmap: true },
-      { label: 'Legal Register', path: '/roadmap/legal-register', icon: Scale, roadmap: true },
+      { label: 'Compliance Matrix', path: '/compliance-matrix', icon: ShieldCheck },
+      { label: 'Legal Register', path: '/legal-register', icon: Scale },
       { label: 'Register Risiko', path: '/risk-register', icon: AlertTriangle },
     ],
   },
@@ -88,13 +86,13 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     label: 'Search & AI',
     items: [
-      { label: 'Knowledge Base & Discovery', path: '/roadmap/knowledge-discovery', icon: Search, roadmap: true },
-      { label: 'Asisten AI', path: '/roadmap/ai-assistant', icon: Sparkles, roadmap: true },
+      { label: 'Knowledge Base & Discovery', path: '/knowledge-discovery', icon: Search },
+      { label: 'Asisten AI', path: '/ai-assistant', icon: Sparkles },
     ],
   },
   {
     label: 'Collaboration',
-    items: [{ label: 'Comment & Discussion', path: '/roadmap/collaboration', icon: MessagesSquare, roadmap: true }],
+    items: [{ label: 'Comment & Discussion', path: '/collaboration', icon: MessagesSquare }],
   },
   {
     label: 'Operasional',
@@ -102,8 +100,8 @@ export const NAV_GROUPS: NavGroup[] = [
       { label: 'Reporting & KPI', path: '/reporting', icon: BarChart3 },
       { label: 'Manajemen Pengguna & Hak Akses', path: '/users', icon: Users },
       { label: 'Master Data', path: '/master-data', icon: Database },
-      { label: 'Integration & API', path: '/roadmap/integration', icon: Plug, roadmap: true },
-      { label: 'System Administration', path: '/roadmap/sysadmin', icon: Cog, roadmap: true },
+      { label: 'Integration & API', path: '/integration', icon: Plug },
+      { label: 'System Administration', path: '/sysadmin', icon: Cog },
       { label: 'Audit Trail', path: '/audit-trail', icon: ClipboardList },
     ],
   },
