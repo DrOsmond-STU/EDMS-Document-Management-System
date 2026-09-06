@@ -213,6 +213,22 @@ function edms_reducer(array $state, array $action): array {
         return $state;
     }
 
+    if ($type === 'SET_USER_PASSWORD') {
+        $name = '';
+        foreach ($state['users'] as &$u) {
+            if ($u['id'] !== $action['userId']) continue;
+            $name = $u['name'];
+            $u['passwordHash'] = $action['passwordHash'];
+        }
+        unset($u);
+        if ($name === '') return $state;
+        $state['auditLog'] = array_merge(
+            [edms_make_audit($action['actor'], 'master_data_change', 'User', $action['userId'], 'Mengganti password akun "' . $name . '"')],
+            $state['auditLog'],
+        );
+        return $state;
+    }
+
     if ($type === 'CREATE_DRAFTING_REQUEST') {
         $input = $action['input'];
         $actor = $action['actor'];

@@ -11,7 +11,7 @@ import type { DocumentStatus } from '../types'
 export function DocumentDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { state, transitionDocument } = useApp()
+  const { state, currentUser, transitionDocument } = useApp()
   const [confirming, setConfirming] = useState<DocumentStatus | null>(null)
 
   const doc = state.documents.find((d) => d.id === id)
@@ -33,7 +33,7 @@ export function DocumentDetail() {
 
   const currentIdx = DOCUMENT_STATUS_ORDER.indexOf(doc.status)
   const nextStatus = DOCUMENT_STATUS_ORDER[currentIdx + 1]
-  const canAdvance = doc.status !== 'obsolete' && canTransition(state.currentRoleId ? [state.currentRoleId] : [], doc.status)
+  const canAdvance = doc.status !== 'obsolete' && canTransition(currentUser.roles, doc.status)
 
   function confirmTransition() {
     if (!confirming) return

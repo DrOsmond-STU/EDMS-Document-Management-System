@@ -172,6 +172,11 @@ export type Action =
   | { type: 'ADD_STANDARD'; standard: Standard; actor: string }
   | { type: 'ADD_USER'; user: User; actor: string }
   | { type: 'TOGGLE_USER_ACTIVE'; userId: string; actor: string }
+  // passwordHash is computed server-side from the plaintext newPassword the
+  // client actually sends — see api/dispatch.ts / cpanel/api/dispatch.php.
+  // currentPassword is required (and verified server-side) unless the caller
+  // has users.manage and is resetting someone else's password.
+  | { type: 'SET_USER_PASSWORD'; userId: string; passwordHash: string; actor: string }
   | { type: 'CREATE_DRAFTING_REQUEST'; input: NewDraftingRequestInput; actor: string }
   | { type: 'ADD_MEETING'; projectId: string; meeting: Omit<MeetingRecord, 'id'>; actor: string }
   | { type: 'SET_FINALIZED_CONTENT'; projectId: string; content: string; actor: string }
@@ -209,6 +214,7 @@ export const ACTION_TYPES: Action['type'][] = [
   'ADD_STANDARD',
   'ADD_USER',
   'TOGGLE_USER_ACTIVE',
+  'SET_USER_PASSWORD',
   'CREATE_DRAFTING_REQUEST',
   'ADD_MEETING',
   'SET_FINALIZED_CONTENT',
@@ -427,6 +433,24 @@ export function reducer(state: SharedState, action: Action): SharedState {
         users,
         auditLog: [
           makeAudit(action.actor, 'master_data_change', 'User', action.userId, `${toggledUser.active ? 'Mengaktifkan' : 'Menonaktifkan'} pengguna "${name}"`),
+          ...state.auditLog,
+        ],
+      }
+    }
+
+    case 'SET_USER_PASSWORD': {
+      let name = ''
+      const users = state.users.map((u) => {
+        if (u.id !== action.userId) return u
+        name = u.name
+        return { ...u, passwordHash: action.passwordHash }
+      })
+      if (!name) return state
+      return {
+        ...state,
+        users,
+        auditLog: [
+          makeAudit(action.actor, 'master_data_change', 'User', action.userId, `Mengganti password akun "${name}"`),
           ...state.auditLog,
         ],
       }

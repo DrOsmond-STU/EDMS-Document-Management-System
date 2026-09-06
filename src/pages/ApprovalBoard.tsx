@@ -8,8 +8,8 @@ import { canTransition } from '../state/permissions'
 import type { DocumentStatus } from '../types'
 
 export function ApprovalBoard() {
-  const { state, transitionDocument } = useApp()
-  const { documents, currentRoleId } = state
+  const { state, currentUser, transitionDocument } = useApp()
+  const { documents } = state
 
   function handleAdvance(documentId: string, title: string, from: DocumentStatus, to: DocumentStatus) {
     const label = to === 'obsolete' ? 'menyatakan dokumen Obsolete' : `memindahkan ke ${STATUS_LABEL[to]}`
@@ -26,7 +26,7 @@ export function ApprovalBoard() {
         {DOCUMENT_STATUS_ORDER.map((status, idx) => {
           const docsInColumn = documents.filter((d) => d.status === status)
           const nextStatus = DOCUMENT_STATUS_ORDER[idx + 1]
-          const canAdvance = nextStatus && canTransition([currentRoleId], status)
+          const canAdvance = nextStatus && canTransition(currentUser.roles, status)
           const color = STATUS_COLOR[status]
 
           return (

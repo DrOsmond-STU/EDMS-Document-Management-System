@@ -4,6 +4,7 @@ import { FileText, ShieldCheck, GitBranch, ClipboardList, Lock } from 'lucide-re
 import { Button, Field, inputClass } from './ui'
 
 export function LoginGate({ onSuccess }: { onSuccess: () => void }) {
+  const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -16,7 +17,7 @@ export function LoginGate({ onSuccess }: { onSuccess: () => void }) {
       const res = await fetch('/api/auth', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password }),
+        body: JSON.stringify({ email, password }),
       })
       const body = await res.json().catch(() => null)
       if (!res.ok || !body?.ok) {
@@ -102,19 +103,31 @@ export function LoginGate({ onSuccess }: { onSuccess: () => void }) {
                 Masuk ke EDMS
               </h1>
               <p className="mt-1 text-[13px] leading-relaxed text-[var(--color-neutral-medium)]">
-                Masukkan password prototipe untuk mengakses sistem manajemen dokumen.
+                Masuk dengan email dan password akun Anda di EDMS.
               </p>
             </div>
 
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+              <Field label="Email">
+                <input
+                  type="email"
+                  className={inputClass}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  autoFocus
+                  required
+                  autoComplete="username"
+                  placeholder="nama.anda@company.example"
+                />
+              </Field>
               <Field label="Password">
                 <input
                   type="password"
                   className={inputClass}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  autoFocus
                   required
+                  autoComplete="current-password"
                   placeholder="••••••••"
                 />
               </Field>
@@ -134,9 +147,10 @@ export function LoginGate({ onSuccess }: { onSuccess: () => void }) {
             </form>
 
             <div className="mt-6 rounded-md border border-[#e8c48a] bg-[#fdf1dc] px-3 py-2 text-[11px] leading-relaxed text-[#7a4e0f]">
-              <strong>Prototipe demo.</strong> Autentikasi ini bersifat placeholder dan{' '}
-              <em>bukan</em> pengganti IAM produksi. Lihat{' '}
-              <code className="rounded bg-black/5 px-1 py-0.5">docs/02_SECURITY.md</code>.
+              <strong>Prototipe demo.</strong> Gunakan email salah satu pengguna contoh (lihat{' '}
+              <code className="rounded bg-black/5 px-1 py-0.5">Manajemen Pengguna</code> setelah masuk) dengan
+              password bawaan <code className="rounded bg-black/5 px-1 py-0.5">Edms#2026</code>. Segera ganti
+              lewat menu akun setelah masuk.
             </div>
           </div>
 

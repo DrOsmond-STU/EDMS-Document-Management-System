@@ -146,6 +146,12 @@ export interface User {
   functionId: string
   roles: RoleId[]
   active: boolean
+  /** Server-side only — hashed (bcrypt on the PHP backend, salted scrypt on the
+   * Node backend). The API strips this field before ever sending a user record
+   * to the browser; it only exists in this shared type because SharedState is
+   * also the server's internal representation. Never populate/read this from
+   * frontend code. */
+  passwordHash?: string
 }
 
 export type NotificationCategory = 'approval_pending' | 'expiring_soon' | 'shared' | 'assigned'

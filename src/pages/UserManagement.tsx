@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Plus } from 'lucide-react'
+import { Plus, KeyRound } from 'lucide-react'
 import { useApp } from '../state/AppContext'
 import { PageHeader, Card, Button, Field, inputClass } from '../components/ui'
 import { ROLES, ROLE_MAP } from '../constants'
@@ -7,14 +7,33 @@ import { rolesHavePermission } from '../state/permissions'
 import type { RoleId } from '../types'
 
 export function UserManagement() {
-  const { state, addUser, toggleUserActive } = useApp()
-  const canManage = rolesHavePermission([state.currentRoleId], 'users.manage')
+  const { currentUser, addUser, toggleUserActive, resetUserPassword, state } = useApp()
+  const canManage = rolesHavePermission(currentUser.roles, 'users.manage')
 
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [functionId, setFunctionId] = useState(state.functions[0]?.id ?? '')
   const [selectedRoles, setSelectedRoles] = useState<RoleId[]>(['viewer'])
   const [showForm, setShowForm] = useState(false)
+  const [resetTargetId, setResetTargetId] = useState<string | null>(null)
+  const [resetPassword, setResetPassword] = useState('')
+  const [resetError, setResetError] = useState('')
+  const [resetSubmitting, setResetSubmitting] = useState(false)
+
+  async function handleResetPassword(e: React.FormEvent) {
+    e.preventDefault()
+    if (!resetTargetId) return
+    setResetSubmitting(true)
+    setResetError('')
+    const err = await resetUserPassword(resetTargetId, resetPassword)
+    setResetSubmitting(false)
+    if (err) {
+      setResetError(err)
+      return
+    }
+    setResetTargetId(null)
+    setResetPassword('')
+  }
 
   function toggleRole(r: RoleId) {
     setSelectedRoles((prev) => (prev.includes(r) ? prev.filter((x) => x !== r) : [...prev, r]))
@@ -128,9 +147,23 @@ export function UserManagement() {
                 </td>
                 {canManage && (
                   <td className="px-3 py-2.5 text-right">
-                    <Button variant="ghost" onClick={() => toggleUserActive(u.id)} className="!py-1 text-[11px]">
-                      {u.active ? 'Nonaktifkan' : 'Aktifkan'}
-                    </Button>
+                    <div className="flex justify-end gap-1.5">
+                      <Button
+                        variant="ghost"
+                        onClick={() => {
+                          setResetTargetId(u.id)
+                          setResetPassword('')
+                          setResetError('')
+                        }}
+                        className="!py-1 text-[11px]"
+                        title="Reset password"
+                      >
+                        <KeyRound size={12} />
+                      </Button>
+                      <Button variant="ghost" onClick={() => toggleUserActive(u.id)} className="!py-1 text-[11px]">
+                        {u.active ? 'Nonaktifkan' : 'Aktifkan'}
+                      </Button>
+                    </div>
                   </td>
                 )}
               </tr>
@@ -138,6 +171,41 @@ export function UserManagement() {
           </tbody>
         </table>
       </div>
+
+      {resetTargetId && (
+        <>
+          <div className="fixed inset-0 z-40 bg-black/30" onClick={() => setResetTargetId(null)} />
+          <div className="fixed left-1/2 top-1/2 z-50 w-full max-w-sm -translate-x-1/2 -translate-y-1/2">
+            <Card>
+              <h3 className="mb-1 text-sm font-bold text-[var(--color-neutral-dark)]">Reset Password</h3>
+              <p className="mb-3 text-xs text-[var(--color-neutral-medium)]">
+                {state.users.find((u) => u.id === resetTargetId)?.name} — password baru berlaku segera.
+              </p>
+              <form onSubmit={handleResetPassword} className="flex flex-col gap-2">
+                <input
+                  type="password"
+                  className={inputClass}
+                  placeholder="Password baru (min. 8 karakter)"
+                  value={resetPassword}
+                  onChange={(e) => setResetPassword(e.target.value)}
+                  minLength={8}
+                  autoFocus
+                  required
+                />
+                {resetError && <p className="text-[11px] text-[var(--color-brand-danger)]">{resetError}</p>}
+                <div className="flex justify-end gap-2">
+                  <Button type="button" variant="ghost" onClick={() => setResetTargetId(null)}>
+                    Batal
+                  </Button>
+                  <Button type="submit" variant="primary" disabled={resetSubmitting}>
+                    {resetSubmitting ? 'Menyimpan…' : 'Reset Password'}
+                  </Button>
+                </div>
+              </form>
+            </Card>
+          </div>
+        </>
+      )}
     </div>
   )
 }

@@ -1,12 +1,83 @@
 import { useState } from 'react'
-import { ChevronDown } from 'lucide-react'
+import type { FormEvent } from 'react'
+import { ChevronDown, KeyRound, LogOut } from 'lucide-react'
 import { useApp } from '../state/AppContext'
 import { ROLE_MAP } from '../constants'
+import { Button, inputClass } from './ui'
+
+function ChangePasswordForm({ onDone }: { onDone: () => void }) {
+  const { changeOwnPassword } = useApp()
+  const [currentPassword, setCurrentPassword] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [error, setError] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+
+  async function handleSubmit(e: FormEvent) {
+    e.preventDefault()
+    setError('')
+    if (newPassword !== confirmPassword) {
+      setError('Konfirmasi password baru tidak sama.')
+      return
+    }
+    setSubmitting(true)
+    const err = await changeOwnPassword(currentPassword, newPassword)
+    setSubmitting(false)
+    if (err) {
+      setError(err)
+      return
+    }
+    onDone()
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="flex flex-col gap-1.5 px-1 py-1.5">
+      <input
+        type="password"
+        placeholder="Password saat ini"
+        className={inputClass}
+        value={currentPassword}
+        onChange={(e) => setCurrentPassword(e.target.value)}
+        autoComplete="current-password"
+        required
+      />
+      <input
+        type="password"
+        placeholder="Password baru (min. 8 karakter)"
+        className={inputClass}
+        value={newPassword}
+        onChange={(e) => setNewPassword(e.target.value)}
+        autoComplete="new-password"
+        minLength={8}
+        required
+      />
+      <input
+        type="password"
+        placeholder="Ulangi password baru"
+        className={inputClass}
+        value={confirmPassword}
+        onChange={(e) => setConfirmPassword(e.target.value)}
+        autoComplete="new-password"
+        minLength={8}
+        required
+      />
+      {error && <p className="text-[11px] text-[var(--color-brand-danger)]">{error}</p>}
+      <Button type="submit" variant="primary" size="sm" className="justify-center" disabled={submitting}>
+        {submitting ? 'Menyimpan…' : 'Simpan Password Baru'}
+      </Button>
+    </form>
+  )
+}
 
 export function UserRoleSwitcher() {
-  const { state, currentUser, setCurrentUser, setCurrentRole } = useApp()
+  const { state, currentUser, setCurrentRole, logout } = useApp()
   const [open, setOpen] = useState(false)
-  const activeUsers = state.users.filter((u) => u.active)
+  const [changingPassword, setChangingPassword] = useState(false)
+
+  function close() {
+    setOpen(false)
+    setChangingPassword(false)
+  }
 
   return (
     <div className="relative">
@@ -26,50 +97,52 @@ export function UserRoleSwitcher() {
 
       {open && (
         <>
-          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
+          <div className="fixed inset-0 z-10" onClick={close} />
           <div className="edms-animate-in absolute right-0 z-20 mt-2 w-72 overflow-hidden rounded-xl border border-[var(--color-neutral-border)] bg-white p-2 shadow-[var(--shadow-popover)]">
-            <div className="mb-2 rounded-md bg-[var(--color-brand-warning)]/10 px-2 py-1.5 text-[10.5px] leading-snug text-[#8a5a10]">
-              Prototipe: peran dipilih manual, bukan autentikasi sungguhan. Lihat{' '}
-              <span className="font-semibold">docs/02_SECURITY.md</span>.
+            <div className="mb-1.5 px-2 pt-1 text-[12.5px] font-semibold text-[var(--color-neutral-dark)]">
+              {currentUser.name}
             </div>
+            <div className="mb-2 px-2 text-[11px] text-[var(--color-neutral-medium)]">{currentUser.email}</div>
 
-            <div className="mb-1 px-1 text-[10px] font-bold uppercase tracking-wide text-[var(--color-neutral-medium)]">
-              Ganti Pengguna
-            </div>
-            <div className="mb-2 max-h-40 overflow-y-auto">
-              {activeUsers.map((u) => (
-                <button
-                  key={u.id}
-                  onClick={() => {
-                    setCurrentUser(u.id)
-                    setCurrentRole(u.roles[0])
-                  }}
-                  className={`flex w-full items-center justify-between rounded-md px-2 py-1.5 text-left text-xs hover:bg-[var(--color-neutral-bg)] ${
-                    u.id === currentUser.id ? 'bg-[var(--color-brand-primary)]/10 font-semibold' : ''
-                  }`}
-                >
-                  <span>{u.name}</span>
-                  <span className="text-[10px] text-[var(--color-neutral-medium)]">{u.functionId}</span>
-                </button>
-              ))}
-            </div>
+            {currentUser.roles.length > 1 && (
+              <>
+                <div className="mb-1 px-1 text-[10px] font-bold uppercase tracking-wide text-[var(--color-neutral-medium)]">
+                  Tampilkan Sebagai
+                </div>
+                <div className="mb-2 flex flex-col gap-0.5">
+                  {currentUser.roles.map((roleId) => (
+                    <button
+                      key={roleId}
+                      onClick={() => setCurrentRole(roleId)}
+                      className={`rounded-md px-2 py-1.5 text-left text-xs hover:bg-[var(--color-neutral-bg)] ${
+                        roleId === state.currentRoleId ? 'bg-[var(--color-brand-primary)]/10 font-semibold' : ''
+                      }`}
+                    >
+                      {ROLE_MAP[roleId].label}
+                    </button>
+                  ))}
+                </div>
+                <div className="mb-2 border-t border-[var(--color-neutral-border)]" />
+              </>
+            )}
 
-            <div className="mb-1 px-1 text-[10px] font-bold uppercase tracking-wide text-[var(--color-neutral-medium)]">
-              Peran Aktif
-            </div>
-            <div className="flex flex-col gap-0.5">
-              {currentUser.roles.map((roleId) => (
-                <button
-                  key={roleId}
-                  onClick={() => setCurrentRole(roleId)}
-                  className={`rounded-md px-2 py-1.5 text-left text-xs hover:bg-[var(--color-neutral-bg)] ${
-                    roleId === state.currentRoleId ? 'bg-[var(--color-brand-primary)]/10 font-semibold' : ''
-                  }`}
-                >
-                  {ROLE_MAP[roleId].label}
-                </button>
-              ))}
-            </div>
+            {changingPassword ? (
+              <ChangePasswordForm onDone={close} />
+            ) : (
+              <button
+                onClick={() => setChangingPassword(true)}
+                className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs text-[var(--color-neutral-dark)] hover:bg-[var(--color-neutral-bg)]"
+              >
+                <KeyRound size={13} /> Ganti Password
+              </button>
+            )}
+
+            <button
+              onClick={logout}
+              className="mt-0.5 flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs text-[var(--color-brand-danger)] hover:bg-[var(--color-brand-danger)]/10"
+            >
+              <LogOut size={13} /> Keluar
+            </button>
           </div>
         </>
       )}

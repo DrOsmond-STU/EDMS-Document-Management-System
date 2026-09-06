@@ -28,6 +28,14 @@ function edms_now_ms(): int {
     return (int) round(microtime(true) * 1000);
 }
 
+// Password bawaan prototipe — didokumentasikan di layar login & README.
+// Pengguna mana pun (hasil seed baru atau data lama yang belum punya
+// passwordHash) otomatis dimigrasi ke hash password ini saat pertama kali
+// dibaca (lihat edms_migrate_passwords() di db.php), supaya tidak ada yang
+// terkunci keluar. Sysadmin sebaiknya minta semua orang menggantinya lewat
+// Manajemen Pengguna -> Reset Password atau menu "Ganti Password" sendiri.
+const EDMS_DEFAULT_PASSWORD = 'Edms#2026';
+
 function edms_action_types(): array {
     return [
         'CREATE_DOCUMENT',
@@ -38,6 +46,7 @@ function edms_action_types(): array {
         'ADD_STANDARD',
         'ADD_USER',
         'TOGGLE_USER_ACTIVE',
+        'SET_USER_PASSWORD',
         'CREATE_DRAFTING_REQUEST',
         'ADD_MEETING',
         'SET_FINALIZED_CONTENT',

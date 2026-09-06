@@ -12,32 +12,26 @@ import { DOCUMENT_STATUS_ORDER } from '../types'
 import type { Action, NewDocumentInput, NewDraftingRequestInput, SharedState } from './reducer'
 import { LoginGate } from '../components/LoginGate'
 
-const ROLE_STORAGE_KEY = 'edms.prototype.role.v1'
+const VIEW_ROLE_STORAGE_KEY = 'edms.prototype.viewRole.v1'
 
-interface RoleSelection {
-  currentUserId: string
-  currentRoleId: RoleId
-}
-
-const DEFAULT_ROLE_SELECTION: RoleSelection = { currentUserId: 'u4', currentRoleId: 'controller' }
-
-function loadRoleSelection(): RoleSelection {
+// Which of the logged-in user's OWN roles they're currently viewing the UI
+// as. Purely a display preference (per-browser, not security-relevant) — the
+// server always checks the full state.users[...].roles for a user, never
+// just this one. Kept as `state.currentRoleId` for backward compatibility
+// with pages written against the old (fully client-trusted) demo switcher.
+function loadViewRole(): RoleId | null {
   try {
-    const raw = localStorage.getItem(ROLE_STORAGE_KEY)
-    if (!raw) return DEFAULT_ROLE_SELECTION
-    const parsed = JSON.parse(raw) as Partial<RoleSelection>
-    if (!parsed.currentUserId || !parsed.currentRoleId) return DEFAULT_ROLE_SELECTION
-    return { currentUserId: parsed.currentUserId, currentRoleId: parsed.currentRoleId }
+    return (localStorage.getItem(VIEW_ROLE_STORAGE_KEY) as RoleId | null) ?? null
   } catch {
-    return DEFAULT_ROLE_SELECTION
+    return null
   }
 }
 
 // Shape kept identical to the pre-database AppState so every existing page
 // component (which reads state.currentUserId / state.currentRoleId) keeps
-// working unchanged. Only documents/users/etc. are actually persisted server
-// side — currentUserId/currentRoleId are a local "who am I demoing as" pick,
-// merged back in below so the shape matches.
+// working unchanged. currentUserId now comes from the server-verified
+// session (see api/state.ts / cpanel/api/state.php) — the frontend can no
+// longer set it to just anyone.
 interface AppState extends SharedState {
   currentUserId: string
   currentRoleId: RoleId
@@ -46,8 +40,14 @@ interface AppState extends SharedState {
 interface AppContextValue {
   state: AppState
   currentUser: User
-  setCurrentUser: (userId: string) => void
+  /** Switch which of the CURRENT user's own roles the UI is displayed as.
+   * No-op if roleId isn't one of currentUser.roles. */
   setCurrentRole: (roleId: RoleId) => void
+  logout: () => void
+  /** Resolves to an error message on failure, or null on success. */
+  changeOwnPassword: (currentPassword: string, newPassword: string) => Promise<string | null>
+  /** sysadmin (users.manage) only — resolves to an error message on failure. */
+  resetUserPassword: (userId: string, newPassword: string) => Promise<string | null>
   createDocument: (input: NewDocumentInput) => void
   transitionDocument: (documentId: string, toStatus: DocumentStatus, note?: string) => void
   markNotificationRead: (id: string) => void
@@ -73,7 +73,7 @@ type Status = 'loading' | 'unauth' | 'ready' | 'error'
 
 function FullScreenMessage({ title, detail, retry }: { title: string; detail: string; retry?: () => void }) {
   return (
-    <div className="flex h-screen w-full flex-col items-center justify-center gap-2 bg-[#fafaf8] px-6 text-center">
+    <div className="flex h-screen w-full flex-col items-center justify-center gap-2 bg-[var(--color-app-bg)] px-6 text-center">
       <div className="text-sm font-bold text-[var(--color-neutral-dark)]">{title}</div>
       <p className="max-w-sm text-xs text-[var(--color-neutral-medium)]">{detail}</p>
       {retry && (
@@ -92,7 +92,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<Status>('loading')
   const [errorMessage, setErrorMessage] = useState('')
   const [sharedState, setSharedState] = useState<SharedState | null>(null)
-  const [role, setRole] = useState<RoleSelection>(loadRoleSelection)
+  const [sessionUserId, setSessionUserId] = useState<string | null>(null)
+  const [viewRoleId, setViewRoleId] = useState<RoleId | null>(loadViewRole)
 
   const loadState = useCallback(async () => {
     setStatus('loading')
@@ -108,8 +109,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
         setStatus('error')
         return
       }
-      const body = (await res.json()) as { state: SharedState }
+      const body = (await res.json()) as { state: SharedState; currentUserId: string }
       setSharedState(body.state)
+      setSessionUserId(body.currentUserId)
       setStatus('ready')
     } catch {
       setErrorMessage('Tidak dapat menghubungi server. Periksa koneksi Anda.')
@@ -122,8 +124,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [loadState])
 
   useEffect(() => {
-    localStorage.setItem(ROLE_STORAGE_KEY, JSON.stringify(role))
-  }, [role])
+    if (!viewRoleId) return
+    try {
+      localStorage.setItem(VIEW_ROLE_STORAGE_KEY, viewRoleId)
+    } catch {
+      // ignore (private browsing, storage full, ...)
+    }
+  }, [viewRoleId])
 
   const dispatch = useCallback(async (action: Action) => {
     try {
@@ -149,26 +156,67 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  const state = useMemo<AppState | null>(() => {
-    if (!sharedState) return null
-    return { ...sharedState, currentUserId: role.currentUserId, currentRoleId: role.currentRoleId }
-  }, [sharedState, role])
+  // Special-cased like dispatch() but returns a result instead of alert()ing,
+  // since the password forms need to show the error inline.
+  const dispatchPasswordChange = useCallback(
+    async (body: { userId: string; newPassword: string; currentPassword?: string }): Promise<string | null> => {
+      try {
+        const res = await fetch('/api/dispatch', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: { type: 'SET_USER_PASSWORD', ...body } }),
+        })
+        if (res.status === 401) {
+          setStatus('unauth')
+          return 'Sesi berakhir. Silakan masuk kembali.'
+        }
+        const responseBody = await res.json().catch(() => null)
+        if (!res.ok) return responseBody?.error ?? 'Gagal mengganti password.'
+        setSharedState(responseBody.state)
+        return null
+      } catch {
+        return 'Tidak dapat menghubungi server. Periksa koneksi Anda.'
+      }
+    },
+    [],
+  )
+
+  const logout = useCallback(() => {
+    fetch('/api/logout', { method: 'POST' }).finally(() => {
+      setSharedState(null)
+      setSessionUserId(null)
+      setStatus('unauth')
+    })
+  }, [])
 
   const currentUser = useMemo(() => {
-    if (!state) return undefined
-    return state.users.find((u) => u.id === state.currentUserId) ?? state.users[0]
-  }, [state])
+    if (!sharedState || !sessionUserId) return undefined
+    return sharedState.users.find((u) => u.id === sessionUserId)
+  }, [sharedState, sessionUserId])
+
+  const resolvedRoleId = useMemo<RoleId | null>(() => {
+    if (!currentUser) return null
+    if (viewRoleId && currentUser.roles.includes(viewRoleId)) return viewRoleId
+    return currentUser.roles[0] ?? null
+  }, [currentUser, viewRoleId])
+
+  const state = useMemo<AppState | null>(() => {
+    if (!sharedState || !sessionUserId || !resolvedRoleId) return null
+    return { ...sharedState, currentUserId: sessionUserId, currentRoleId: resolvedRoleId }
+  }, [sharedState, sessionUserId, resolvedRoleId])
 
   const value = useMemo<AppContextValue | null>(() => {
     if (!state || !currentUser) return null
     return {
       state,
       currentUser,
-      setCurrentUser: (userId) => {
-        const nextUser = state.users.find((u) => u.id === userId)
-        setRole({ currentUserId: userId, currentRoleId: nextUser?.roles[0] ?? role.currentRoleId })
+      setCurrentRole: (roleId) => {
+        if (currentUser.roles.includes(roleId)) setViewRoleId(roleId)
       },
-      setCurrentRole: (roleId) => setRole((r) => ({ ...r, currentRoleId: roleId })),
+      logout,
+      changeOwnPassword: (currentPassword, newPassword) =>
+        dispatchPasswordChange({ userId: currentUser.id, currentPassword, newPassword }),
+      resetUserPassword: (userId, newPassword) => dispatchPasswordChange({ userId, newPassword }),
       createDocument: (input) => dispatch({ type: 'CREATE_DOCUMENT', input, actor: currentUser.name }),
       transitionDocument: (documentId, toStatus, note) =>
         dispatch({ type: 'TRANSITION_STATUS', documentId, toStatus, actor: currentUser.name, note }),
@@ -186,7 +234,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       resetDemoData: () => dispatch({ type: 'RESET_DEMO_DATA' }),
       dispatch,
     }
-  }, [state, currentUser, role, dispatch])
+  }, [state, currentUser, logout, dispatchPasswordChange, dispatch])
 
   if (status === 'loading') {
     return <FullScreenMessage title="Memuat…" detail="Menghubungi server EDMS." />

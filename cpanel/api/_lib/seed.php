@@ -38,7 +38,7 @@ function edms_standards_seed(): array {
 }
 
 function edms_users_seed(): array {
-    return [
+    $users = [
         ['id' => 'u1', 'name' => 'Rangga Pradipta', 'email' => 'rangga.pradipta@company.example', 'functionId' => 'qa', 'roles' => ['requester', 'drafter'], 'active' => true],
         ['id' => 'u2', 'name' => 'Siti Marlina', 'email' => 'siti.marlina@company.example', 'functionId' => 'qa', 'roles' => ['reviewer'], 'active' => true],
         ['id' => 'u3', 'name' => 'Bayu Kusuma', 'email' => 'bayu.kusuma@company.example', 'functionId' => 'qa', 'roles' => ['approver', 'function_head'], 'active' => true],
@@ -56,6 +56,13 @@ function edms_users_seed(): array {
         ['id' => 'u15', 'name' => 'Hendra Gunawan', 'email' => 'hendra.gunawan@company.example', 'functionId' => 'it', 'roles' => ['reviewer', 'sysadmin'], 'active' => true],
         ['id' => 'u16', 'name' => 'Putri Ramadhani', 'email' => 'putri.ramadhani@company.example', 'functionId' => 'qa', 'roles' => ['viewer'], 'active' => false],
     ];
+    // Semua pengguna demo mulai dengan EDMS_DEFAULT_PASSWORD (lihat constants.php)
+    // — sama seperti migrasi lazy untuk database lama di db.php.
+    foreach ($users as &$u) {
+        $u['passwordHash'] = password_hash(EDMS_DEFAULT_PASSWORD, PASSWORD_BCRYPT);
+    }
+    unset($u);
+    return $users;
 }
 
 function edms_seed_inputs(): array {

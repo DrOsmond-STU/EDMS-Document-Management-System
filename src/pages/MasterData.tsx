@@ -5,8 +5,8 @@ import { PageHeader, Card, Button, Field, inputClass } from '../components/ui'
 import { rolesHavePermission } from '../state/permissions'
 
 export function MasterData() {
-  const { state, addFunction, addStandard } = useApp()
-  const canManage = rolesHavePermission([state.currentRoleId], 'masterdata.manage')
+  const { state, currentUser, addFunction, addStandard } = useApp()
+  const canManage = rolesHavePermission(currentUser.roles, 'masterdata.manage')
 
   const [deptName, setDeptName] = useState('')
   const [stdCode, setStdCode] = useState('')
