@@ -3,7 +3,7 @@
 
 | Item | Keterangan |
 |---|---|
-| Versi | 2.0 (revisi besar — mengikuti arsitektur 10 domain / 30 modul) |
+| Versi | 2.1 (chrome navigasi navy gelap ala dashboard QHSE/governance korporat — lihat `05_BRAND.md` §3 catatan referensi) |
 | Status | Referensi implementasi UI saat ini + panduan pengembangan lanjutan |
 
 ---

@@ -41,10 +41,10 @@ export const STATUS_LABEL: Record<DocumentStatus, string> = {
 
 // Status colors — docs/05_BRAND.md Section 6 (semantic, distinct from classification scheme)
 export const STATUS_COLOR: Record<DocumentStatus, { bg: string; text: string }> = {
-  draft: { bg: '#E9EAE4', text: '#4A4F45' },
+  draft: { bg: '#EEF2F7', text: '#475569' },
   review: { bg: '#FDF1DC', text: '#B9791C' },
   approval: { bg: '#FCE8D1', text: '#C1650F' },
-  released: { bg: '#E3F1EA', text: '#1D6E48' },
+  released: { bg: '#E5F5EC', text: '#1E8E5A' },
   obsolete: { bg: '#FBE7E6', text: '#B23B3A' },
 }
 
@@ -56,10 +56,10 @@ export const VALIDITY_LABEL: Record<ValidityStatus, string> = {
 }
 
 export const VALIDITY_COLOR: Record<ValidityStatus, { bg: string; text: string }> = {
-  berlaku: { bg: '#E3F1EA', text: '#1D6E48' },
+  berlaku: { bg: '#E5F5EC', text: '#1E8E5A' },
   kadaluarsa: { bg: '#FBE7E6', text: '#B23B3A' },
-  tidak_berlaku: { bg: '#EDEDED', text: '#5B5F58' },
-  belum_berlaku: { bg: '#E9EAE4', text: '#4A4F45' },
+  tidak_berlaku: { bg: '#E9EEF2', text: '#55606B' },
+  belum_berlaku: { bg: '#EEF2F7', text: '#475569' },
 }
 
 // Classification badges — docs/05_BRAND.md Section 3.1 (Domain 7: Information Protection)
@@ -73,12 +73,12 @@ export const CLASSIFICATION_LABEL: Record<ClassificationLevel, string> = {
 }
 
 export const CLASSIFICATION_COLOR: Record<ClassificationLevel, { bg: string; text: string }> = {
-  public: { bg: '#8fa98c', text: '#ffffff' },
-  internal: { bg: '#6b93b0', text: '#ffffff' },
+  public: { bg: '#7fa88f', text: '#ffffff' },
+  internal: { bg: '#5f8fb4', text: '#ffffff' },
   restricted: { bg: '#c98a3e', text: '#ffffff' },
   confidential: { bg: '#b9563f', text: '#ffffff' },
   secret: { bg: '#7a3b3b', text: '#ffffff' },
-  top_secret: { bg: '#2b2f29', text: '#ffffff' },
+  top_secret: { bg: '#1f2937', text: '#ffffff' },
 }
 
 export const CLASSIFICATION_HAS_LOCK: Record<ClassificationLevel, boolean> = {

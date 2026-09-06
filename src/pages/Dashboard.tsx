@@ -115,7 +115,7 @@ export function Dashboard() {
           icon={<FileText size={18} />}
           label="Total Dokumen"
           value={totalDocs}
-          accent="#378add"
+          accent="#0b5fa8"
           hint={`${byStatus.released} sudah dirilis`}
           to="/documents"
         />
@@ -123,7 +123,7 @@ export function Dashboard() {
           icon={<GitPullRequestArrow size={18} />}
           label="Penyusunan Berjalan"
           value={activeDrafting.length}
-          accent="#0e7c86"
+          accent="#0891a8"
           hint={`${draftingProjects.length - activeDrafting.length} sudah masuk register`}
           to="/tracking"
         />
@@ -131,7 +131,7 @@ export function Dashboard() {
           icon={<AlertTriangle size={18} />}
           label="Mendekati Review"
           value={expiringSoon.length}
-          accent="#ef9f27"
+          accent="#f2a93b"
           hint={expiringSoon.length ? 'Perlu peninjauan berkala' : 'Tidak ada yang mendekat'}
           to="/documents"
         />
@@ -139,7 +139,7 @@ export function Dashboard() {
           icon={<Users size={18} />}
           label="Pengguna Aktif"
           value={state.users.filter((u) => u.active).length}
-          accent="#7f77df"
+          accent="#6c63c7"
           hint={`${state.users.length} total pengguna terdaftar`}
           to="/users"
         />
@@ -157,11 +157,11 @@ export function Dashboard() {
               const pct = totalDocs === 0 ? 0 : (byStatus[s] / totalDocs) * 100
               if (pct === 0) return null
               const colors: Record<DocumentStatus, string> = {
-                draft: '#a3a89f',
-                review: '#ef9f27',
+                draft: '#94a3b8',
+                review: '#f2a93b',
                 approval: '#c98a3e',
-                released: '#1d9265',
-                obsolete: '#c85857',
+                released: '#1e8e5a',
+                obsolete: '#d93b3b',
               }
               return (
                 <div

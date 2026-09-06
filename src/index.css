@@ -3,32 +3,41 @@
 @theme {
   --font-sans: Inter, "Segoe UI", system-ui, -apple-system, sans-serif;
 
-  /* Brand palette — docs/05_BRAND.md Section 3 */
-  --color-brand-primary: #378add;
-  --color-brand-primary-dark: #2a6fb3;
-  --color-brand-primary-soft: #eaf3fb;
-  --color-brand-warning: #ef9f27;
-  --color-brand-teal: #0e7c86;
-  --color-brand-violet: #7f77df;
-  --color-brand-danger: #e24b4a;
-  --color-brand-success-text: #1d6e48;
-  --color-brand-success-bg: #e3f1ea;
+  /* Brand palette — docs/05_BRAND.md Section 3 (QHSE-inspired: deep governance
+     blue, safety green, hazard amber/red — see 05_BRAND.md's reference note) */
+  --color-brand-primary: #0b5fa8;
+  --color-brand-primary-dark: #08477e;
+  --color-brand-primary-soft: #e8f1f9;
+  --color-brand-warning: #f2a93b;
+  --color-brand-teal: #0891a8;
+  --color-brand-violet: #6c63c7;
+  --color-brand-danger: #d93b3b;
+  --color-brand-success-text: #1e8e5a;
+  --color-brand-success-bg: #e5f5ec;
 
   /* Neutral scale */
-  --color-neutral-dark: #1f2420;
-  --color-neutral-medium: #6b7268;
-  --color-neutral-soft: #a3a89f;
-  --color-neutral-border: #e2e4dd;
-  --color-neutral-border-strong: #cfd2c9;
-  --color-neutral-bg: #f2f3ee;
-  --color-neutral-bg-soft: #f7f8f4;
-  --color-chip-bg: #e9eae4;
-  --color-chip-text: #4a4f45;
+  --color-neutral-dark: #1f2937;
+  --color-neutral-medium: #64748b;
+  --color-neutral-soft: #94a3b8;
+  --color-neutral-border: #e2e8f0;
+  --color-neutral-border-strong: #cbd5e1;
+  --color-neutral-bg: #f1f5f9;
+  --color-neutral-bg-soft: #f8fafc;
+  --color-chip-bg: #eef2f7;
+  --color-chip-text: #475569;
 
   /* Surface & app background */
-  --color-app-bg: #f6f7f2;
+  --color-app-bg: #f6f8fa;
   --color-surface: #ffffff;
   --color-surface-elevated: #ffffff;
+
+  /* Sidebar chrome — dark navy governance/EHS dashboard treatment */
+  --color-sidebar-bg: #0b2340;
+  --color-sidebar-bg-active: #123256;
+  --color-sidebar-border: #16385f;
+  --color-sidebar-text: #b9c8dc;
+  --color-sidebar-text-active: #ffffff;
+  --color-sidebar-accent: #38bdf8;
 
   /* Elevation */
   --shadow-card: 0 1px 2px rgba(20, 24, 20, 0.04), 0 1px 3px rgba(20, 24, 20, 0.03);
@@ -36,12 +45,12 @@
   --shadow-popover: 0 12px 28px rgba(20, 24, 20, 0.12), 0 4px 8px rgba(20, 24, 20, 0.06);
 
   /* Classification tokens — docs/05_BRAND.md Section 3.1 */
-  --color-classification-public: #8fa98c;
-  --color-classification-internal: #6b93b0;
+  --color-classification-public: #7fa88f;
+  --color-classification-internal: #5f8fb4;
   --color-classification-restricted: #c98a3e;
   --color-classification-confidential: #b9563f;
   --color-classification-secret: #7a3b3b;
-  --color-classification-topsecret: #2b2f29;
+  --color-classification-topsecret: #1f2937;
 }
 
 * {

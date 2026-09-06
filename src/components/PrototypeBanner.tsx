@@ -11,11 +11,11 @@ export function PrototypeBanner() {
         <ShieldAlert size={12} strokeWidth={2.25} />
       </div>
       <p className="flex-1 text-[12px] leading-snug">
-        <strong>Prototipe demo — bukan untuk operasional resmi.</strong> Tidak ada autentikasi, backend, atau
-        enkripsi sungguhan; seluruh data tersimpan di localStorage browser Anda. Fitur Asisten AI, Information
-        Protection, Digital Signature, dan Integration sengaja tidak disertakan karena membutuhkan backend
-        (lihat <code className="rounded bg-black/5 px-1 py-0.5 font-mono text-[11px]">docs/02_SECURITY.md</code> §2 dan §12
-        sebelum deployment produksi).
+        <strong>Prototipe demo — bukan untuk operasional resmi.</strong> Tidak ada autentikasi pengguna individual,
+        enkripsi, atau proteksi dokumen sungguhan; sebagian besar data adalah contoh statis. Modul Asisten AI dan
+        Information Protection/Digital Signature yang tampil di sini murni tampilan (UI mock), belum terhubung ke
+        API/backend sungguhan (lihat <code className="rounded bg-black/5 px-1 py-0.5 font-mono text-[11px]">docs/02_SECURITY.md</code>{' '}
+        §2 dan §12 sebelum deployment produksi).
       </p>
       <button
         onClick={() => setDismissed(true)}

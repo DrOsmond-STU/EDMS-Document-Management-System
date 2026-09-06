@@ -3,7 +3,7 @@
 
 | Item | Keterangan |
 |---|---|
-| Versi | 2.0 (revisi — menambahkan token klasifikasi dokumen) |
+| Versi | 3.0 (revisi — tema visual QHSE-korporat: sidebar navy gelap, palet biru governance/hijau safety/amber-merah hazard) |
 | Status | Panduan dasar — sesuaikan dengan identitas visual korporat resmi organisasi sebelum go-live |
 
 ---
@@ -14,6 +14,8 @@ EDMS mencerminkan **kepercayaan, ketelitian, dan tata kelola (governance)**. Seb
 
 > **Catatan:** Jika organisasi memiliki brand guideline korporat resmi, dokumen ini harus diselaraskan dengannya sebelum deployment.
 
+> **Catatan referensi tema (v3.0):** permintaan perbaikan UI/UX ini meminta gaya visual mengacu ke `qhse.semestateknologiutama.com`. Domain tersebut tidak dapat diakses dari lingkungan build (diblokir egress proxy) dan tidak ditemukan cukup detail visual publik untuk direplikasi persis, sehingga palet & gaya di bawah adalah **interpretasi generik gaya dashboard QHSE korporat** (governance blue + safety green + hazard amber/red, sidebar gelap ala platform EHS/compliance) — bukan salinan literal situs tersebut. Sesuaikan token di `src/index.css` bila referensi asli tersedia.
+
 ## 2. Nama & Penamaan Produk
 
 - Gunakan nama generik enterprise, mis. **"EDMS"** atau nama produk internal resmi yang ditetapkan manajemen.
@@ -23,28 +25,30 @@ EDMS mencerminkan **kepercayaan, ketelitian, dan tata kelola (governance)**. Seb
 
 | Token | Hex | Penggunaan |
 |---|---|---|
-| Primary Blue | `#378ADD` | Aksi utama, tautan, ikon dokumen baru |
-| Warning Amber | `#EF9F27` | Status "Approval", peringatan mendekati kedaluwarsa |
-| Teal | `#0E7C86` | Status "Pembaruan Dokumen", elemen sekunder |
-| Violet | `#7F77DD` | Status "Dokumen Dibagikan" |
-| Danger Red | `#E24B4A` | Status "Kadaluarsa", aksi hapus/obsolete/destroy |
-| Success Green | `#1D6E48` (teks) / `#E3F1EA` (latar) | Status selesai/berhasil |
-| Neutral Dark | `#2B2F29` | Teks utama |
-| Neutral Medium | `#6B7268` | Label sekunder, meta info |
-| Neutral Border | `#D7D9D2` | Garis pembatas input/tabel |
-| Neutral Background | `#F0F1EC` | Latar panel/section |
-| Standard Chip Neutral | `#E9EAE4` (latar) / `#4A4F45` (teks) | Chip label standar (ISO 9001, dst.) |
+| Primary Blue (Governance) | `#0B5FA8` (hover/aktif: `#08477E`) | Aksi utama, tautan, ikon dokumen baru, aksen sidebar/PageHeader |
+| Warning Amber | `#F2A93B` | Status "Approval", peringatan mendekati kedaluwarsa, banner prototipe |
+| Teal | `#0891A8` | Status "Pembaruan Dokumen", elemen sekunder |
+| Violet | `#6C63C7` | Status "Dokumen Dibagikan" |
+| Danger Red | `#D93B3B` | Status "Kadaluarsa", aksi hapus/obsolete/destroy |
+| Success Green | `#1E8E5A` (teks) / `#E5F5EC` (latar) | Status selesai/berhasil/Released/Berlaku |
+| Neutral Dark | `#1F2937` | Teks utama |
+| Neutral Medium | `#64748B` | Label sekunder, meta info |
+| Neutral Border | `#E2E8F0` | Garis pembatas input/tabel |
+| Neutral Background (App) | `#F6F8FA` | Latar halaman |
+| Neutral Background (Panel) | `#F1F5F9` | Latar panel/section di atas kartu putih |
+| Standard Chip Neutral | `#EEF2F7` (latar) / `#475569` (teks) | Chip label standar (ISO 9001, dst.) |
+| Sidebar (chrome) | `#0B2340` latar / `#B9C8DC` teks / `#38BDF8` aksen aktif | Navigasi utama — navy gelap ala dashboard governance/EHS, membedakan chrome dari konten |
 
 ### 3.1 Token Klasifikasi Dokumen (Domain 7 — Information Protection)
 
 | Level | Warna Badge | Catatan |
 |---|---|---|
-| Public | `#8FA98C` (hijau muda netral) | Tanpa ikon gembok |
-| Internal | `#6B93B0` (biru netral) | Tanpa ikon gembok |
+| Public | `#7FA88F` (hijau muda netral) | Tanpa ikon gembok |
+| Internal | `#5F8FB4` (biru netral) | Tanpa ikon gembok |
 | Restricted | `#C98A3E` (oranye tanah) | Ikon gembok terbuka |
 | Confidential | `#B9563F` (merah bata) | Ikon gembok tertutup |
 | Secret | `#7A3B3B` (merah gelap) | Ikon gembok tertutup + label tegas |
-| Top Secret | `#2B2F29` (hitam/gelap) dengan teks putih | Ikon gembok tertutup + garis diagonal peringatan |
+| Top Secret | `#1F2937` (hitam/gelap) dengan teks putih | Ikon gembok tertutup + garis diagonal peringatan |
 
 > Warna klasifikasi sengaja dibuat **berbeda skema** dari warna status siklus hidup (Bagian 6 di `03_DESIGN.md`) agar pengguna tidak salah membaca badge status sebagai badge klasifikasi, atau sebaliknya.
 
