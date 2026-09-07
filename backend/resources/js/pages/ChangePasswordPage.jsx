@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { KeyRound } from 'lucide-react'
+import { Logo } from '../components/Logo'
 import { useAuth } from '../AuthContext'
 import { Button, Field, inputClass } from '../components/ui'
 import { ApiError } from '../api'
@@ -28,7 +29,9 @@ export default function ChangePasswordPage() {
 
   return (
     <div className="flex min-h-screen w-full items-center justify-center px-4">
-      <div className="w-full max-w-sm rounded-2xl border border-[var(--color-neutral-border)] bg-white p-7 shadow-[var(--shadow-elevated)]">
+      <div className="w-full max-w-sm">
+      <div className="mb-5"><Logo /></div>
+      <div className="rounded-2xl border border-[var(--color-neutral-border)] bg-white p-7 shadow-[var(--shadow-elevated)]">
         <div className="mb-5">
           <div className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-[#fdf1dc] px-2.5 py-0.5 text-[10.5px] font-bold uppercase tracking-wide text-[#8a5a10]">
             <KeyRound size={11} strokeWidth={2.5} /> Wajib Ganti Password
@@ -56,6 +59,7 @@ export default function ChangePasswordPage() {
             Keluar
           </button>
         </form>
+      </div>
       </div>
     </div>
   )

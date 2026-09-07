@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { FileText, Plus } from 'lucide-react'
+import { Logo } from '../components/Logo'
 import { api, ApiError } from '../api'
 import { useAuth } from '../AuthContext'
 import { Button, Card, Field, StatusBadge, inputClass } from '../components/ui'
@@ -101,9 +102,9 @@ export default function DocumentsPage() {
     <div className="mx-auto max-w-5xl px-4 py-8">
       <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-[20px] font-bold tracking-tight">Register Dokumen</h1>
-          <p className="mt-0.5 text-[12.5px] text-[var(--color-neutral-medium)]">
-            {user?.name} · {user?.roles?.join(', ')}
+          <Logo size={30} />
+          <p className="mt-2 text-[12.5px] text-[var(--color-neutral-medium)]">
+            Register Dokumen · {user?.name} · {user?.roles?.join(', ')}
           </p>
         </div>
         <div className="flex items-center gap-2">
