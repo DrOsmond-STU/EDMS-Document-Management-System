@@ -252,25 +252,24 @@ function edms_build_audit_log(array $documents): array {
  * Falls back to empty arrays if the file is missing so the app still boots.
  */
 function edms_seed_extras(): array {
+    $defaults = [
+        'risks' => [],
+        'internalAudits' => [],
+        'externalAudits' => [],
+        'findings' => [],
+        'mgmtReviews' => [],
+        'gapFollowUps' => [],
+    ];
     $path = __DIR__ . '/seed_extras.json';
     if (!is_readable($path)) {
-        return [
-            'risks' => [],
-            'internalAudits' => [],
-            'externalAudits' => [],
-            'findings' => [],
-            'mgmtReviews' => [],
-        ];
+        return $defaults;
     }
     $raw = file_get_contents($path);
     $decoded = json_decode($raw, true);
     if (!is_array($decoded)) {
-        return ['risks' => [], 'internalAudits' => [], 'externalAudits' => [], 'findings' => [], 'mgmtReviews' => []];
+        return $defaults;
     }
-    return array_merge(
-        ['risks' => [], 'internalAudits' => [], 'externalAudits' => [], 'findings' => [], 'mgmtReviews' => []],
-        $decoded,
-    );
+    return array_merge($defaults, $decoded);
 }
 
 function edms_initial_state(): array {
@@ -290,5 +289,6 @@ function edms_initial_state(): array {
         'externalAudits' => $extras['externalAudits'],
         'findings' => $extras['findings'],
         'mgmtReviews' => $extras['mgmtReviews'],
+        'gapFollowUps' => $extras['gapFollowUps'],
     ];
 }

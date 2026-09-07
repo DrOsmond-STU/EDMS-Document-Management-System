@@ -19,6 +19,9 @@ import type {
   FindingType,
   FindingVerification,
   FunctionDept,
+  GapFollowUp,
+  GapFollowUpStatus,
+  GapFollowUpType,
   Impact,
   InternalAudit,
   Likelihood,
@@ -47,6 +50,7 @@ import {
   EXTERNAL_AUDITS,
   FINDINGS,
   FUNCTIONS,
+  GAP_FOLLOWUPS,
   INTERNAL_AUDITS,
   MGMT_REVIEWS,
   NOTIFICATIONS,
@@ -70,6 +74,7 @@ export interface SharedState {
   externalAudits: ExternalAudit[]
   findings: AuditFinding[]
   mgmtReviews: ManagementReview[]
+  gapFollowUps: GapFollowUp[]
 }
 
 export function initialState(): SharedState {
@@ -87,6 +92,7 @@ export function initialState(): SharedState {
     externalAudits: EXTERNAL_AUDITS,
     findings: FINDINGS,
     mgmtReviews: MGMT_REVIEWS,
+    gapFollowUps: GAP_FOLLOWUPS,
   }
 }
 
@@ -163,6 +169,15 @@ export interface NewMgmtReviewInput {
   inputs: Omit<MgmtReviewInput, 'id'>[]
 }
 
+export interface NewGapFollowUpInput {
+  gapId: string
+  type: GapFollowUpType
+  pic: string
+  deadline: string
+  action: string
+  reviewer: string
+}
+
 export type Action =
   | { type: 'CREATE_DOCUMENT'; input: NewDocumentInput; actor: string }
   | { type: 'TRANSITION_STATUS'; documentId: string; toStatus: DocumentStatus; actor: string; note?: string }
@@ -203,6 +218,9 @@ export type Action =
   | { type: 'ADD_MGMT_ACTION'; reviewId: string; item: Omit<MgmtReviewActionItem, 'id' | 'status'>; actor: string }
   | { type: 'CLOSE_MGMT_ACTION'; reviewId: string; itemId: string; closureNote: string; actor: string }
   | { type: 'UPDATE_MGMT_REVIEW_STATUS'; reviewId: string; status: ManagementReview['status']; actor: string }
+  // Compliance matrix — tindak lanjut gap
+  | { type: 'ADD_GAP_FOLLOWUP'; input: NewGapFollowUpInput; actor: string }
+  | { type: 'UPDATE_GAP_FOLLOWUP_STATUS'; followUpId: string; status: GapFollowUpStatus; actor: string }
   | { type: 'RESET_DEMO_DATA' }
 
 export const ACTION_TYPES: Action['type'][] = [
@@ -238,6 +256,8 @@ export const ACTION_TYPES: Action['type'][] = [
   'ADD_MGMT_ACTION',
   'CLOSE_MGMT_ACTION',
   'UPDATE_MGMT_REVIEW_STATUS',
+  'ADD_GAP_FOLLOWUP',
+  'UPDATE_GAP_FOLLOWUP_STATUS',
   'RESET_DEMO_DATA',
 ]
 
@@ -974,6 +994,52 @@ export function reducer(state: SharedState, action: Action): SharedState {
         ...state,
         mgmtReviews,
         auditLog: [makeAudit(action.actor, 'status_change', 'ManagementReview', action.reviewId, `Status tinjauan manajemen → ${action.status}`), ...state.auditLog],
+      }
+    }
+
+    case 'ADD_GAP_FOLLOWUP': {
+      const { input, actor } = action
+      const followUp: GapFollowUp = {
+        id: `gf-${Date.now()}`,
+        gapId: input.gapId,
+        type: input.type,
+        pic: input.pic,
+        deadline: input.deadline,
+        action: input.action,
+        reviewer: input.reviewer,
+        status: 'open',
+        createdAt: new Date().toISOString().slice(0, 10),
+        createdBy: actor,
+      }
+      return {
+        ...state,
+        gapFollowUps: [followUp, ...state.gapFollowUps],
+        auditLog: [
+          makeAudit(actor, 'create', 'GapFollowUp', followUp.id, `Menambahkan tindak lanjut gap (PIC: ${followUp.pic})`),
+          ...state.auditLog,
+        ],
+      }
+    }
+
+    case 'UPDATE_GAP_FOLLOWUP_STATUS': {
+      let found: GapFollowUp | null = null
+      const gapFollowUps = state.gapFollowUps.map((gf) => {
+        if (gf.id !== action.followUpId) return gf
+        found = gf
+        return {
+          ...gf,
+          status: action.status,
+          closedAt: action.status === 'closed' ? new Date().toISOString().slice(0, 10) : undefined,
+        }
+      })
+      if (!found) return state
+      return {
+        ...state,
+        gapFollowUps,
+        auditLog: [
+          makeAudit(action.actor, 'status_change', 'GapFollowUp', action.followUpId, `Status tindak lanjut gap → ${action.status}`),
+          ...state.auditLog,
+        ],
       }
     }
 

@@ -1,6 +1,7 @@
 import { Pool, type PoolClient } from 'pg'
 import { initialState, reducer, type Action, type SharedState } from '../../src/state/reducer'
 import { hashPassword } from './password'
+import { GAP_FOLLOWUPS } from '../../src/data/seed'
 
 const ROW_ID = 1
 
@@ -22,6 +23,16 @@ function migratePasswords(state: SharedState): [SharedState, boolean] {
     return { ...u, passwordHash: hashPassword(DEFAULT_PASSWORD) }
   })
   return changed ? [{ ...state, users }, true] : [state, false]
+}
+
+/** Backfills state.gapFollowUps for a database predating the Compliance
+ * Matrix follow-up feature (that key won't exist in an older stored row).
+ * Seeded with the same demo entries as a fresh install, not an empty array,
+ * so the feature is visibly working on an old install without manual entry.
+ * Returns [state, changed]. */
+function migrateGapFollowUps(state: SharedState): [SharedState, boolean] {
+  if (Array.isArray(state.gapFollowUps)) return [state, false]
+  return [{ ...state, gapFollowUps: GAP_FOLLOWUPS }, true]
 }
 
 /** Strips passwordHash before a state ever reaches the browser. */
@@ -67,8 +78,9 @@ export async function readState(): Promise<SharedState> {
     const again = await db.query('SELECT state FROM app_state WHERE id = $1', [ROW_ID])
     state = again.rows[0].state as SharedState
   }
-  const [migrated, changed] = migratePasswords(state)
-  if (changed) {
+  const [migratedPw, changedPw] = migratePasswords(state)
+  const [migrated, changedGf] = migrateGapFollowUps(migratedPw)
+  if (changedPw || changedGf) {
     await db.query('UPDATE app_state SET state = $1::jsonb, updated_at = now() WHERE id = $2', [
       JSON.stringify(migrated),
       ROW_ID,
@@ -93,7 +105,8 @@ export async function applyAction(action: Action): Promise<SharedState> {
       const again = await client.query('SELECT state FROM app_state WHERE id = $1 FOR UPDATE', [ROW_ID])
       rows = again.rows
     }
-    const [current] = migratePasswords(rows[0].state as SharedState)
+    const [currentPw] = migratePasswords(rows[0].state as SharedState)
+    const [current] = migrateGapFollowUps(currentPw)
     const next = reducer(current, action)
     await client.query('UPDATE app_state SET state = $1::jsonb, updated_at = now() WHERE id = $2', [
       JSON.stringify(next),

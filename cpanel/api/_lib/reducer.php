@@ -805,6 +805,50 @@ function edms_reducer(array $state, array $action): array {
         return $state;
     }
 
+    if ($type === 'ADD_GAP_FOLLOWUP') {
+        $input = $action['input'];
+        $followUp = [
+            'id' => 'gf-' . edms_now_ms(),
+            'gapId' => $input['gapId'],
+            'type' => $input['type'],
+            'pic' => $input['pic'],
+            'deadline' => $input['deadline'],
+            'action' => $input['action'],
+            'reviewer' => $input['reviewer'],
+            'status' => 'open',
+            'createdAt' => edms_today(),
+            'createdBy' => $action['actor'],
+        ];
+        array_unshift($state['gapFollowUps'], $followUp);
+        $state['auditLog'] = array_merge(
+            [edms_make_audit($action['actor'], 'create', 'GapFollowUp', $followUp['id'], 'Menambahkan tindak lanjut gap (PIC: ' . $followUp['pic'] . ')')],
+            $state['auditLog'],
+        );
+        return $state;
+    }
+
+    if ($type === 'UPDATE_GAP_FOLLOWUP_STATUS') {
+        $found = false;
+        foreach ($state['gapFollowUps'] as &$gf) {
+            if ($gf['id'] === $action['followUpId']) {
+                $found = true;
+                $gf['status'] = $action['status'];
+                if ($action['status'] === 'closed') {
+                    $gf['closedAt'] = edms_today();
+                } else {
+                    unset($gf['closedAt']);
+                }
+            }
+        }
+        unset($gf);
+        if (!$found) return $state;
+        $state['auditLog'] = array_merge(
+            [edms_make_audit($action['actor'], 'status_change', 'GapFollowUp', $action['followUpId'], 'Status tindak lanjut gap → ' . $action['status'])],
+            $state['auditLog'],
+        );
+        return $state;
+    }
+
     if ($type === 'RESET_DEMO_DATA') {
         return edms_initial_state();
     }

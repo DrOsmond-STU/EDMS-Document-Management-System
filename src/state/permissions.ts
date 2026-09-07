@@ -97,6 +97,9 @@ const ACTION_PERMISSION: Partial<Record<Action['type'], Permission>> = {
   ADD_MGMT_ACTION: 'mgmt_review.chair',
   CLOSE_MGMT_ACTION: 'mgmt_review.chair',
   UPDATE_MGMT_REVIEW_STATUS: 'mgmt_review.chair',
+
+  ADD_GAP_FOLLOWUP: 'compliance.manage',
+  UPDATE_GAP_FOLLOWUP_STATUS: 'compliance.manage',
 }
 
 // risk.manage OR compliance.manage may both administer the risk register

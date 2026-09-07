@@ -72,6 +72,9 @@ function edms_action_permission(): array {
         'ADD_MGMT_ACTION' => 'mgmt_review.chair',
         'CLOSE_MGMT_ACTION' => 'mgmt_review.chair',
         'UPDATE_MGMT_REVIEW_STATUS' => 'mgmt_review.chair',
+
+        'ADD_GAP_FOLLOWUP' => 'compliance.manage',
+        'UPDATE_GAP_FOLLOWUP_STATUS' => 'compliance.manage',
     ];
 }
 

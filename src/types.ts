@@ -330,6 +330,29 @@ export interface AuditFinding {
   closureNote?: string
 }
 
+export type GapFollowUpType = 'documentation' | 'implementation' | 'competency' | 'system'
+
+export type GapFollowUpStatus = 'open' | 'in_progress' | 'closed'
+
+// Tindak lanjut atas gap yang ditemukan di Compliance Matrix (klausul standar
+// yang belum/kurang terpenuhi dokumennya). Terpisah dari AuditFinding —
+// gap di sini muncul dari pemetaan klausul×dokumen, bukan dari pelaksanaan
+// audit — tapi strukturnya sengaja dibuat mirip (pic/deadline/reviewer/
+// status/closedAt) supaya konsisten dengan modul Findings & CAPA.
+export interface GapFollowUp {
+  id: string
+  gapId: string // merujuk ke id gap statis di ComplianceMatrix (mis. "g1")
+  type: GapFollowUpType
+  pic: string // person in charge — penanggung jawab tindak lanjut
+  deadline: string
+  action: string // deskripsi tindak lanjut
+  reviewer: string
+  status: GapFollowUpStatus
+  closedAt?: string
+  createdAt: string
+  createdBy: string
+}
+
 export interface AuditChecklistItem {
   id: string
   clauseReference: string

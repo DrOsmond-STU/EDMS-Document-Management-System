@@ -15,6 +15,20 @@ function edms_migrate_passwords(array $state): array {
     return [$state, $changed];
 }
 
+/** Mengisi state['gapFollowUps'] bagi database live yang dibuat sebelum
+ * fitur tindak lanjut Compliance Matrix ada (field ini belum ada di baris
+ * app_state lama). Diisi dengan data contoh yang sama seperti seed baru,
+ * bukan array kosong, supaya fitur langsung terlihat berfungsi di instalasi
+ * lama tanpa perlu isi manual. Mengembalikan [state, changed]. */
+function edms_migrate_gap_followups(array $state): array {
+    if (isset($state['gapFollowUps']) && is_array($state['gapFollowUps'])) {
+        return [$state, false];
+    }
+    $extras = edms_seed_extras();
+    $state['gapFollowUps'] = $extras['gapFollowUps'];
+    return [$state, true];
+}
+
 /** Menghapus passwordHash sebelum sebuah state dikirim ke browser. */
 function edms_sanitize_for_client(array $state): array {
     foreach ($state['users'] as &$u) {
@@ -57,8 +71,9 @@ function edms_read_state(): array {
         $ins = $pdo->prepare('INSERT INTO app_state (id, state) VALUES (1, :state)');
         $ins->execute([':state' => json_encode($state, JSON_UNESCAPED_UNICODE)]);
     }
-    [$state, $changed] = edms_migrate_passwords($state);
-    if ($changed) {
+    [$state, $changedPw] = edms_migrate_passwords($state);
+    [$state, $changedGf] = edms_migrate_gap_followups($state);
+    if ($changedPw || $changedGf) {
         $upd = $pdo->prepare('UPDATE app_state SET state = :state WHERE id = 1');
         $upd->execute([':state' => json_encode($state, JSON_UNESCAPED_UNICODE)]);
     }
@@ -80,6 +95,7 @@ function edms_apply_action(array $action): array {
             $current = json_decode($row['state'], true);
         }
         [$current] = edms_migrate_passwords($current);
+        [$current] = edms_migrate_gap_followups($current);
         $next = edms_reducer($current, $action);
         $upd = $pdo->prepare('UPDATE app_state SET state = :state WHERE id = 1');
         $upd->execute([':state' => json_encode($next, JSON_UNESCAPED_UNICODE)]);

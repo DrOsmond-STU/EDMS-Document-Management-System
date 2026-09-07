@@ -71,6 +71,9 @@ function edms_action_types(): array {
         'ADD_MGMT_ACTION',
         'CLOSE_MGMT_ACTION',
         'UPDATE_MGMT_REVIEW_STATUS',
+        // Compliance matrix — tindak lanjut gap
+        'ADD_GAP_FOLLOWUP',
+        'UPDATE_GAP_FOLLOWUP_STATUS',
         'RESET_DEMO_DATA',
     ];
 }

@@ -946,5 +946,68 @@
       "createdAt": "2026-07-10",
       "updatedAt": "2026-07-10"
     }
+  ],
+  "gapFollowUps": [
+    {
+      "id": "gf-001",
+      "gapId": "g1",
+      "type": "implementation",
+      "pic": "Fajar Nugroho",
+      "deadline": "2026-10-22",
+      "action": "Susun Business Impact Analysis formal untuk seluruh proses kritikal, mengacu template ISO 22301 §8.2.",
+      "reviewer": "Intan Permatasari",
+      "status": "in_progress",
+      "createdAt": "2026-08-18",
+      "createdBy": "Intan Permatasari"
+    },
+    {
+      "id": "gf-002",
+      "gapId": "g2",
+      "type": "documentation",
+      "pic": "Agus Prasetyo",
+      "deadline": "2026-10-07",
+      "action": "Telaah ulang register aspek lingkungan dan sinkronkan dengan JSA/HIRADC terkini.",
+      "reviewer": "Novita Handayani",
+      "status": "open",
+      "createdAt": "2026-08-24",
+      "createdBy": "Intan Permatasari"
+    },
+    {
+      "id": "gf-003",
+      "gapId": "g3",
+      "type": "system",
+      "pic": "Wahyu Setiawan",
+      "deadline": "2026-09-27",
+      "action": "Lengkapi baseline konfigurasi untuk seluruh server produksi & dokumentasikan di SOP-IT-010.",
+      "reviewer": "Hendra Gunawan",
+      "status": "in_progress",
+      "createdAt": "2026-08-20",
+      "createdBy": "Intan Permatasari"
+    },
+    {
+      "id": "gf-004",
+      "gapId": "g4",
+      "type": "implementation",
+      "pic": "Yusuf Hidayat",
+      "deadline": "2026-09-02",
+      "action": "Formalkan bukti komitmen manajemen lewat notulen rapat P2K3 rutin bulanan.",
+      "reviewer": "Ratna Sari",
+      "status": "closed",
+      "closedAt": "2026-09-04",
+      "createdAt": "2026-07-29",
+      "createdBy": "Intan Permatasari"
+    },
+    {
+      "id": "gf-005",
+      "gapId": "g5",
+      "type": "documentation",
+      "pic": "Doni Firmansyah",
+      "deadline": "2026-11-06",
+      "action": "Petakan setiap risiko di register terhadap peluang perbaikan terkait, lengkapi kolom mapping.",
+      "reviewer": "Bayu Kusuma",
+      "status": "open",
+      "createdAt": "2026-08-31",
+      "createdBy": "Intan Permatasari"
+    }
   ]
 }

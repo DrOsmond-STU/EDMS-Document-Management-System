@@ -9,6 +9,7 @@ import type {
   EdmsDocument,
   ExternalAudit,
   FunctionDept,
+  GapFollowUp,
   InternalAudit,
   ManagementReview,
   Revision,
@@ -858,6 +859,74 @@ export const FINDINGS: AuditFinding[] = [
     ],
     closedAt: daysFromToday(-32),
     closureNote: 'Diterima customer. Sertifikat approved supplier diterbitkan.',
+  },
+]
+
+// ---------------------------------------------------------------------------
+// Compliance Matrix — tindak lanjut gap (klausul×dokumen yang belum terpenuhi)
+// ---------------------------------------------------------------------------
+
+export const GAP_FOLLOWUPS: GapFollowUp[] = [
+  {
+    id: 'gf-001',
+    gapId: 'g1',
+    type: 'implementation',
+    pic: 'Fajar Nugroho',
+    deadline: daysFromToday(45),
+    action: 'Susun Business Impact Analysis formal untuk seluruh proses kritikal, mengacu template ISO 22301 §8.2.',
+    reviewer: 'Intan Permatasari',
+    status: 'in_progress',
+    createdAt: daysFromToday(-20),
+    createdBy: 'Intan Permatasari',
+  },
+  {
+    id: 'gf-002',
+    gapId: 'g2',
+    type: 'documentation',
+    pic: 'Agus Prasetyo',
+    deadline: daysFromToday(30),
+    action: 'Telaah ulang register aspek lingkungan dan sinkronkan dengan JSA/HIRADC terkini.',
+    reviewer: 'Novita Handayani',
+    status: 'open',
+    createdAt: daysFromToday(-14),
+    createdBy: 'Intan Permatasari',
+  },
+  {
+    id: 'gf-003',
+    gapId: 'g3',
+    type: 'system',
+    pic: 'Wahyu Setiawan',
+    deadline: daysFromToday(20),
+    action: 'Lengkapi baseline konfigurasi untuk seluruh server produksi & dokumentasikan di SOP-IT-010.',
+    reviewer: 'Hendra Gunawan',
+    status: 'in_progress',
+    createdAt: daysFromToday(-18),
+    createdBy: 'Intan Permatasari',
+  },
+  {
+    id: 'gf-004',
+    gapId: 'g4',
+    type: 'implementation',
+    pic: 'Yusuf Hidayat',
+    deadline: daysFromToday(-5),
+    action: 'Formalkan bukti komitmen manajemen lewat notulen rapat P2K3 rutin bulanan.',
+    reviewer: 'Ratna Sari',
+    status: 'closed',
+    closedAt: daysFromToday(-3),
+    createdAt: daysFromToday(-40),
+    createdBy: 'Intan Permatasari',
+  },
+  {
+    id: 'gf-005',
+    gapId: 'g5',
+    type: 'documentation',
+    pic: 'Doni Firmansyah',
+    deadline: daysFromToday(60),
+    action: 'Petakan setiap risiko di register terhadap peluang perbaikan terkait, lengkapi kolom mapping.',
+    reviewer: 'Bayu Kusuma',
+    status: 'open',
+    createdAt: daysFromToday(-7),
+    createdBy: 'Intan Permatasari',
   },
 ]
 

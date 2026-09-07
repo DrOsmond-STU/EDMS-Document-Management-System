@@ -1,6 +1,10 @@
 import { useMemo, useState } from 'react'
-import { AlertTriangle, CheckCircle2, MinusCircle, XCircle } from 'lucide-react'
-import { Card, PageHeader, SectionTitle, inputClass } from '../components/ui'
+import type { FormEvent } from 'react'
+import { AlertTriangle, CheckCircle2, MinusCircle, Plus, XCircle } from 'lucide-react'
+import { Button, Card, Field, PageHeader, SectionTitle, inputClass } from '../components/ui'
+import { useApp } from '../state/AppContext'
+import { rolesHavePermission } from '../state/permissions'
+import type { GapFollowUp, GapFollowUpStatus, GapFollowUpType } from '../types'
 
 type Standard = 'ISO9001' | 'ISO14001' | 'ISO45001' | 'SMK3' | 'ISO27001' | 'ISO22301' | 'ISO37001'
 type CoverageStatus = 'compliant' | 'partial' | 'gap' | 'na'
@@ -95,8 +99,169 @@ function PriorityChip({ p }: { p: 'high' | 'medium' | 'low' }) {
   )
 }
 
+const GAP_TYPE_LABEL: Record<GapFollowUpType, string> = {
+  documentation: 'Dokumentasi',
+  implementation: 'Implementasi',
+  competency: 'Kompetensi',
+  system: 'Sistem/Infrastruktur',
+}
+
+const GAP_STATUS_LABEL: Record<GapFollowUpStatus, string> = {
+  open: 'Belum Ditindaklanjuti',
+  in_progress: 'Dalam Proses',
+  closed: 'Selesai (Closed)',
+}
+
+function GapTypeChip({ t }: { t: GapFollowUpType }) {
+  return (
+    <span className="rounded-full border border-[#c9e0f3] bg-[#eaf3fb] px-2 py-0.5 text-[10.5px] font-semibold text-[#2a6fb3]">
+      {GAP_TYPE_LABEL[t]}
+    </span>
+  )
+}
+
+function FollowUpStatusChip({ s }: { s: GapFollowUpStatus }) {
+  const map: Record<GapFollowUpStatus, string> = {
+    open: 'border-[#f4c8c6] bg-[#fbe7e6] text-[#b23b3a]',
+    in_progress: 'border-[#f4dfae] bg-[#fdf1dc] text-[#b9791c]',
+    closed: 'border-[#c3e3d2] bg-[#e3f1ea] text-[#1d6e48]',
+  }
+  return (
+    <span className={`rounded-full border px-2 py-0.5 text-[10.5px] font-semibold ${map[s]}`}>
+      {GAP_STATUS_LABEL[s]}
+    </span>
+  )
+}
+
+function isOverdue(deadline: string, status: GapFollowUpStatus): boolean {
+  return status !== 'closed' && deadline < new Date().toISOString().slice(0, 10)
+}
+
+function AddFollowUpForm({ gapId, onDone }: { gapId: string; onDone: () => void }) {
+  const { currentUser, dispatch } = useApp()
+  const [type, setType] = useState<GapFollowUpType>('documentation')
+  const [pic, setPic] = useState('')
+  const [deadline, setDeadline] = useState('')
+  const [reviewer, setReviewer] = useState('')
+  const [actionText, setActionText] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+
+  async function handleSubmit(e: FormEvent) {
+    e.preventDefault()
+    if (!pic.trim() || !deadline || !reviewer.trim() || !actionText.trim()) return
+    setSubmitting(true)
+    await dispatch({
+      type: 'ADD_GAP_FOLLOWUP',
+      input: { gapId, type, pic: pic.trim(), deadline, action: actionText.trim(), reviewer: reviewer.trim() },
+      actor: currentUser.name,
+    })
+    setSubmitting(false)
+    onDone()
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="mt-3 flex flex-col gap-2 rounded-lg border border-[var(--color-neutral-border)] bg-[var(--color-neutral-bg-soft)] p-3">
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+        <Field label="Type GAP">
+          <select className={inputClass} value={type} onChange={(e) => setType(e.target.value as GapFollowUpType)}>
+            {(Object.keys(GAP_TYPE_LABEL) as GapFollowUpType[]).map((t) => (
+              <option key={t} value={t}>{GAP_TYPE_LABEL[t]}</option>
+            ))}
+          </select>
+        </Field>
+        <Field label="PIC">
+          <input className={inputClass} value={pic} onChange={(e) => setPic(e.target.value)} placeholder="Nama penanggung jawab" required />
+        </Field>
+        <Field label="Deadline">
+          <input type="date" className={inputClass} value={deadline} onChange={(e) => setDeadline(e.target.value)} required />
+        </Field>
+        <Field label="Reviewer">
+          <input className={inputClass} value={reviewer} onChange={(e) => setReviewer(e.target.value)} placeholder="Nama reviewer" required />
+        </Field>
+      </div>
+      <Field label="Tindak Lanjut">
+        <textarea
+          className={inputClass}
+          rows={2}
+          value={actionText}
+          onChange={(e) => setActionText(e.target.value)}
+          placeholder="Deskripsi tindakan yang akan/sudah dilakukan untuk menutup gap ini"
+          required
+        />
+      </Field>
+      <div className="flex justify-end gap-2">
+        <Button type="button" variant="ghost" size="sm" onClick={onDone}>Batal</Button>
+        <Button type="submit" variant="primary" size="sm" disabled={submitting}>
+          {submitting ? 'Menyimpan…' : 'Simpan Tindak Lanjut'}
+        </Button>
+      </div>
+    </form>
+  )
+}
+
+function GapFollowUpCard({ followUp, canManage }: { followUp: GapFollowUp; canManage: boolean }) {
+  const { currentUser, dispatch } = useApp()
+  const [updating, setUpdating] = useState(false)
+  const overdue = isOverdue(followUp.deadline, followUp.status)
+
+  async function setStatus(status: GapFollowUpStatus) {
+    setUpdating(true)
+    await dispatch({ type: 'UPDATE_GAP_FOLLOWUP_STATUS', followUpId: followUp.id, status, actor: currentUser.name })
+    setUpdating(false)
+  }
+
+  return (
+    <div className="mt-2 rounded-lg border border-[var(--color-neutral-border)] bg-white p-3">
+      <div className="flex flex-wrap items-center gap-1.5">
+        <GapTypeChip t={followUp.type} />
+        <FollowUpStatusChip s={followUp.status} />
+        {overdue && (
+          <span className="rounded-full border border-[#f4c8c6] bg-[#fbe7e6] px-2 py-0.5 text-[10.5px] font-semibold text-[#b23b3a]">
+            Lewat Deadline
+          </span>
+        )}
+      </div>
+      <p className="mt-2 text-[12px] leading-relaxed text-[var(--color-neutral-dark)]">{followUp.action}</p>
+      <div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-[11.5px] text-[var(--color-neutral-medium)] sm:grid-cols-4">
+        <div><span className="font-semibold text-[var(--color-neutral-dark)]">PIC:</span> {followUp.pic}</div>
+        <div><span className="font-semibold text-[var(--color-neutral-dark)]">Deadline:</span> {followUp.deadline}</div>
+        <div><span className="font-semibold text-[var(--color-neutral-dark)]">Reviewer:</span> {followUp.reviewer}</div>
+        <div>
+          <span className="font-semibold text-[var(--color-neutral-dark)]">Closed:</span>{' '}
+          {followUp.status === 'closed' ? (followUp.closedAt ?? '—') : 'Belum'}
+        </div>
+      </div>
+      {canManage && followUp.status !== 'closed' && (
+        <div className="mt-2.5 flex gap-1.5">
+          {followUp.status === 'open' && (
+            <Button variant="outline" size="sm" disabled={updating} onClick={() => setStatus('in_progress')}>
+              Tandai Dalam Proses
+            </Button>
+          )}
+          <Button variant="primary" size="sm" disabled={updating} onClick={() => setStatus('closed')}>
+            Tandai Selesai (Close)
+          </Button>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export function ComplianceMatrixPage() {
+  const { state, currentUser } = useApp()
   const [standard, setStandard] = useState<'' | Standard>('')
+  const [addFormGapId, setAddFormGapId] = useState<string | null>(null)
+  const canManage = rolesHavePermission(currentUser.roles, 'compliance.manage')
+
+  const followUpsByGap = useMemo(() => {
+    const map = new Map<string, GapFollowUp[]>()
+    for (const gf of state.gapFollowUps) {
+      const list = map.get(gf.gapId) ?? []
+      list.push(gf)
+      map.set(gf.gapId, list)
+    }
+    return map
+  }, [state.gapFollowUps])
 
   const filteredClauses = useMemo(
     () => (standard ? CLAUSES.filter((c) => c.standard === standard) : CLAUSES),
@@ -222,21 +387,50 @@ export function ComplianceMatrixPage() {
       </Card>
 
       <Card>
-        <SectionTitle hint={`${GAPS.length} gap teridentifikasi`}>Gap Analysis</SectionTitle>
+        <SectionTitle hint={`${GAPS.length} gap teridentifikasi — tiap gap dilengkapi tindak lanjut (type, PIC, deadline, reviewer, status)`}>
+          Gap Analysis & Tindak Lanjut
+        </SectionTitle>
         <ul className="divide-y divide-[var(--color-neutral-border)]">
-          {GAPS.map((g) => (
-            <li key={g.id} className="flex items-start gap-3 py-3">
-              <div className="mt-0.5"><PriorityChip p={g.priority} /></div>
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-baseline gap-2">
-                  <span className="rounded border border-[var(--color-neutral-border)] px-1 font-mono text-[10px] text-[var(--color-neutral-medium)]">{g.clause.standard}</span>
-                  <span className="font-mono text-[12px] font-bold">{g.clause.code}</span>
-                  <span className="text-[12.5px] font-semibold text-[var(--color-neutral-dark)]">{g.clause.title}</span>
+          {GAPS.map((g) => {
+            const followUps = followUpsByGap.get(g.id) ?? []
+            return (
+              <li key={g.id} className="py-3">
+                <div className="flex items-start gap-3">
+                  <div className="mt-0.5"><PriorityChip p={g.priority} /></div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-baseline gap-2">
+                      <span className="rounded border border-[var(--color-neutral-border)] px-1 font-mono text-[10px] text-[var(--color-neutral-medium)]">{g.clause.standard}</span>
+                      <span className="font-mono text-[12px] font-bold">{g.clause.code}</span>
+                      <span className="text-[12.5px] font-semibold text-[var(--color-neutral-dark)]">{g.clause.title}</span>
+                    </div>
+                    <p className="mt-0.5 text-[12px] text-[var(--color-neutral-medium)]">{g.note}</p>
+
+                    {followUps.map((fu) => (
+                      <GapFollowUpCard key={fu.id} followUp={fu} canManage={canManage} />
+                    ))}
+
+                    {canManage && (
+                      addFormGapId === g.id ? (
+                        <AddFollowUpForm gapId={g.id} onDone={() => setAddFormGapId(null)} />
+                      ) : (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="mt-2"
+                          onClick={() => setAddFormGapId(g.id)}
+                        >
+                          <Plus size={12} /> Tambah Tindak Lanjut
+                        </Button>
+                      )
+                    )}
+                    {!canManage && followUps.length === 0 && (
+                      <p className="mt-2 text-[11.5px] italic text-[var(--color-neutral-soft)]">Belum ada tindak lanjut.</p>
+                    )}
+                  </div>
                 </div>
-                <p className="mt-0.5 text-[12px] text-[var(--color-neutral-medium)]">{g.note}</p>
-              </div>
-            </li>
-          ))}
+              </li>
+            )
+          })}
         </ul>
       </Card>
     </div>
