@@ -33,6 +33,17 @@ return [
         // Berkas dokumen disimpan DI LUAR document root, jadi tidak ada
         // URL langsung yang bisa ditebak. Semua unduhan wajib lewat
         // controller yang memeriksa hak akses lebih dulu.
+        // Logo perusahaan. Terpisah dari disk 'documents' (yang isinya berkas
+        // dokumen internal) karena logo justru harus bisa ditampilkan publik
+        // di halaman login sebelum pengguna masuk.
+        'company' => [
+            'driver' => 'local',
+            'root' => storage_path('app/company'),
+            'serve' => false,
+            'throw' => true,
+            'report' => false,
+        ],
+
         'documents' => [
             'driver' => 'local',
             'root' => storage_path('app/documents'),
