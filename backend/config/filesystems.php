@@ -30,6 +30,17 @@ return [
 
     'disks' => [
 
+        // Berkas dokumen disimpan DI LUAR document root, jadi tidak ada
+        // URL langsung yang bisa ditebak. Semua unduhan wajib lewat
+        // controller yang memeriksa hak akses lebih dulu.
+        'documents' => [
+            'driver' => 'local',
+            'root' => storage_path('app/documents'),
+            'serve' => false,
+            'throw' => true,
+            'report' => false,
+        ],
+
         'local' => [
             'driver' => 'local',
             'root' => storage_path('app/private'),

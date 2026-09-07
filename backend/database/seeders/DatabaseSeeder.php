@@ -2,24 +2,17 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
 {
-    use WithoutModelEvents;
-
     /**
-     * Seed the application's database.
+     * Sengaja hanya master data. Seeder bawaan Laravel memakai factory dengan
+     * fake(), yang berasal dari dependensi dev — di server kita pasang
+     * --no-dev, jadi memanggilnya akan menggagalkan `migrate --seed`.
      */
     public function run(): void
     {
-        // User::factory(10)->create();
-
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
+        $this->call(MasterDataSeeder::class);
     }
 }
