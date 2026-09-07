@@ -1,6 +1,15 @@
 import { useState } from 'react'
-import type { FormEvent } from 'react'
-import { FileText, ShieldCheck, GitBranch, ClipboardList, Lock } from 'lucide-react'
+import type { FormEvent, ReactNode } from 'react'
+import {
+  FileText,
+  ShieldCheck,
+  GitBranch,
+  ClipboardList,
+  Lock,
+  AlertTriangle,
+  ClipboardCheck,
+  Users,
+} from 'lucide-react'
 import { Button, Field, inputClass } from './ui'
 
 export function LoginGate({ onSuccess }: { onSuccess: () => void }) {
@@ -65,10 +74,36 @@ export function LoginGate({ onSuccess }: { onSuccess: () => void }) {
             </p>
 
             <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <Feature icon={<GitBranch size={14} />} label="Lifecycle terpandu" />
-              <Feature icon={<ShieldCheck size={14} />} label="RBAC 11 peran" />
-              <Feature icon={<ClipboardList size={14} />} label="Audit trail lengkap" />
-              <Feature icon={<FileText size={14} />} label="Penomoran otomatis" />
+              <Feature
+                icon={<GitBranch size={14} />}
+                label="Siklus Dokumen Terpandu"
+                desc="Draft → Review → Approval → Released → Obsolete dengan penomoran otomatis."
+              />
+              <Feature
+                icon={<ShieldCheck size={14} />}
+                label="RBAC 11 Peran"
+                desc="Setiap aksi divalidasi di server sesuai peran & wewenang pengguna, bukan cuma disembunyikan di UI."
+              />
+              <Feature
+                icon={<AlertTriangle size={14} />}
+                label="Manajemen Risiko"
+                desc="Risk register, kontrol mitigasi, dan tinjauan berkala selaras ISO 31000/27001."
+              />
+              <Feature
+                icon={<ClipboardCheck size={14} />}
+                label="Audit & CAPA"
+                desc="Audit internal/eksternal, temuan, akar masalah, tindakan korektif hingga verifikasi penutupan."
+              />
+              <Feature
+                icon={<Users size={14} />}
+                label="Tinjauan Manajemen"
+                desc="Rapat, keputusan, dan tindak lanjut manajemen tercatat & terlacak sampai selesai."
+              />
+              <Feature
+                icon={<ClipboardList size={14} />}
+                label="Audit Trail Lengkap"
+                desc="Setiap perubahan tercatat: siapa, kapan, dan apa yang diubah — untuk kepatuhan & investigasi."
+              />
             </div>
           </div>
 
@@ -171,13 +206,16 @@ export function LoginGate({ onSuccess }: { onSuccess: () => void }) {
   )
 }
 
-function Feature({ icon, label }: { icon: React.ReactNode; label: string }) {
+function Feature({ icon, label, desc }: { icon: ReactNode; label: string; desc: string }) {
   return (
-    <div className="flex items-center gap-2 rounded-lg bg-white/10 px-3 py-2 backdrop-blur">
-      <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-white/20 text-white">
+    <div className="flex items-start gap-2 rounded-lg bg-white/10 px-3 py-2.5 backdrop-blur">
+      <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-white/20 text-white">
         {icon}
       </div>
-      <span className="text-[12.5px] font-medium text-white">{label}</span>
+      <div>
+        <div className="text-[12.5px] font-semibold leading-tight text-white">{label}</div>
+        <p className="mt-0.5 text-[11px] leading-snug text-white/75">{desc}</p>
+      </div>
     </div>
   )
 }
