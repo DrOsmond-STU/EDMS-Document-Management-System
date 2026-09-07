@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\DocumentController;
 use App\Http\Controllers\Api\DocumentFileController;
+use App\Http\Controllers\Api\MasterDataController;
 use Illuminate\Support\Facades\Route;
 
 // Memancing cookie XSRF-TOKEN sebelum frontend mengirim permintaan tulis.
@@ -22,6 +23,7 @@ Route::middleware('auth')->group(function () {
         ->middleware('throttle:10,1');
 
     Route::middleware('password.changed')->group(function () {
+        Route::get('master-data', [MasterDataController::class, 'index']);
         Route::get('documents', [DocumentController::class, 'index']);
         Route::post('documents', [DocumentController::class, 'store']);
         Route::get('documents/{document}', [DocumentController::class, 'show']);
