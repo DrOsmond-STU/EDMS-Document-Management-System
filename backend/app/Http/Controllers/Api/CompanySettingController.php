@@ -63,6 +63,14 @@ class CompanySettingController extends Controller
         ]);
     }
 
+    /**
+     * Nama & alamat perusahaan SENGAJA TIDAK ADA di sini — keduanya
+     * ditandatangani bersama lisensi (lihat LicenseService) supaya salinan
+     * kode+database ini tidak bisa diganti nama perusahaannya untuk dijual
+     * ulang ke klien lain. Hanya logo & ukurannya yang boleh diubah sysadmin
+     * klien sendiri lewat endpoint ini; nama/alamat hanya bisa diubah lewat
+     * tool vendor eksternal (POST /api/license/apply).
+     */
     public function update(Request $request): JsonResponse
     {
         $user = $request->user();
@@ -71,8 +79,6 @@ class CompanySettingController extends Controller
         }
 
         $data = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'address' => ['nullable', 'string', 'max:1000'],
             'logo' => ['nullable', 'file', 'max:'.self::MAX_KB, 'mimetypes:'.implode(',', self::ALLOWED_MIMES)],
             'logo_width' => ['nullable', 'integer', 'between:'.self::MIN_LOGO_WIDTH.','.self::MAX_LOGO_WIDTH],
             'sidebar_logo' => ['nullable', 'file', 'max:'.self::MAX_KB, 'mimetypes:'.implode(',', self::ALLOWED_MIMES)],
@@ -88,8 +94,6 @@ class CompanySettingController extends Controller
         $oldLogoPath = $setting->logo_stored_path;
         $oldSidebarLogoPath = $setting->sidebar_logo_stored_path;
 
-        $setting->name = $data['name'];
-        $setting->address = $data['address'] ?? null;
         if (array_key_exists('logo_width', $data) && $data['logo_width'] !== null) {
             $setting->logo_width = $data['logo_width'];
         }

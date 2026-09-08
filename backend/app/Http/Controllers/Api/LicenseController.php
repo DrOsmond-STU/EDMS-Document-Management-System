@@ -35,11 +35,16 @@ class LicenseController extends Controller
             'license_key' => ['required', 'string', 'max:255'],
             'expires_at' => ['required', 'date'],
             'status' => ['required', Rule::in(['active', 'suspended', 'revoked'])],
+            'company_name' => ['required', 'string', 'max:255'],
+            'company_address' => ['nullable', 'string', 'max:1000'],
             'signature' => ['required', 'string'],
         ]);
 
         $expiresAt = Carbon::parse($data['expires_at'])->toDateString();
-        $expected = $this->license->computeSignature($data['license_key'], $expiresAt, $data['status']);
+        $companyAddress = $data['company_address'] ?? '';
+        $expected = $this->license->computeSignature(
+            $data['license_key'], $expiresAt, $data['status'], $data['company_name'], $companyAddress,
+        );
 
         if (! hash_equals($expected, $data['signature'])) {
             Log::warning('Percobaan pembaruan lisensi dengan tanda tangan tidak valid', ['ip' => $request->ip()]);
@@ -47,10 +52,12 @@ class LicenseController extends Controller
             return response()->json(['message' => 'Tanda tangan tidak valid.'], 403);
         }
 
-        $license = $this->license->apply($data['license_key'], $expiresAt, $data['status']);
+        $license = $this->license->apply(
+            $data['license_key'], $expiresAt, $data['status'], $data['company_name'], $companyAddress,
+        );
 
         $this->audit->log(null, 'update', 'License', '1', $license->license_key,
-            "Lisensi diperbarui oleh tool vendor eksternal — status: {$license->status}, berlaku s/d {$expiresAt}.");
+            "Lisensi & identitas perusahaan diperbarui oleh tool vendor eksternal — status: {$license->status}, berlaku s/d {$expiresAt}, nama: {$data['company_name']}.");
 
         return response()->json($this->license->publicStatus());
     }

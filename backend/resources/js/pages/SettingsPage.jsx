@@ -13,46 +13,54 @@ const MIN_LOGO_WIDTH = 60
 const MAX_LOGO_WIDTH = 320
 const DEFAULT_LOGO_WIDTH = 160
 
-function LicenseInfoCard() {
+// Nama & alamat perusahaan ditandatangani BERSAMA lisensi (lihat
+// LicenseService) — supaya salinan kode+database ini tidak bisa dipasang di
+// server lain lalu diganti nama perusahaannya untuk dijual ulang. Karena
+// itu keduanya read-only di sini, ditampilkan berdampingan dengan info
+// lisensi, bukan di form yang bisa disimpan.
+function IdentityAndLicenseCard({ companyName, companyAddress }) {
   const [status, setStatus] = useState(null)
 
   useEffect(() => {
     api('license-status').then(setStatus).catch(() => {})
   }, [])
 
-  if (!status) return null
-
   return (
     <Card className="mb-4">
       <div className="mb-3 flex items-center gap-2">
-        {status.valid ? (
+        {status?.valid ? (
           <ShieldCheck size={16} className="text-[var(--color-brand-success-text)]" />
         ) : (
           <ShieldX size={16} className="text-[var(--color-brand-danger)]" />
         )}
-        <h2 className="text-[13.5px] font-bold">Informasi Lisensi</h2>
+        <h2 className="text-[13.5px] font-bold">Identitas Perusahaan & Lisensi</h2>
       </div>
       <p className="mb-3 text-[11.5px] text-[var(--color-neutral-medium)]">
-        Hanya bisa diperbarui oleh penyedia layanan lewat tool terpisah — tidak ada tombol ubah di sini.
+        Nama, alamat, dan lisensi terkunci menjadi satu — hanya bisa diperbarui bersama-sama oleh
+        penyedia layanan lewat tool terpisah. Tidak ada tombol ubah di sini.
       </p>
-      <dl className="grid grid-cols-2 gap-3 text-[12.5px] sm:grid-cols-4">
+      <dl className="grid grid-cols-2 gap-3 text-[12.5px] sm:grid-cols-3">
+        <div className="col-span-2 sm:col-span-1">
+          <dt className="flex items-center gap-1 text-[10.5px] uppercase text-[var(--color-neutral-medium)]"><Building2 size={11} /> Nama Perusahaan</dt>
+          <dd className="font-semibold">{companyName || '—'}</dd>
+        </div>
+        <div className="col-span-2">
+          <dt className="flex items-center gap-1 text-[10.5px] uppercase text-[var(--color-neutral-medium)]"><MapPin size={11} /> Alamat</dt>
+          <dd>{companyAddress || '—'}</dd>
+        </div>
         <div>
-          <dt className="text-[10.5px] uppercase text-[var(--color-neutral-medium)]">Status</dt>
-          <dd className={status.valid ? 'font-semibold text-[var(--color-brand-success-text)]' : 'font-semibold text-[var(--color-brand-danger)]'}>
-            {status.valid ? 'Aktif' : (status.status ?? 'Tidak aktif')}
+          <dt className="text-[10.5px] uppercase text-[var(--color-neutral-medium)]">Status Lisensi</dt>
+          <dd className={status?.valid ? 'font-semibold text-[var(--color-brand-success-text)]' : 'font-semibold text-[var(--color-brand-danger)]'}>
+            {status ? (status.valid ? 'Aktif' : (status.status ?? 'Tidak aktif')) : '…'}
           </dd>
         </div>
         <div>
           <dt className="text-[10.5px] uppercase text-[var(--color-neutral-medium)]">Kode Lisensi</dt>
-          <dd className="font-mono">{status.license_key_masked ?? '—'}</dd>
+          <dd className="font-mono">{status?.license_key_masked ?? '—'}</dd>
         </div>
         <div>
           <dt className="text-[10.5px] uppercase text-[var(--color-neutral-medium)]">Masa Berlaku</dt>
-          <dd>{status.expires_at ?? '—'}</dd>
-        </div>
-        <div>
-          <dt className="text-[10.5px] uppercase text-[var(--color-neutral-medium)]">Tanggal Aktivasi</dt>
-          <dd>{status.activated_at ?? '—'}</dd>
+          <dd>{status?.expires_at ?? '—'}</dd>
         </div>
       </dl>
     </Card>
@@ -84,8 +92,6 @@ export default function SettingsPage() {
   const { refresh: refreshCompany } = useCompany()
 
   const [settings, setSettings] = useState(null)
-  const [name, setName] = useState('')
-  const [address, setAddress] = useState('')
   const [file, setFile] = useState(null)
   const [preview, setPreview] = useState(null)
   const [sidebarFile, setSidebarFile] = useState(null)
@@ -100,8 +106,6 @@ export default function SettingsPage() {
   useEffect(() => {
     api('company-settings').then((s) => {
       setSettings(s)
-      setName(s.name)
-      setAddress(s.address || '')
       setLogoWidth(s.logo_width || DEFAULT_LOGO_WIDTH)
     })
   }, [])
@@ -139,8 +143,6 @@ export default function SettingsPage() {
     setSubmitting(true)
     try {
       const form = new FormData()
-      form.append('name', name)
-      form.append('address', address)
       form.append('logo_width', String(logoWidth))
       if (file) form.append('logo', file)
       if (sidebarFile) form.append('sidebar_logo', sidebarFile)
@@ -153,12 +155,12 @@ export default function SettingsPage() {
       setSidebarPreview(null)
       if (fileInputRef.current) fileInputRef.current.value = ''
       if (sidebarFileInputRef.current) sidebarFileInputRef.current.value = ''
-      setSuccess('Pengaturan perusahaan disimpan.')
+      setSuccess('Pengaturan logo disimpan.')
       // Sidebar & Logo (CompanyContext) dimuat terpisah dari halaman ini,
-      // jadi perlu disegarkan agar logo/nama baru langsung terlihat tanpa reload.
+      // jadi perlu disegarkan agar logo baru langsung terlihat tanpa reload.
       refreshCompany()
     } catch (err) {
-      setError(err instanceof ApiError ? (err.body?.errors?.logo?.[0] || err.body?.errors?.sidebar_logo?.[0] || err.body?.errors?.name?.[0] || err.message) : 'Gagal menyimpan.')
+      setError(err instanceof ApiError ? (err.body?.errors?.logo?.[0] || err.body?.errors?.sidebar_logo?.[0] || err.message) : 'Gagal menyimpan.')
     } finally {
       setSubmitting(false)
     }
@@ -184,34 +186,14 @@ export default function SettingsPage() {
           </p>
         </div>
 
-        <LicenseInfoCard />
+        <IdentityAndLicenseCard companyName={settings?.name} companyAddress={settings?.address} />
 
         <Card>
           {!settings ? (
             <p className="text-[13px] text-[var(--color-neutral-medium)]">Memuat…</p>
           ) : (
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-              <Field label="Nama Perusahaan">
-                <div className="flex items-center gap-2">
-                  <Building2 size={15} className="shrink-0 text-[var(--color-neutral-medium)]" />
-                  <input type="text" className={inputClass} value={name} onChange={(e) => setName(e.target.value)} required maxLength={255} />
-                </div>
-              </Field>
-
-              <Field label="Alamat Perusahaan">
-                <div className="flex items-start gap-2">
-                  <MapPin size={15} className="mt-2 shrink-0 text-[var(--color-neutral-medium)]" />
-                  <textarea
-                    className={`${inputClass} min-h-[64px] resize-y`}
-                    value={address}
-                    onChange={(e) => setAddress(e.target.value)}
-                    maxLength={1000}
-                    placeholder="Alamat kantor / operasional"
-                  />
-                </div>
-              </Field>
-
-              <div className="border-t border-[var(--color-neutral-border)] pt-4">
+              <div>
                 <LogoUploadField
                   label="Logo Halaman Login"
                   hint="PNG, JPG, SVG, atau WEBP · maks. 2 MB"
@@ -262,7 +244,7 @@ export default function SettingsPage() {
 
               <div className="flex justify-end">
                 <Button type="submit" variant="primary" disabled={submitting}>
-                  {submitting ? 'Menyimpan…' : 'Simpan Pengaturan'}
+                  {submitting ? 'Menyimpan…' : 'Simpan Logo'}
                 </Button>
               </div>
             </form>
