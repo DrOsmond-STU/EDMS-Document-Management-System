@@ -26,6 +26,14 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'password.changed' => EnsurePasswordChanged::class,
         ]);
+
+        // Seluruh aplikasi ini adalah API (tidak ada halaman "login" HTML di
+        // sisi Laravel — login ditangani React). Tanpa ini, permintaan tak
+        // terautentikasi yang tidak mengirim header Accept: application/json
+        // (mis. dipanggil langsung lewat curl/browser) akan membuat middleware
+        // auth bawaan mencoba redirect ke route('login') yang tidak ada,
+        // sehingga malah menghasilkan 500 alih-alih 401.
+        $middleware->redirectGuestsTo(fn (Request $request) => $request->is('api/*') ? null : '/login');
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(
