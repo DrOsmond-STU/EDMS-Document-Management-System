@@ -8,6 +8,7 @@ import SettingsPage from './pages/SettingsPage'
 import NumberingSettingsPage from './pages/NumberingSettingsPage'
 import AuditTrailPage from './pages/AuditTrailPage'
 import UsersPage from './pages/UsersPage'
+import ApprovalBoardPage from './pages/ApprovalBoardPage'
 
 function FullScreenMessage({ text }) {
   return <div className="flex min-h-screen w-full items-center justify-center text-[13px] text-[var(--color-neutral-medium)]">{text}</div>
@@ -29,6 +30,7 @@ export default function App() {
       <Route path="/settings/numbering" element={<NumberingSettingsPage />} />
       <Route path="/audit-trail" element={<AuditTrailPage />} />
       <Route path="/users" element={<UsersPage />} />
+      <Route path="/approval-board" element={<ApprovalBoardPage />} />
       <Route path="*" element={<Navigate to="/documents" replace />} />
     </Routes>
   )

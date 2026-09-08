@@ -26,7 +26,7 @@ export const NAV_GROUPS = [
   {
     label: 'Document Lifecycle',
     items: [
-      { label: 'Papan Approval', path: null, icon: KanbanSquare },
+      { label: 'Papan Approval', path: '/approval-board', icon: KanbanSquare },
       { label: 'Tracking Penyusunan Dokumen', path: null, icon: GitBranch },
     ],
   },

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\ApprovalBoardController;
 use App\Http\Controllers\Api\AuditLogController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CompanySettingController;
@@ -43,6 +44,8 @@ Route::middleware('auth')->group(function () {
     Route::middleware('password.changed')->group(function () {
         Route::get('master-data', [MasterDataController::class, 'index']);
         Route::post('company-settings', [CompanySettingController::class, 'update']);
+
+        Route::get('approval-board', [ApprovalBoardController::class, 'index']);
 
         Route::get('documents', [DocumentController::class, 'index']);
         Route::post('documents', [DocumentController::class, 'store']);
