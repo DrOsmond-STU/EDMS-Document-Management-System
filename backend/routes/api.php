@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CompanySettingController;
 use App\Http\Controllers\Api\DocumentController;
 use App\Http\Controllers\Api\DocumentFileController;
+use App\Http\Controllers\Api\IntegrationSettingController;
 use App\Http\Controllers\Api\LicenseController;
 use App\Http\Controllers\Api\MasterDataController;
 use App\Http\Controllers\Api\NumberingSettingController;
@@ -72,5 +73,9 @@ Route::middleware('auth')->group(function () {
         Route::post('users', [UserController::class, 'store']);
         Route::patch('users/{user}', [UserController::class, 'update']);
         Route::post('users/{user}/reset-password', [UserController::class, 'resetPassword']);
+
+        Route::get('integrations', [IntegrationSettingController::class, 'index']);
+        Route::patch('integrations/{type}', [IntegrationSettingController::class, 'update']);
+        Route::post('integrations/{type}/test', [IntegrationSettingController::class, 'test']);
     });
 });
