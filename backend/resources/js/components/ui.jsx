@@ -122,6 +122,7 @@ const ACTION_COLOR = {
   update: { bg: '#EAF3FB', text: '#2A6FB3' },
   status_change: { bg: '#EAF3FB', text: '#2A6FB3' },
   password_change: { bg: '#EAF3FB', text: '#2A6FB3' },
+  password_reset: { bg: '#EAF3FB', text: '#2A6FB3' },
   download: { bg: '#EEF2F7', text: '#475569' },
   view: { bg: '#EEF2F7', text: '#475569' },
   logout: { bg: '#EEF2F7', text: '#475569' },
@@ -135,7 +136,8 @@ const ACTION_COLOR = {
 }
 const ACTION_LABEL = {
   create: 'Dibuat', upload: 'Diunggah', login: 'Masuk', update: 'Diperbarui',
-  status_change: 'Status Berubah', password_change: 'Ganti Password', download: 'Diunduh',
+  status_change: 'Status Berubah', password_change: 'Ganti Password', password_reset: 'Reset Password',
+  download: 'Diunduh',
   view: 'Dilihat', logout: 'Keluar', delete: 'Dihapus', login_failed: 'Gagal Masuk',
   account_locked: 'Akun Terkunci', lifecycle_action: 'Aksi Siklus Hidup',
 }

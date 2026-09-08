@@ -69,7 +69,7 @@ export const NAV_GROUPS = [
     label: 'Operasional',
     items: [
       { label: 'Reporting & KPI', path: null, icon: BarChart3 },
-      { label: 'Manajemen Pengguna & Hak Akses', path: null, icon: Users },
+      { label: 'Manajemen Pengguna & Hak Akses', path: '/users', icon: Users, perm: 'users.manage' },
       { label: 'Master Data', path: null, icon: Database },
       { label: 'Pengaturan Perusahaan', path: '/settings', icon: Settings, perm: 'masterdata.manage' },
       { label: 'Pengaturan Penomoran Dokumen', path: '/settings/numbering', icon: Hash, perm: 'masterdata.manage' },

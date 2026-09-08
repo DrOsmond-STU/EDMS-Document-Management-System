@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\DocumentFileController;
 use App\Http\Controllers\Api\LicenseController;
 use App\Http\Controllers\Api\MasterDataController;
 use App\Http\Controllers\Api\NumberingSettingController;
+use App\Http\Controllers\Api\UserController;
 use Illuminate\Support\Facades\Route;
 
 // Publik, dan dikecualikan dari gerbang lisensi (lihat EnsureLicenseActive,
@@ -62,5 +63,11 @@ Route::middleware('auth')->group(function () {
 
         Route::get('audit-logs', [AuditLogController::class, 'index']);
         Route::get('audit-logs/meta', [AuditLogController::class, 'meta']);
+
+        Route::get('users', [UserController::class, 'index']);
+        Route::get('users/meta', [UserController::class, 'meta']);
+        Route::post('users', [UserController::class, 'store']);
+        Route::patch('users/{user}', [UserController::class, 'update']);
+        Route::post('users/{user}/reset-password', [UserController::class, 'resetPassword']);
     });
 });
