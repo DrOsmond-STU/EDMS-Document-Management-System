@@ -25,15 +25,60 @@ import { useCompany } from '../CompanyContext'
 // itu yang ditampilkan (dianggap satu lockup lengkap: gambar + nama sudah
 // menyatu). Sebelum ada logo yang diunggah, dipakai wordmark "DoGO" bawaan
 // sebagai placeholder produk — bukan logo perusahaan yang sesungguhnya.
-export function Logo({ size = 36, showTagline = false }) {
-  const { name, logo_url: logoUrl } = useCompany()
+//
+// `useConfiguredWidth` memakai lebar (piksel) yang diatur manual lewat
+// Pengaturan Perusahaan (khusus tampilan halaman login, yang punya banyak
+// ruang kosong). Konsumen lain (mis. Sidebar) TIDAK memakai prop ini —
+// Sidebar merender <img> sendiri dengan tinggi tetap mengikuti baris header,
+// supaya ukuran logo yang aneh tidak pernah merusak tata letak navigasi.
+export function Logo({ size = 36, showTagline = false, useConfiguredWidth = false }) {
+  const { name, logo_url: logoUrl, logo_width: logoWidth } = useCompany()
 
   if (logoUrl) {
+    const imgStyle = useConfiguredWidth
+      ? { width: logoWidth || 160, height: 'auto', maxWidth: '100%' }
+      : { height: size * 1.15, maxWidth: size * 4.5 }
+
+    // Di halaman login (useConfiguredWidth), logo ditumpuk VERTIKAL di atas
+    // nama perusahaan supaya gambar logo itu sendiri jatuh tepat di tengah
+    // — kalau disandingkan sejajar seperti di Sidebar, teks di sampingnya
+    // menggeser optik gambar menjauh dari tengah kartu login.
+    if (useConfiguredWidth) {
+      return (
+        <div className="flex flex-col items-center gap-2 text-center">
+          <img src={logoUrl} alt={name} style={imgStyle} className="object-contain" />
+          {showTagline && (
+            <p className="max-w-[260px] text-[11px] leading-snug text-[var(--color-neutral-medium)]">{name}</p>
+          )}
+        </div>
+      )
+    }
+
     return (
       <div className="flex items-center gap-2.5">
-        <img src={logoUrl} alt={name} style={{ height: size * 1.15, maxWidth: size * 4.5 }} className="object-contain" />
+        <img src={logoUrl} alt={name} style={imgStyle} className="object-contain" />
         {showTagline && (
           <p className="max-w-[220px] text-[11px] leading-snug text-[var(--color-neutral-medium)]">{name}</p>
+        )}
+      </div>
+    )
+  }
+
+  if (useConfiguredWidth) {
+    return (
+      <div className="flex flex-col items-center gap-1 text-center">
+        <LogoMark size={Math.round((logoWidth || 160) / 3)} />
+        <div className="text-[19px] font-extrabold tracking-tight">
+          <span className="text-[var(--color-neutral-dark)]">Do</span>
+          <span className="bg-gradient-to-br from-[var(--color-brand-primary)] to-[#4fb2f0] bg-clip-text text-transparent">GO</span>
+        </div>
+        <div className="-mt-1 text-[9.5px] font-semibold uppercase tracking-[0.14em] text-[var(--color-neutral-medium)]">
+          Document Governance
+        </div>
+        {showTagline && (
+          <p className="mt-1 max-w-[260px] text-[11px] leading-snug text-[var(--color-neutral-medium)]">
+            Tata kelola dokumen untuk memastikan dokumen dikelola dengan baik, aman, dan sesuai aturan.
+          </p>
         )}
       </div>
     )

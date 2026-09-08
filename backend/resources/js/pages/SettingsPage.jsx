@@ -8,6 +8,10 @@ import { useAuth } from '../AuthContext'
 import { useCompany } from '../CompanyContext'
 
 const MAX_LOGO_BYTES = 2 * 1024 * 1024
+// Samakan dengan batas di CompanySettingController (MIN/MAX_LOGO_WIDTH).
+const MIN_LOGO_WIDTH = 60
+const MAX_LOGO_WIDTH = 320
+const DEFAULT_LOGO_WIDTH = 160
 
 export default function SettingsPage() {
   const { hasPermission } = useAuth()
@@ -18,6 +22,7 @@ export default function SettingsPage() {
   const [name, setName] = useState('')
   const [file, setFile] = useState(null)
   const [preview, setPreview] = useState(null)
+  const [logoWidth, setLogoWidth] = useState(DEFAULT_LOGO_WIDTH)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -27,6 +32,7 @@ export default function SettingsPage() {
     api('company-settings').then((s) => {
       setSettings(s)
       setName(s.name)
+      setLogoWidth(s.logo_width || DEFAULT_LOGO_WIDTH)
     })
   }, [])
 
@@ -51,9 +57,11 @@ export default function SettingsPage() {
     try {
       const form = new FormData()
       form.append('name', name)
+      form.append('logo_width', String(logoWidth))
       if (file) form.append('logo', file)
       const updated = await api('company-settings', { method: 'POST', body: form, isForm: true })
       setSettings(updated)
+      setLogoWidth(updated.logo_width || DEFAULT_LOGO_WIDTH)
       setFile(null)
       setPreview(null)
       if (fileInputRef.current) fileInputRef.current.value = ''
@@ -119,6 +127,32 @@ export default function SettingsPage() {
                   <input type="text" className={inputClass} value={name} onChange={(e) => setName(e.target.value)} required maxLength={255} />
                 </div>
               </Field>
+
+              <Field
+                label={`Ukuran Logo di Halaman Login (${logoWidth}px)`}
+                hint="Logo tampil di tengah, di atas form login. Geser untuk memperbesar/memperkecil."
+              >
+                <input
+                  type="range"
+                  min={MIN_LOGO_WIDTH}
+                  max={MAX_LOGO_WIDTH}
+                  step={10}
+                  value={logoWidth}
+                  onChange={(e) => setLogoWidth(Number(e.target.value))}
+                  className="w-full accent-[var(--color-brand-primary)]"
+                />
+              </Field>
+
+              <div className="flex flex-col items-center gap-1 rounded-lg border border-dashed border-[var(--color-neutral-border)] bg-[var(--color-neutral-bg-soft)] px-4 py-6">
+                {preview ? (
+                  <img src={preview} alt="Pratinjau logo" style={{ width: logoWidth, height: 'auto', maxWidth: '100%' }} className="object-contain" />
+                ) : settings.logo_url ? (
+                  <img src={settings.logo_url} alt="Pratinjau logo" style={{ width: logoWidth, height: 'auto', maxWidth: '100%' }} className="object-contain" />
+                ) : (
+                  <LogoMark size={Math.round(logoWidth / 3)} />
+                )}
+                <p className="mt-2 text-[10.5px] uppercase tracking-wide text-[var(--color-neutral-medium)]">Pratinjau halaman login</p>
+              </div>
 
               {error && <div className="rounded-md border border-[#f3c9c8] bg-[#fbe7e6] px-3 py-2 text-[12px] text-[#7d2c2b]">{error}</div>}
               {success && <div className="rounded-md border border-[var(--color-brand-success-text)]/30 bg-[var(--color-brand-success-bg)] px-3 py-2 text-[12px] text-[var(--color-brand-success-text)]">{success}</div>}

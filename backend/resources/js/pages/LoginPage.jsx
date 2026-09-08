@@ -28,8 +28,8 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-screen w-full items-center justify-center px-4">
       <div className="w-full max-w-sm">
-        <div className="mb-6">
-          <Logo showTagline />
+        <div className="mb-6 flex flex-col items-center text-center">
+          <Logo showTagline useConfiguredWidth />
         </div>
 
         <div className="rounded-2xl border border-[var(--color-neutral-border)] bg-white p-7 shadow-[var(--shadow-elevated)]">

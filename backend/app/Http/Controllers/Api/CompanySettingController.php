@@ -19,6 +19,11 @@ class CompanySettingController extends Controller
 
     private const MAX_KB = 2048; // 2 MB — cukup untuk logo, bukan foto/scan
 
+    /** Batas lebar logo di halaman login (piksel) — sesuai rentang slider di UI. */
+    private const MIN_LOGO_WIDTH = 60;
+
+    private const MAX_LOGO_WIDTH = 320;
+
     public function __construct(private AuditLogger $audit) {}
 
     /** Publik (tanpa sesi) — logo & nama perusahaan wajib tampil di halaman login. */
@@ -29,6 +34,7 @@ class CompanySettingController extends Controller
         return response()->json([
             'name' => $setting->name,
             'logo_url' => $setting->hasLogo() ? route('company-settings.logo') : null,
+            'logo_width' => $setting->logo_width,
         ]);
     }
 
@@ -57,14 +63,19 @@ class CompanySettingController extends Controller
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'logo' => ['nullable', 'file', 'max:'.self::MAX_KB, 'mimetypes:'.implode(',', self::ALLOWED_MIMES)],
+            'logo_width' => ['nullable', 'integer', 'between:'.self::MIN_LOGO_WIDTH.','.self::MAX_LOGO_WIDTH],
         ], [
             'logo.mimetypes' => 'Jenis berkas tidak didukung. Gunakan PNG, JPG, SVG, atau WEBP.',
             'logo.max' => 'Ukuran logo melebihi 2 MB.',
+            'logo_width.between' => 'Ukuran logo harus antara '.self::MIN_LOGO_WIDTH.' dan '.self::MAX_LOGO_WIDTH.' piksel.',
         ]);
 
         $setting = CompanySetting::current();
         $oldPath = $setting->logo_stored_path;
         $setting->name = $data['name'];
+        if (array_key_exists('logo_width', $data) && $data['logo_width'] !== null) {
+            $setting->logo_width = $data['logo_width'];
+        }
 
         if ($request->hasFile('logo')) {
             $upload = $request->file('logo');
@@ -91,6 +102,7 @@ class CompanySettingController extends Controller
         return response()->json([
             'name' => $setting->name,
             'logo_url' => $setting->hasLogo() ? route('company-settings.logo') : null,
+            'logo_width' => $setting->logo_width,
         ]);
     }
 }

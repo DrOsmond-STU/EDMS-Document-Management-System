@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Storage;
  */
 class CompanySetting extends Model
 {
-    protected $fillable = ['name', 'logo_original_name', 'logo_stored_path', 'logo_mime_type', 'updated_by'];
+    protected $fillable = ['name', 'logo_original_name', 'logo_stored_path', 'logo_mime_type', 'logo_width', 'updated_by'];
 
     public function updater(): BelongsTo
     {
