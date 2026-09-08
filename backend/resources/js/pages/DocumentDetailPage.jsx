@@ -3,7 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import { ArrowLeft, Download, ShieldCheck, Trash2, Upload } from 'lucide-react'
 import { api, ApiError } from '../api'
 import { Layout } from '../components/Layout'
-import { Button, Card, StatusBadge } from '../components/ui'
+import { Button, Card, ClassificationBadge, StatusBadge, ValidityBadge } from '../components/ui'
 
 function UploadForm({ documentId, onUploaded }) {
   const [file, setFile] = useState(null)
@@ -151,7 +151,10 @@ export default function DocumentDetailPage() {
             <div className="font-mono text-[12px] font-semibold text-[var(--color-neutral-medium)]">{doc.code}</div>
             <h1 className="text-[19px] font-bold tracking-tight">{doc.title}</h1>
           </div>
-          <StatusBadge status={doc.status} />
+          <div className="flex flex-shrink-0 items-center gap-1.5">
+            <StatusBadge status={doc.status} />
+            <ValidityBadge validity={doc.display_validity ?? doc.validity} />
+          </div>
         </div>
         <div className="mt-3 flex flex-wrap gap-1.5">
           {doc.standards?.map((s) => (
@@ -160,11 +163,11 @@ export default function DocumentDetailPage() {
         </div>
         <dl className="mt-4 grid grid-cols-2 gap-3 text-[12.5px] sm:grid-cols-3">
           <div><dt className="text-[10.5px] uppercase text-[var(--color-neutral-medium)]">Fungsi</dt><dd>{doc.org_function?.name ?? '—'}</dd></div>
-          <div><dt className="text-[10.5px] uppercase text-[var(--color-neutral-medium)]">Klasifikasi</dt><dd className="capitalize">{doc.classification}</dd></div>
+          <div><dt className="text-[10.5px] uppercase text-[var(--color-neutral-medium)]">Klasifikasi</dt><dd><ClassificationBadge level={doc.classification} /></dd></div>
           <div><dt className="text-[10.5px] uppercase text-[var(--color-neutral-medium)]">Versi</dt><dd>{doc.version} (rev. {doc.revision_number})</dd></div>
           <div><dt className="text-[10.5px] uppercase text-[var(--color-neutral-medium)]">Pemilik</dt><dd>{doc.owner?.name ?? '—'}</dd></div>
-          <div><dt className="text-[10.5px] uppercase text-[var(--color-neutral-medium)]">Berlaku</dt><dd>{doc.effective_date ?? '—'}</dd></div>
-          <div><dt className="text-[10.5px] uppercase text-[var(--color-neutral-medium)]">Tinjau ulang</dt><dd>{doc.review_date ?? '—'}</dd></div>
+          <div><dt className="text-[10.5px] uppercase text-[var(--color-neutral-medium)]">Berlaku</dt><dd>{doc.effective_date?.slice(0, 10) ?? '—'}</dd></div>
+          <div><dt className="text-[10.5px] uppercase text-[var(--color-neutral-medium)]">Tinjau ulang</dt><dd>{doc.review_date?.slice(0, 10) ?? '—'}</dd></div>
         </dl>
 
         {can.transition && allowed_next.length > 0 && (

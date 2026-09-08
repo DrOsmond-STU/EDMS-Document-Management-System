@@ -19,6 +19,16 @@ class Document extends Model
         'review_date', 'expiry_date', 'keywords', 'content', 'owner_id', 'created_by',
     ];
 
+    /**
+     * display_validity dihitung, bukan disimpan: kolom `validity` hanya
+     * berubah lewat DocumentLifecycle::transition() (berlaku/tidak_berlaku/
+     * belum_berlaku sesuai status). "Kadaluarsa" bukan status yang pernah
+     * di-set eksplisit — itu kondisi tinjauan ulang yang sudah lewat tanggal
+     * pada dokumen yang MASIH released, jadi harus selalu dihitung ulang
+     * terhadap tanggal hari ini, bukan disimpan sebagai nilai statis.
+     */
+    protected $appends = ['display_validity'];
+
     protected function casts(): array
     {
         return [
@@ -69,6 +79,15 @@ class Document extends Model
     public function primaryFile()
     {
         return $this->hasOne(DocumentFile::class)->where('is_primary', true);
+    }
+
+    public function getDisplayValidityAttribute(): string
+    {
+        if ($this->status === 'released' && $this->review_date && $this->review_date->isPast()) {
+            return 'kadaluarsa';
+        }
+
+        return $this->validity;
     }
 
     public function scopeReleased($query)

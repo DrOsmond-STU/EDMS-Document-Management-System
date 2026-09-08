@@ -1,86 +1,10 @@
 import { NavLink } from 'react-router-dom'
-import {
-  LayoutDashboard, FolderOpen, FolderTree, KanbanSquare, GitBranch, Archive, Timer,
-  ShieldCheck, Scale, AlertTriangle, Search, Sparkles, MessagesSquare, BarChart3,
-  Users, Database, Plug, Cog, ClipboardList, ClipboardCheck, ClipboardEdit, Building2,
-  Presentation, Settings, LogOut,
-} from 'lucide-react'
+import { LogOut } from 'lucide-react'
 import { useAuth } from '../AuthContext'
 import { useCompany } from '../CompanyContext'
 import { LogoMark } from './Logo'
-
-// Peta lengkap arsitektur informasi aplikasi (lihat docs/03_DESIGN.md).
-// `path: null` berarti modul belum dibangun di v2 — ditampilkan supaya
-// pengguna melihat peta lengkap yang direncanakan, tapi non-aktif dengan
-// label "Segera". `perm` membatasi modul yang SUDAH jadi ke peran yang
-// berwenang; modul yang belum jadi tidak perlu perm (toh tidak bisa diklik).
-const NAV_GROUPS = [
-  {
-    label: 'Analytics',
-    items: [{ label: 'Dashboard', path: null, icon: LayoutDashboard }],
-  },
-  {
-    label: 'Document Repository',
-    items: [
-      { label: 'Register Dokumen', path: '/documents', icon: FolderOpen },
-      { label: 'Folder Virtual & Kategori', path: null, icon: FolderTree },
-    ],
-  },
-  {
-    label: 'Document Lifecycle',
-    items: [
-      { label: 'Papan Approval', path: null, icon: KanbanSquare },
-      { label: 'Tracking Penyusunan Dokumen', path: null, icon: GitBranch },
-    ],
-  },
-  {
-    label: 'Records Management',
-    items: [
-      { label: 'Records Register', path: null, icon: Archive },
-      { label: 'Retention & Archive', path: null, icon: Timer },
-    ],
-  },
-  {
-    label: 'Governance & Compliance',
-    items: [
-      { label: 'Compliance Matrix', path: null, icon: ShieldCheck },
-      { label: 'Legal Register', path: null, icon: Scale },
-      { label: 'Register Risiko', path: null, icon: AlertTriangle },
-    ],
-  },
-  {
-    label: 'Audit & Review',
-    items: [
-      { label: 'Audit Internal', path: null, icon: ClipboardCheck },
-      { label: 'Audit Eksternal', path: null, icon: Building2 },
-      { label: 'Register Temuan & CAPA', path: null, icon: ClipboardEdit },
-      { label: 'Tinjauan Manajemen', path: null, icon: Presentation },
-    ],
-  },
-  {
-    label: 'Search & AI',
-    items: [
-      { label: 'Knowledge Base & Discovery', path: null, icon: Search },
-      { label: 'Asisten AI', path: null, icon: Sparkles },
-    ],
-  },
-  {
-    label: 'Collaboration',
-    items: [{ label: 'Comment & Discussion', path: null, icon: MessagesSquare }],
-  },
-  {
-    label: 'Operasional',
-    items: [
-      { label: 'Reporting & KPI', path: null, icon: BarChart3 },
-      { label: 'Manajemen Pengguna & Hak Akses', path: null, icon: Users },
-      { label: 'Master Data', path: null, icon: Database },
-      { label: 'Pengaturan Perusahaan', path: '/settings', icon: Settings, perm: 'masterdata.manage' },
-      { label: 'Integration & API', path: null, icon: Plug },
-      { label: 'System Administration', path: null, icon: Cog },
-      { label: 'Audit Trail', path: null, icon: ClipboardList },
-    ],
-  },
-]
+import { NAV_GROUPS } from './navConfig'
+import { roleLabels } from '../lib/roleLabels'
 
 export function Sidebar() {
   const { user, hasPermission, logout } = useAuth()
@@ -160,7 +84,7 @@ export function Sidebar() {
 
       <div className="border-t border-white/10 p-3">
         <div className="mb-1 truncate px-2 text-[12px] font-semibold text-white">{user?.name}</div>
-        <div className="mb-2 truncate px-2 text-[10.5px] text-white/50">{user?.roles?.join(', ')}</div>
+        <div className="mb-2 truncate px-2 text-[10.5px] text-white/50">{roleLabels(user?.roles)}</div>
         <button
           onClick={logout}
           className="flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-[12.5px] text-white/70 transition-colors hover:bg-white/5 hover:text-white"

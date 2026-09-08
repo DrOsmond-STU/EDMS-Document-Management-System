@@ -1,3 +1,5 @@
+import { Lock } from 'lucide-react'
+
 export function Button({ variant = 'secondary', size = 'md', className = '', ...props }) {
   const variants = {
     primary: 'bg-[var(--color-brand-primary)] text-white shadow-sm hover:bg-[var(--color-brand-primary-dark)]',
@@ -35,14 +37,77 @@ export function Field({ label, children, hint }) {
 export const inputClass =
   'w-full rounded-md border border-[var(--color-neutral-border)] bg-white px-2.5 py-2 text-[13px] outline-none transition-colors placeholder:text-[var(--color-neutral-soft)] focus:border-[var(--color-brand-primary)] focus:ring-2 focus:ring-[var(--color-brand-primary)]/20'
 
+function BasePill({ bg, text, children }) {
+  return (
+    <span
+      className="inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2.5 py-0.5 text-[10.5px] font-semibold"
+      style={{ backgroundColor: bg, color: text }}
+    >
+      {children}
+    </span>
+  )
+}
+
+// Warna & label persis mengikuti purwarupa lama (docs/05_BRAND.md §6) supaya
+// tampilan status/validitas/klasifikasi konsisten di kedua versi aplikasi.
+const STATUS_COLOR = {
+  draft: { bg: '#EEF2F7', text: '#475569' },
+  review: { bg: '#FDF1DC', text: '#B9791C' },
+  approval: { bg: '#FCE8D1', text: '#C1650F' },
+  released: { bg: '#E5F5EC', text: '#1E8E5A' },
+  obsolete: { bg: '#FBE7E6', text: '#B23B3A' },
+}
+const STATUS_LABEL = { draft: 'Draft', review: 'Review', approval: 'Approval', released: 'Released', obsolete: 'Obsolete' }
+
 export function StatusBadge({ status }) {
-  const map = {
-    draft: 'bg-[var(--color-chip-bg)] text-[var(--color-chip-text)]',
-    review: 'bg-[#fdf1dc] text-[#b9791c]',
-    approval: 'bg-[#eaf3fb] text-[#2a6fb3]',
-    released: 'bg-[var(--color-brand-success-bg)] text-[var(--color-brand-success-text)]',
-    obsolete: 'bg-[#fbe7e6] text-[#b23b3a]',
-  }
-  const labels = { draft: 'Draft', review: 'Review', approval: 'Approval', released: 'Released', obsolete: 'Obsolete' }
-  return <span className={`rounded-full px-2 py-0.5 text-[10.5px] font-semibold ${map[status] || ''}`}>{labels[status] || status}</span>
+  const c = STATUS_COLOR[status] || STATUS_COLOR.draft
+  return <BasePill bg={c.bg} text={c.text}>{STATUS_LABEL[status] || status}</BasePill>
+}
+
+const VALIDITY_COLOR = {
+  berlaku: { bg: '#E5F5EC', text: '#1E8E5A' },
+  kadaluarsa: { bg: '#FBE7E6', text: '#B23B3A' },
+  tidak_berlaku: { bg: '#E9EEF2', text: '#55606B' },
+  belum_berlaku: { bg: '#EEF2F7', text: '#475569' },
+}
+const VALIDITY_LABEL = { berlaku: 'Berlaku', kadaluarsa: 'Kadaluarsa', tidak_berlaku: 'Tidak Berlaku', belum_berlaku: 'Belum Berlaku' }
+
+export function ValidityBadge({ validity }) {
+  const c = VALIDITY_COLOR[validity] || VALIDITY_COLOR.belum_berlaku
+  return <BasePill bg={c.bg} text={c.text}>{VALIDITY_LABEL[validity] || validity}</BasePill>
+}
+
+const CLASSIFICATION_COLOR = {
+  public: { bg: '#7fa88f', text: '#ffffff' },
+  internal: { bg: '#5f8fb4', text: '#ffffff' },
+  restricted: { bg: '#c98a3e', text: '#ffffff' },
+  confidential: { bg: '#b9563f', text: '#ffffff' },
+  secret: { bg: '#7a3b3b', text: '#ffffff' },
+  top_secret: { bg: '#1f2937', text: '#ffffff' },
+}
+const CLASSIFICATION_LABEL = {
+  public: 'Public', internal: 'Internal', restricted: 'Restricted',
+  confidential: 'Confidential', secret: 'Secret', top_secret: 'Top Secret',
+}
+const CLASSIFICATION_HAS_LOCK = { public: false, internal: false, restricted: true, confidential: true, secret: true, top_secret: true }
+
+export function ClassificationBadge({ level }) {
+  const c = CLASSIFICATION_COLOR[level] || CLASSIFICATION_COLOR.internal
+  return (
+    <BasePill bg={c.bg} text={c.text}>
+      {CLASSIFICATION_HAS_LOCK[level] && <Lock size={11} strokeWidth={2.5} />}
+      {CLASSIFICATION_LABEL[level] || level}
+    </BasePill>
+  )
+}
+
+export function StandardChip({ code }) {
+  return (
+    <span
+      className="inline-flex items-center whitespace-nowrap rounded px-2 py-0.5 text-[11px] font-semibold"
+      style={{ backgroundColor: 'var(--color-chip-bg)', color: 'var(--color-chip-text)' }}
+    >
+      {code}
+    </span>
+  )
 }

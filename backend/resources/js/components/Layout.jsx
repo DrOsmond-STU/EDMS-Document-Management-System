@@ -1,10 +1,16 @@
 import { Sidebar } from './Sidebar'
+import { Topbar } from './Topbar'
 
 export function Layout({ children }) {
   return (
-    <div className="flex min-h-screen w-full bg-[var(--color-app-bg)]">
+    <div className="flex h-screen w-full overflow-hidden bg-[var(--color-app-bg)]">
       <Sidebar />
-      <main className="min-w-0 flex-1 overflow-y-auto p-6">{children}</main>
+      <div className="flex min-w-0 flex-1 flex-col">
+        <Topbar />
+        <main className="flex-1 overflow-y-auto p-6">
+          <div className="mx-auto max-w-[1400px]">{children}</div>
+        </main>
+      </div>
     </div>
   )
 }
