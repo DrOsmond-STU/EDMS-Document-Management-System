@@ -8,13 +8,17 @@ import { roleLabels } from '../lib/roleLabels'
 
 export function Sidebar() {
   const { user, hasPermission, logout } = useAuth()
-  const { name, logo_url: logoUrl } = useCompany()
+  // Logo sidebar SENGAJA berkas terpisah dari logo halaman login (lihat
+  // Pengaturan Perusahaan) — kalau belum diunggah, tetap pakai wordmark
+  // "DoGO" bawaan, bukan jatuh balik ke logo login yang mungkin proporsinya
+  // tidak cocok untuk baris header sidebar yang sempit.
+  const { name, sidebar_logo_url: sidebarLogoUrl } = useCompany()
 
   return (
     <aside className="hidden w-64 shrink-0 flex-col bg-[#0b1f3a] md:flex">
       <div className="flex items-center gap-2.5 border-b border-white/10 px-5 py-4">
-        {logoUrl ? (
-          <img src={logoUrl} alt={name} className="h-8 max-w-[10.5rem] object-contain" />
+        {sidebarLogoUrl ? (
+          <img src={sidebarLogoUrl} alt={name} className="h-8 max-w-[10.5rem] object-contain" />
         ) : (
           <>
             <LogoMark size={30} />

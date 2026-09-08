@@ -13,7 +13,10 @@ use Illuminate\Support\Facades\Storage;
  */
 class CompanySetting extends Model
 {
-    protected $fillable = ['name', 'logo_original_name', 'logo_stored_path', 'logo_mime_type', 'logo_width', 'updated_by'];
+    protected $fillable = [
+        'name', 'address', 'logo_original_name', 'logo_stored_path', 'logo_mime_type', 'logo_width',
+        'sidebar_logo_original_name', 'sidebar_logo_stored_path', 'sidebar_logo_mime_type', 'updated_by',
+    ];
 
     public function updater(): BelongsTo
     {
@@ -28,5 +31,10 @@ class CompanySetting extends Model
     public function hasLogo(): bool
     {
         return $this->logo_stored_path !== null && Storage::disk('company')->exists($this->logo_stored_path);
+    }
+
+    public function hasSidebarLogo(): bool
+    {
+        return $this->sidebar_logo_stored_path !== null && Storage::disk('company')->exists($this->sidebar_logo_stored_path);
     }
 }

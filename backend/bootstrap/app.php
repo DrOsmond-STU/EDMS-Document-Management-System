@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\EnsureLicenseActive;
 use App\Http\Middleware\EnsurePasswordChanged;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -26,6 +27,19 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'password.changed' => EnsurePasswordChanged::class,
         ]);
+
+        // Gerbang lisensi didaftarkan GLOBAL & PALING DEPAN (bukan alias yang
+        // ditempel di grup rute) — supaya tidak ada middleware bawaan Laravel
+        // (VerifyCsrfToken, Authenticate, dst.) yang bisa "mendahuluinya"
+        // akibat urutan penggabungan grup/prioritas middleware. Lihat
+        // EnsureLicenseActive untuk pengecualian dua path publiknya.
+        $middleware->prepend(EnsureLicenseActive::class);
+
+        // /api/license/apply dipanggil oleh tool vendor eksternal (server ke
+        // server, tanpa sesi browser) — tidak akan pernah punya token CSRF.
+        // Diautentikasi lewat tanda tangan HMAC di body-nya sendiri sebagai
+        // gantinya (lihat LicenseController::apply).
+        $middleware->validateCsrfTokens(except: ['api/license/apply']);
 
         // Seluruh aplikasi ini adalah API (tidak ada halaman "login" HTML di
         // sisi Laravel — login ditangani React). Tanpa ini, permintaan tak

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Building2, Upload } from 'lucide-react'
+import { Building2, MapPin, ShieldCheck, ShieldX, Upload } from 'lucide-react'
 import { Layout } from '../components/Layout'
 import { LogoMark } from '../components/Logo'
 import { Button, Card, Field, inputClass } from '../components/ui'
@@ -13,6 +13,71 @@ const MIN_LOGO_WIDTH = 60
 const MAX_LOGO_WIDTH = 320
 const DEFAULT_LOGO_WIDTH = 160
 
+function LicenseInfoCard() {
+  const [status, setStatus] = useState(null)
+
+  useEffect(() => {
+    api('license-status').then(setStatus).catch(() => {})
+  }, [])
+
+  if (!status) return null
+
+  return (
+    <Card className="mb-4">
+      <div className="mb-3 flex items-center gap-2">
+        {status.valid ? (
+          <ShieldCheck size={16} className="text-[var(--color-brand-success-text)]" />
+        ) : (
+          <ShieldX size={16} className="text-[var(--color-brand-danger)]" />
+        )}
+        <h2 className="text-[13.5px] font-bold">Informasi Lisensi</h2>
+      </div>
+      <p className="mb-3 text-[11.5px] text-[var(--color-neutral-medium)]">
+        Hanya bisa diperbarui oleh penyedia layanan lewat tool terpisah — tidak ada tombol ubah di sini.
+      </p>
+      <dl className="grid grid-cols-2 gap-3 text-[12.5px] sm:grid-cols-4">
+        <div>
+          <dt className="text-[10.5px] uppercase text-[var(--color-neutral-medium)]">Status</dt>
+          <dd className={status.valid ? 'font-semibold text-[var(--color-brand-success-text)]' : 'font-semibold text-[var(--color-brand-danger)]'}>
+            {status.valid ? 'Aktif' : (status.status ?? 'Tidak aktif')}
+          </dd>
+        </div>
+        <div>
+          <dt className="text-[10.5px] uppercase text-[var(--color-neutral-medium)]">Kode Lisensi</dt>
+          <dd className="font-mono">{status.license_key_masked ?? '—'}</dd>
+        </div>
+        <div>
+          <dt className="text-[10.5px] uppercase text-[var(--color-neutral-medium)]">Masa Berlaku</dt>
+          <dd>{status.expires_at ?? '—'}</dd>
+        </div>
+        <div>
+          <dt className="text-[10.5px] uppercase text-[var(--color-neutral-medium)]">Tanggal Aktivasi</dt>
+          <dd>{status.activated_at ?? '—'}</dd>
+        </div>
+      </dl>
+    </Card>
+  )
+}
+
+function LogoUploadField({ label, hint, previewUrl, file, onPickFile, inputRef }) {
+  return (
+    <div className="flex items-center gap-4">
+      <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[var(--color-neutral-border)] bg-[var(--color-neutral-bg-soft)]">
+        {previewUrl ? <img src={previewUrl} alt={label} className="h-full w-full object-contain" /> : <LogoMark size={40} />}
+      </div>
+      <div className="min-w-0 flex-1">
+        <span className="mb-1 block text-[11px] font-bold uppercase tracking-wide text-[var(--color-neutral-medium)]">{label}</span>
+        <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-[var(--color-neutral-border)] bg-white px-3 py-1.5 text-[12.5px] font-semibold text-[var(--color-neutral-dark)] hover:bg-[var(--color-neutral-bg-soft)]">
+          <Upload size={13} /> Pilih Berkas
+          <input ref={inputRef} type="file" accept="image/png,image/jpeg,image/svg+xml,image/webp" onChange={onPickFile} className="hidden" />
+        </label>
+        <p className="mt-1.5 text-[11px] text-[var(--color-neutral-medium)]">{hint}</p>
+        {file && <p className="mt-0.5 truncate text-[11px] text-[var(--color-neutral-dark)]">Dipilih: {file.name}</p>}
+      </div>
+    </div>
+  )
+}
+
 export default function SettingsPage() {
   const { hasPermission } = useAuth()
   const canManage = hasPermission('masterdata.manage')
@@ -20,18 +85,23 @@ export default function SettingsPage() {
 
   const [settings, setSettings] = useState(null)
   const [name, setName] = useState('')
+  const [address, setAddress] = useState('')
   const [file, setFile] = useState(null)
   const [preview, setPreview] = useState(null)
+  const [sidebarFile, setSidebarFile] = useState(null)
+  const [sidebarPreview, setSidebarPreview] = useState(null)
   const [logoWidth, setLogoWidth] = useState(DEFAULT_LOGO_WIDTH)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const fileInputRef = useRef(null)
+  const sidebarFileInputRef = useRef(null)
 
   useEffect(() => {
     api('company-settings').then((s) => {
       setSettings(s)
       setName(s.name)
+      setAddress(s.address || '')
       setLogoWidth(s.logo_width || DEFAULT_LOGO_WIDTH)
     })
   }, [])
@@ -49,6 +119,19 @@ export default function SettingsPage() {
     setPreview(URL.createObjectURL(f))
   }
 
+  function handlePickSidebarFile(e) {
+    const f = e.target.files?.[0]
+    setError('')
+    if (!f) { setSidebarFile(null); setSidebarPreview(null); return }
+    if (f.size > MAX_LOGO_BYTES) {
+      setError('Ukuran logo sidebar melebihi 2 MB.')
+      e.target.value = ''
+      return
+    }
+    setSidebarFile(f)
+    setSidebarPreview(URL.createObjectURL(f))
+  }
+
   async function handleSubmit(e) {
     e.preventDefault()
     setError('')
@@ -57,20 +140,25 @@ export default function SettingsPage() {
     try {
       const form = new FormData()
       form.append('name', name)
+      form.append('address', address)
       form.append('logo_width', String(logoWidth))
       if (file) form.append('logo', file)
+      if (sidebarFile) form.append('sidebar_logo', sidebarFile)
       const updated = await api('company-settings', { method: 'POST', body: form, isForm: true })
       setSettings(updated)
       setLogoWidth(updated.logo_width || DEFAULT_LOGO_WIDTH)
       setFile(null)
       setPreview(null)
+      setSidebarFile(null)
+      setSidebarPreview(null)
       if (fileInputRef.current) fileInputRef.current.value = ''
+      if (sidebarFileInputRef.current) sidebarFileInputRef.current.value = ''
       setSuccess('Pengaturan perusahaan disimpan.')
       // Sidebar & Logo (CompanyContext) dimuat terpisah dari halaman ini,
       // jadi perlu disegarkan agar logo/nama baru langsung terlihat tanpa reload.
       refreshCompany()
     } catch (err) {
-      setError(err instanceof ApiError ? (err.body?.errors?.logo?.[0] || err.body?.errors?.name?.[0] || err.message) : 'Gagal menyimpan.')
+      setError(err instanceof ApiError ? (err.body?.errors?.logo?.[0] || err.body?.errors?.sidebar_logo?.[0] || err.body?.errors?.name?.[0] || err.message) : 'Gagal menyimpan.')
     } finally {
       setSubmitting(false)
     }
@@ -92,41 +180,58 @@ export default function SettingsPage() {
         <div className="mb-6">
           <h1 className="text-[20px] font-bold tracking-tight text-[var(--color-neutral-dark)]">Pengaturan Perusahaan</h1>
           <p className="mt-0.5 text-[12.5px] text-[var(--color-neutral-medium)]">
-            Nama dan logo di sini tampil di halaman login dan seluruh aplikasi.
+            Identitas perusahaan tampil di halaman login dan seluruh aplikasi.
           </p>
         </div>
+
+        <LicenseInfoCard />
 
         <Card>
           {!settings ? (
             <p className="text-[13px] text-[var(--color-neutral-medium)]">Memuat…</p>
           ) : (
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-              <div className="flex items-center gap-4">
-                <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[var(--color-neutral-border)] bg-[var(--color-neutral-bg-soft)]">
-                  {preview ? (
-                    <img src={preview} alt="Pratinjau logo" className="h-full w-full object-contain" />
-                  ) : settings.logo_url ? (
-                    <img src={settings.logo_url} alt="Logo perusahaan" className="h-full w-full object-contain" />
-                  ) : (
-                    <LogoMark size={40} />
-                  )}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-md border border-[var(--color-neutral-border)] bg-white px-3 py-1.5 text-[12.5px] font-semibold text-[var(--color-neutral-dark)] hover:bg-[var(--color-neutral-bg-soft)]">
-                    <Upload size={13} /> Pilih Berkas Logo
-                    <input ref={fileInputRef} type="file" accept="image/png,image/jpeg,image/svg+xml,image/webp" onChange={handlePickFile} className="hidden" />
-                  </label>
-                  <p className="mt-1.5 text-[11px] text-[var(--color-neutral-medium)]">PNG, JPG, SVG, atau WEBP · maks. 2 MB</p>
-                  {file && <p className="mt-0.5 truncate text-[11px] text-[var(--color-neutral-dark)]">Dipilih: {file.name}</p>}
-                </div>
-              </div>
-
               <Field label="Nama Perusahaan">
                 <div className="flex items-center gap-2">
                   <Building2 size={15} className="shrink-0 text-[var(--color-neutral-medium)]" />
                   <input type="text" className={inputClass} value={name} onChange={(e) => setName(e.target.value)} required maxLength={255} />
                 </div>
               </Field>
+
+              <Field label="Alamat Perusahaan">
+                <div className="flex items-start gap-2">
+                  <MapPin size={15} className="mt-2 shrink-0 text-[var(--color-neutral-medium)]" />
+                  <textarea
+                    className={`${inputClass} min-h-[64px] resize-y`}
+                    value={address}
+                    onChange={(e) => setAddress(e.target.value)}
+                    maxLength={1000}
+                    placeholder="Alamat kantor / operasional"
+                  />
+                </div>
+              </Field>
+
+              <div className="border-t border-[var(--color-neutral-border)] pt-4">
+                <LogoUploadField
+                  label="Logo Halaman Login"
+                  hint="PNG, JPG, SVG, atau WEBP · maks. 2 MB"
+                  previewUrl={preview || settings.logo_url}
+                  file={file}
+                  onPickFile={handlePickFile}
+                  inputRef={fileInputRef}
+                />
+              </div>
+
+              <div className="border-t border-[var(--color-neutral-border)] pt-4">
+                <LogoUploadField
+                  label="Logo Sidebar"
+                  hint="Berkas terpisah dari logo login — biasanya bentuk ikon/kotak. PNG, JPG, SVG, atau WEBP · maks. 2 MB"
+                  previewUrl={sidebarPreview || settings.sidebar_logo_url}
+                  file={sidebarFile}
+                  onPickFile={handlePickSidebarFile}
+                  inputRef={sidebarFileInputRef}
+                />
+              </div>
 
               <Field
                 label={`Ukuran Logo di Halaman Login (${logoWidth}px)`}
@@ -144,10 +249,8 @@ export default function SettingsPage() {
               </Field>
 
               <div className="flex flex-col items-center gap-1 rounded-lg border border-dashed border-[var(--color-neutral-border)] bg-[var(--color-neutral-bg-soft)] px-4 py-6">
-                {preview ? (
-                  <img src={preview} alt="Pratinjau logo" style={{ width: logoWidth, height: 'auto', maxWidth: '100%' }} className="object-contain" />
-                ) : settings.logo_url ? (
-                  <img src={settings.logo_url} alt="Pratinjau logo" style={{ width: logoWidth, height: 'auto', maxWidth: '100%' }} className="object-contain" />
+                {preview || settings.logo_url ? (
+                  <img src={preview || settings.logo_url} alt="Pratinjau logo" style={{ width: logoWidth, height: 'auto', maxWidth: '100%' }} className="object-contain" />
                 ) : (
                   <LogoMark size={Math.round(logoWidth / 3)} />
                 )}

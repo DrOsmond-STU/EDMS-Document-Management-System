@@ -8,6 +8,7 @@ use App\Services\AuditLogger;
 use App\Support\Permissions;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -26,19 +27,13 @@ class CompanySettingController extends Controller
 
     public function __construct(private AuditLogger $audit) {}
 
-    /** Publik (tanpa sesi) — logo & nama perusahaan wajib tampil di halaman login. */
+    /** Publik (tanpa sesi) — identitas perusahaan wajib tampil di halaman login. */
     public function show(): JsonResponse
     {
-        $setting = CompanySetting::current();
-
-        return response()->json([
-            'name' => $setting->name,
-            'logo_url' => $setting->hasLogo() ? route('company-settings.logo') : null,
-            'logo_width' => $setting->logo_width,
-        ]);
+        return response()->json($this->publicPayload(CompanySetting::current()));
     }
 
-    /** Streaming berkas logo. Publik juga, dengan alasan yang sama seperti show(). */
+    /** Streaming logo halaman login. Publik juga, dengan alasan yang sama seperti show(). */
     public function logo(): StreamedResponse|JsonResponse
     {
         $setting = CompanySetting::current();
@@ -53,6 +48,21 @@ class CompanySettingController extends Controller
         ]);
     }
 
+    /** Streaming logo sidebar — berkas TERPISAH dari logo halaman login. */
+    public function sidebarLogo(): StreamedResponse|JsonResponse
+    {
+        $setting = CompanySetting::current();
+
+        if (! $setting->hasSidebarLogo()) {
+            return response()->json(['message' => 'Logo sidebar belum diunggah.'], 404);
+        }
+
+        return Storage::disk('company')->response($setting->sidebar_logo_stored_path, $setting->sidebar_logo_original_name, [
+            'Content-Type' => $setting->sidebar_logo_mime_type,
+            'Cache-Control' => 'public, max-age=300',
+        ]);
+    }
+
     public function update(Request $request): JsonResponse
     {
         $user = $request->user();
@@ -62,29 +72,33 @@ class CompanySettingController extends Controller
 
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
+            'address' => ['nullable', 'string', 'max:1000'],
             'logo' => ['nullable', 'file', 'max:'.self::MAX_KB, 'mimetypes:'.implode(',', self::ALLOWED_MIMES)],
             'logo_width' => ['nullable', 'integer', 'between:'.self::MIN_LOGO_WIDTH.','.self::MAX_LOGO_WIDTH],
+            'sidebar_logo' => ['nullable', 'file', 'max:'.self::MAX_KB, 'mimetypes:'.implode(',', self::ALLOWED_MIMES)],
         ], [
             'logo.mimetypes' => 'Jenis berkas tidak didukung. Gunakan PNG, JPG, SVG, atau WEBP.',
             'logo.max' => 'Ukuran logo melebihi 2 MB.',
+            'sidebar_logo.mimetypes' => 'Jenis berkas tidak didukung. Gunakan PNG, JPG, SVG, atau WEBP.',
+            'sidebar_logo.max' => 'Ukuran logo sidebar melebihi 2 MB.',
             'logo_width.between' => 'Ukuran logo harus antara '.self::MIN_LOGO_WIDTH.' dan '.self::MAX_LOGO_WIDTH.' piksel.',
         ]);
 
         $setting = CompanySetting::current();
-        $oldPath = $setting->logo_stored_path;
+        $oldLogoPath = $setting->logo_stored_path;
+        $oldSidebarLogoPath = $setting->sidebar_logo_stored_path;
+
         $setting->name = $data['name'];
+        $setting->address = $data['address'] ?? null;
         if (array_key_exists('logo_width', $data) && $data['logo_width'] !== null) {
             $setting->logo_width = $data['logo_width'];
         }
 
         if ($request->hasFile('logo')) {
-            $upload = $request->file('logo');
-            $storedPath = sprintf('logo/%s.%s', Str::ulid(), strtolower($upload->getClientOriginalExtension() ?: 'png'));
-            Storage::disk('company')->put($storedPath, file_get_contents($upload->getRealPath()));
-
-            $setting->logo_original_name = $upload->getClientOriginalName();
-            $setting->logo_stored_path = $storedPath;
-            $setting->logo_mime_type = $upload->getMimeType();
+            $this->storeLogo($setting, $request->file('logo'), 'logo', 'logo_original_name', 'logo_stored_path', 'logo_mime_type');
+        }
+        if ($request->hasFile('sidebar_logo')) {
+            $this->storeLogo($setting, $request->file('sidebar_logo'), 'sidebar-logo', 'sidebar_logo_original_name', 'sidebar_logo_stored_path', 'sidebar_logo_mime_type');
         }
 
         $setting->updated_by = $user->id;
@@ -92,17 +106,41 @@ class CompanySettingController extends Controller
 
         // Baru dihapus SETELAH baris baru tersimpan, supaya kalau proses ini
         // gagal di tengah jalan, logo lama tidak ikut hilang tanpa pengganti.
-        if ($oldPath && $oldPath !== $setting->logo_stored_path) {
-            Storage::disk('company')->delete($oldPath);
+        if ($oldLogoPath && $oldLogoPath !== $setting->logo_stored_path) {
+            Storage::disk('company')->delete($oldLogoPath);
+        }
+        if ($oldSidebarLogoPath && $oldSidebarLogoPath !== $setting->sidebar_logo_stored_path) {
+            Storage::disk('company')->delete($oldSidebarLogoPath);
         }
 
+        $changedLogos = array_filter([
+            $request->hasFile('logo') ? 'logo login' : null,
+            $request->hasFile('sidebar_logo') ? 'logo sidebar' : null,
+        ]);
         $this->audit->log($user, 'update', 'CompanySetting', '1', $setting->name,
-            'Memperbarui pengaturan perusahaan'.($request->hasFile('logo') ? ' (termasuk logo baru)' : ''));
+            'Memperbarui pengaturan perusahaan'.($changedLogos ? ' (termasuk '.implode(' & ', $changedLogos).' baru)' : ''));
 
-        return response()->json([
+        return response()->json($this->publicPayload($setting));
+    }
+
+    private function storeLogo(CompanySetting $setting, UploadedFile $upload, string $folder, string $nameField, string $pathField, string $mimeField): void
+    {
+        $storedPath = sprintf('%s/%s.%s', $folder, Str::ulid(), strtolower($upload->getClientOriginalExtension() ?: 'png'));
+        Storage::disk('company')->put($storedPath, file_get_contents($upload->getRealPath()));
+
+        $setting->{$nameField} = $upload->getClientOriginalName();
+        $setting->{$pathField} = $storedPath;
+        $setting->{$mimeField} = $upload->getMimeType();
+    }
+
+    private function publicPayload(CompanySetting $setting): array
+    {
+        return [
             'name' => $setting->name,
+            'address' => $setting->address,
             'logo_url' => $setting->hasLogo() ? route('company-settings.logo') : null,
             'logo_width' => $setting->logo_width,
-        ]);
+            'sidebar_logo_url' => $setting->hasSidebarLogo() ? route('company-settings.sidebar-logo') : null,
+        ];
     }
 }

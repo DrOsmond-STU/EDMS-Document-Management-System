@@ -4,8 +4,16 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CompanySettingController;
 use App\Http\Controllers\Api\DocumentController;
 use App\Http\Controllers\Api\DocumentFileController;
+use App\Http\Controllers\Api\LicenseController;
 use App\Http\Controllers\Api\MasterDataController;
 use Illuminate\Support\Facades\Route;
+
+// Publik, dan dikecualikan dari gerbang lisensi (lihat EnsureLicenseActive,
+// didaftarkan global di bootstrap/app.php) — status perlu bisa dibaca kapan
+// pun untuk layar blokir, dan apply harus tetap bisa dipanggil tool vendor
+// bahkan saat lisensi sedang tidak aktif, karena itulah cara memperbaikinya.
+Route::get('license-status', [LicenseController::class, 'status']);
+Route::post('license/apply', [LicenseController::class, 'apply']);
 
 // Memancing cookie XSRF-TOKEN sebelum frontend mengirim permintaan tulis.
 Route::get('csrf-cookie', fn () => response()->noContent());
@@ -17,6 +25,7 @@ Route::post('auth/login', [AuthController::class, 'login'])
 // login sebelum siapa pun masuk.
 Route::get('company-settings', [CompanySettingController::class, 'show']);
 Route::get('company-settings/logo', [CompanySettingController::class, 'logo'])->name('company-settings.logo');
+Route::get('company-settings/sidebar-logo', [CompanySettingController::class, 'sidebarLogo'])->name('company-settings.sidebar-logo');
 
 Route::middleware('auth')->group(function () {
     Route::post('auth/logout', [AuthController::class, 'logout']);
