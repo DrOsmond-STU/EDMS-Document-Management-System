@@ -12,8 +12,11 @@ const CLASSIFICATION_LABEL = {
   public: 'Public', internal: 'Internal', restricted: 'Restricted',
   confidential: 'Confidential', secret: 'Secret', top_secret: 'Top Secret',
 }
-const STATUSES = ['draft', 'review', 'approval', 'released', 'obsolete']
-const STATUS_LABEL = { draft: 'Draft', review: 'Review', approval: 'Approval', released: 'Released', obsolete: 'Obsolete' }
+const STATUSES = ['draft', 'review', 'approval', 'released', 'obsolete', 'frozen', 'revoked', 'cancelled']
+const STATUS_LABEL = {
+  draft: 'Draft', review: 'Review', approval: 'Approval', released: 'Released', obsolete: 'Obsolete',
+  frozen: 'Dibekukan', revoked: 'Dicabut', cancelled: 'Dibatalkan',
+}
 
 function CreateDocumentForm({ masterData, onCreated, onCancel }) {
   const [title, setTitle] = useState('')

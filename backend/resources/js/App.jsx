@@ -5,6 +5,7 @@ import ChangePasswordPage from './pages/ChangePasswordPage'
 import DocumentsPage from './pages/DocumentsPage'
 import DocumentDetailPage from './pages/DocumentDetailPage'
 import SettingsPage from './pages/SettingsPage'
+import NumberingSettingsPage from './pages/NumberingSettingsPage'
 import AuditTrailPage from './pages/AuditTrailPage'
 
 function FullScreenMessage({ text }) {
@@ -24,6 +25,7 @@ export default function App() {
       <Route path="/documents" element={<DocumentsPage />} />
       <Route path="/documents/:id" element={<DocumentDetailPage />} />
       <Route path="/settings" element={<SettingsPage />} />
+      <Route path="/settings/numbering" element={<NumberingSettingsPage />} />
       <Route path="/audit-trail" element={<AuditTrailPage />} />
       <Route path="*" element={<Navigate to="/documents" replace />} />
     </Routes>

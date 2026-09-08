@@ -1,4 +1,6 @@
-import { Lock } from 'lucide-react'
+import { useEffect } from 'react'
+import { createPortal } from 'react-dom'
+import { Lock, X } from 'lucide-react'
 
 export function Button({ variant = 'secondary', size = 'md', className = '', ...props }) {
   const variants = {
@@ -56,8 +58,15 @@ const STATUS_COLOR = {
   approval: { bg: '#FCE8D1', text: '#C1650F' },
   released: { bg: '#E5F5EC', text: '#1E8E5A' },
   obsolete: { bg: '#FBE7E6', text: '#B23B3A' },
+  // Status di luar rantai maju resmi (lihat DocumentLifecycle::performAction).
+  frozen: { bg: '#E0F2FE', text: '#0369A1' },
+  revoked: { bg: '#450A0A', text: '#FECACA' },
+  cancelled: { bg: '#E9EEF2', text: '#55606B' },
 }
-const STATUS_LABEL = { draft: 'Draft', review: 'Review', approval: 'Approval', released: 'Released', obsolete: 'Obsolete' }
+const STATUS_LABEL = {
+  draft: 'Draft', review: 'Review', approval: 'Approval', released: 'Released', obsolete: 'Obsolete',
+  frozen: 'Dibekukan', revoked: 'Dicabut', cancelled: 'Dibatalkan',
+}
 
 export function StatusBadge({ status }) {
   const c = STATUS_COLOR[status] || STATUS_COLOR.draft
@@ -114,20 +123,58 @@ const ACTION_COLOR = {
   status_change: { bg: '#EAF3FB', text: '#2A6FB3' },
   password_change: { bg: '#EAF3FB', text: '#2A6FB3' },
   download: { bg: '#EEF2F7', text: '#475569' },
+  view: { bg: '#EEF2F7', text: '#475569' },
   logout: { bg: '#EEF2F7', text: '#475569' },
   delete: { bg: '#FBE7E6', text: '#B23B3A' },
   login_failed: { bg: '#FBE7E6', text: '#B23B3A' },
   account_locked: { bg: '#FBE7E6', text: '#B23B3A' },
+  // Bekukan/cairkan/cabut/batalkan/tandai-digantikan (lihat
+  // DocumentLifecycle::performAction) — warna oranye karena ini
+  // penyimpangan pengecualian dari alur normal, bukan langkah rantai maju.
+  lifecycle_action: { bg: '#FDF1DC', text: '#B9791C' },
 }
 const ACTION_LABEL = {
   create: 'Dibuat', upload: 'Diunggah', login: 'Masuk', update: 'Diperbarui',
   status_change: 'Status Berubah', password_change: 'Ganti Password', download: 'Diunduh',
-  logout: 'Keluar', delete: 'Dihapus', login_failed: 'Gagal Masuk', account_locked: 'Akun Terkunci',
+  view: 'Dilihat', logout: 'Keluar', delete: 'Dihapus', login_failed: 'Gagal Masuk',
+  account_locked: 'Akun Terkunci', lifecycle_action: 'Aksi Siklus Hidup',
 }
 
 export function ActionBadge({ action }) {
   const c = ACTION_COLOR[action] || { bg: '#EEF2F7', text: '#475569' }
   return <BasePill bg={c.bg} text={c.text}>{ACTION_LABEL[action] || action}</BasePill>
+}
+
+/** Dialog modal generik — dipakai untuk konfirmasi hapus & aksi siklus hidup
+ *  yang mewajibkan alasan tertulis, menggantikan window.confirm/prompt bawaan
+ *  browser yang tidak konsisten dengan tampilan aplikasi. */
+export function Modal({ open, onClose, title, children }) {
+  useEffect(() => {
+    if (!open) return
+    function onKey(e) { if (e.key === 'Escape') onClose?.() }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [open, onClose])
+
+  if (!open) return null
+
+  return createPortal(
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" onClick={onClose}>
+      <div
+        className="w-full max-w-md rounded-xl border border-[var(--color-neutral-border)] bg-[var(--color-surface)] p-5 shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <h2 className="text-[14.5px] font-bold">{title}</h2>
+          <button onClick={onClose} className="rounded p-1 text-[var(--color-neutral-medium)] hover:bg-[var(--color-neutral-bg)]" title="Tutup">
+            <X size={15} />
+          </button>
+        </div>
+        {children}
+      </div>
+    </div>,
+    document.body,
+  )
 }
 
 export function StandardChip({ code }) {

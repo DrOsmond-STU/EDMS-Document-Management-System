@@ -81,13 +81,31 @@ class Document extends Model
         return $this->hasOne(DocumentFile::class)->where('is_primary', true);
     }
 
+    /**
+     * Status yang PERNAH resmi dirilis — berkas utamanya wajib PDF (lihat
+     * DocumentLifecycle::assertReadyForRelease) dan karena itu wajib
+     * ditempeli watermark "uncontrolled copy" saat dilihat/diunduh siapa
+     * pun selain Document Controller (lihat DocumentFileController).
+     */
+    public const CONTROLLED_STATUSES = ['released', 'frozen', 'revoked', 'obsolete'];
+
+    public function isControlled(): bool
+    {
+        return in_array($this->status, self::CONTROLLED_STATUSES, true);
+    }
+
     public function getDisplayValidityAttribute(): string
     {
         if ($this->status === 'released' && $this->review_date && $this->review_date->isPast()) {
             return 'kadaluarsa';
         }
 
-        return $this->validity;
+        // $appends berlaku untuk SETIAP instance model ini, termasuk yang
+        // dimuat lewat select kolom terbatas (mis. documentRelations.target
+        // yang sengaja hanya memilih id,code,title,status,validity) — kalau
+        // suatu saat ada pemuatan yang lupa menyertakan validity, jangan
+        // sampai seluruh respons API gagal karena TypeError.
+        return $this->validity ?? '';
     }
 
     public function scopeReleased($query)

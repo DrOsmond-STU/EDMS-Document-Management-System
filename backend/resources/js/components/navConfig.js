@@ -2,7 +2,7 @@ import {
   LayoutDashboard, FolderOpen, FolderTree, KanbanSquare, GitBranch, Archive, Timer,
   ShieldCheck, Scale, AlertTriangle, Search, Sparkles, MessagesSquare, BarChart3,
   Users, Database, Plug, Cog, ClipboardList, ClipboardCheck, ClipboardEdit, Building2,
-  Presentation, Settings,
+  Presentation, Settings, Hash,
 } from 'lucide-react'
 
 // Peta lengkap arsitektur informasi aplikasi (lihat docs/03_DESIGN.md).
@@ -72,6 +72,7 @@ export const NAV_GROUPS = [
       { label: 'Manajemen Pengguna & Hak Akses', path: null, icon: Users },
       { label: 'Master Data', path: null, icon: Database },
       { label: 'Pengaturan Perusahaan', path: '/settings', icon: Settings, perm: 'masterdata.manage' },
+      { label: 'Pengaturan Penomoran Dokumen', path: '/settings/numbering', icon: Hash, perm: 'masterdata.manage' },
       { label: 'Integration & API', path: null, icon: Plug },
       { label: 'System Administration', path: null, icon: Cog },
       { label: 'Audit Trail', path: '/audit-trail', icon: ClipboardList, perm: 'audit.view' },
@@ -79,14 +80,22 @@ export const NAV_GROUPS = [
   },
 ]
 
-/** Cari grup+label item aktif dari pathname saat ini, untuk breadcrumb Topbar. */
+/**
+ * Cari grup+label item aktif dari pathname saat ini, untuk breadcrumb Topbar.
+ * Dicari kecocokan PALING SPESIFIK (path terpanjang), bukan yang pertama
+ * ditemukan — supaya mis. "/settings/numbering" tidak salah tertangkap
+ * oleh entri "/settings" hanya karena urutannya lebih dulu di navConfig.
+ */
 export function findCurrentSection(pathname) {
+  let best = null
   for (const g of NAV_GROUPS) {
     for (const it of g.items) {
       if (!it.path) continue
       const match = pathname === it.path || pathname.startsWith(it.path + '/')
-      if (match) return { group: g.label, label: it.label }
+      if (match && (!best || it.path.length > best.path.length)) {
+        best = { group: g.label, label: it.label, path: it.path }
+      }
     }
   }
-  return {}
+  return best ? { group: best.group, label: best.label } : {}
 }

@@ -6,8 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Models\Document;
 use App\Models\DocumentFile;
 use App\Services\AuditLogger;
+use App\Services\WatermarkService;
+use App\Support\Permissions;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -30,7 +33,7 @@ class DocumentFileController extends Controller
 
     private const MAX_KB = 25600; // 25 MB
 
-    public function __construct(private AuditLogger $audit) {}
+    public function __construct(private AuditLogger $audit, private WatermarkService $watermark) {}
 
     public function store(Request $request, Document $document): JsonResponse
     {
@@ -97,12 +100,25 @@ class DocumentFileController extends Controller
         return response()->json($file->fresh(), 201);
     }
 
+    /**
+     * Unduh berkas ASLI (tanpa watermark). Untuk dokumen terkontrol
+     * (pernah released — lihat Document::isControlled), ini SENGAJA
+     * dibatasi hanya untuk Document Controller: siapa pun yang lain harus
+     * lewat view() yang menempelkan watermark "uncontrolled copy" —
+     * "tidak boleh download langsung" sesuai permintaan.
+     */
     public function download(Request $request, Document $document, DocumentFile $file): StreamedResponse|JsonResponse
     {
         $this->authorize('downloadFile', $document);
 
         if ($file->document_id !== $document->id) {
             return response()->json(['message' => 'Berkas tidak ditemukan pada dokumen ini.'], 404);
+        }
+
+        if ($document->isControlled() && ! $request->user()->hasPermission(Permissions::DOCUMENT_CONTROL)) {
+            return response()->json([
+                'message' => 'Berkas asli dokumen terkontrol hanya bisa diunduh Document Controller. Gunakan "Lihat Dokumen" untuk salinan berwatermark.',
+            ], 403);
         }
 
         if (! $file->exists()) {
@@ -117,6 +133,52 @@ class DocumentFileController extends Controller
             $file->original_name,
             ['Content-Type' => $file->mime_type],
         );
+    }
+
+    /**
+     * Pratinjau untuk dilihat di layar (dan dicetak/print-to-PDF). Untuk
+     * dokumen terkontrol, berkas ditempeli watermark "UNCONTROLLED COPY"
+     * SUNGGUHAN ke dalam berkasnya (bukan lapisan CSS) sebelum dikirim,
+     * disposisi "inline" (bukan attachment) supaya terbuka di penampil
+     * bawaan browser, bukan langsung terunduh.
+     */
+    public function view(Request $request, Document $document, DocumentFile $file): Response|JsonResponse
+    {
+        $this->authorize('downloadFile', $document);
+
+        if ($file->document_id !== $document->id) {
+            return response()->json(['message' => 'Berkas tidak ditemukan pada dokumen ini.'], 404);
+        }
+        if (! $file->exists()) {
+            return response()->json(['message' => 'Berkas tidak ditemukan di penyimpanan.'], 404);
+        }
+
+        $absolutePath = Storage::disk($file->disk)->path($file->stored_path);
+
+        if (! $document->isControlled()) {
+            // Belum pernah dirilis — dokumen kerja, bukan salinan terkontrol.
+            // Tampilkan apa adanya, tanpa watermark.
+            return response(Storage::disk($file->disk)->get($file->stored_path))
+                ->header('Content-Type', $file->mime_type)
+                ->header('Content-Disposition', 'inline; filename="'.$file->original_name.'"')
+                ->header('Cache-Control', 'no-store, private');
+        }
+
+        if (! $this->watermark->isWatermarkable($file->mime_type)) {
+            return response()->json([
+                'message' => 'Pratinjau berwatermark tidak tersedia untuk jenis berkas ini. Hubungi Document Controller untuk salinan resmi.',
+            ], 415);
+        }
+
+        $result = $this->watermark->watermark($absolutePath, $file->mime_type);
+
+        $this->audit->log($request->user(), 'view', 'DocumentFile', (string) $file->id, $document->code,
+            "Melihat berkas \"{$file->original_name}\" dari {$document->code} (uncontrolled copy)");
+
+        return response($result['content'])
+            ->header('Content-Type', $result['mime'])
+            ->header('Content-Disposition', 'inline; filename="uncontrolled-copy-'.$file->original_name.'"')
+            ->header('Cache-Control', 'no-store, private');
     }
 
     /** Memeriksa berkas di disk masih identik dengan saat diunggah. */

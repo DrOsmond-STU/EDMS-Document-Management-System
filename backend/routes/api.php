@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\DocumentController;
 use App\Http\Controllers\Api\DocumentFileController;
 use App\Http\Controllers\Api\LicenseController;
 use App\Http\Controllers\Api\MasterDataController;
+use App\Http\Controllers\Api\NumberingSettingController;
 use Illuminate\Support\Facades\Route;
 
 // Publik, dan dikecualikan dari gerbang lisensi (lihat EnsureLicenseActive,
@@ -46,12 +47,18 @@ Route::middleware('auth')->group(function () {
         Route::post('documents', [DocumentController::class, 'store']);
         Route::get('documents/{document}', [DocumentController::class, 'show']);
         Route::patch('documents/{document}', [DocumentController::class, 'update']);
+        Route::delete('documents/{document}', [DocumentController::class, 'destroy']);
         Route::post('documents/{document}/transition', [DocumentController::class, 'transition']);
+        Route::post('documents/{document}/lifecycle-action', [DocumentController::class, 'lifecycleAction']);
 
         Route::post('documents/{document}/files', [DocumentFileController::class, 'store']);
         Route::get('documents/{document}/files/{file}/download', [DocumentFileController::class, 'download']);
+        Route::get('documents/{document}/files/{file}/view', [DocumentFileController::class, 'view']);
         Route::get('documents/{document}/files/{file}/verify', [DocumentFileController::class, 'verify']);
         Route::delete('documents/{document}/files/{file}', [DocumentFileController::class, 'destroy']);
+
+        Route::get('numbering-settings', [NumberingSettingController::class, 'show']);
+        Route::post('numbering-settings', [NumberingSettingController::class, 'update']);
 
         Route::get('audit-logs', [AuditLogController::class, 'index']);
         Route::get('audit-logs/meta', [AuditLogController::class, 'meta']);

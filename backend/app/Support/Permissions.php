@@ -122,6 +122,19 @@ final class Permissions
         return count(array_intersect($roleIds, $allowed)) > 0;
     }
 
+    /**
+     * Bekukan/cairkan/cabut/batalkan/tandai-digantikan — sengaja SAMA
+     * untuk semua aksi (bukan per tahap seperti canTransitionFrom) karena
+     * ini tindakan pengecualian/darurat di luar alur normal siapa-
+     * menyetujui-tahap-apa, bukan bagian rantai persetujuan itu sendiri.
+     *
+     * @param list<string> $roleIds
+     */
+    public static function canPerformLifecycleActions(array $roleIds): bool
+    {
+        return in_array('controller', $roleIds, true) || in_array('sysadmin', $roleIds, true);
+    }
+
     /** @return list<string> */
     public static function forRoles(array $roleIds): array
     {

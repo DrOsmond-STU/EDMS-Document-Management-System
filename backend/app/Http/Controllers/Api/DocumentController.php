@@ -68,17 +68,24 @@ class DocumentController extends Controller
         $document->load([
             'orgFunction:id,name', 'owner:id,name', 'creator:id,name',
             'standards:code,name', 'revisions.editor:id,name',
-            'files.uploader:id,name', 'documentRelations.target:id,code,title,status',
+            'files.uploader:id,name', 'documentRelations.target:id,code,title,status,validity',
         ]);
+
+        $roleIds = $request->user()->roleIds();
 
         return response()->json([
             'document' => $document,
             'allowed_next' => $this->lifecycle->allowedNext($document->status),
+            'available_lifecycle_actions' => Permissions::canPerformLifecycleActions($roleIds)
+                ? $this->lifecycle->availableActions($document->status)
+                : [],
             'can' => [
                 'update' => $request->user()->can('update', $document),
                 'transition' => $request->user()->can('transition', $document),
                 'upload_file' => $request->user()->can('uploadFile', $document),
                 'delete' => $request->user()->can('delete', $document),
+                'lifecycle_action' => Permissions::canPerformLifecycleActions($roleIds),
+                'download_master' => $request->user()->hasPermission(Permissions::DOCUMENT_CONTROL),
             ],
         ]);
     }
@@ -189,6 +196,70 @@ class DocumentController extends Controller
         return response()->json([
             'document' => $document->fresh(),
             'allowed_next' => $this->lifecycle->allowedNext($document->status),
+        ]);
+    }
+
+    /**
+     * Hanya dokumen berstatus Draft yang boleh dihapus — sekadar
+     * membereskan salah input sebelum masuk alur resmi. Dokumen yang sudah
+     * berjalan (review ke atas) tidak boleh dihapus sama sekali; harus
+     * lewat Batalkan/Cabut (lifecycleAction) supaya tetap ada jejaknya.
+     */
+    public function destroy(Request $request, Document $document): JsonResponse
+    {
+        $this->authorize('delete', $document);
+
+        if ($document->status !== 'draft') {
+            return response()->json([
+                'message' => 'Hanya dokumen berstatus Draft yang bisa dihapus. Gunakan Batalkan/Cabut untuk dokumen yang sudah berjalan.',
+            ], 422);
+        }
+
+        $user = $request->user();
+        $this->audit->log($user, 'delete', 'Document', (string) $document->id, $document->code,
+            "Menghapus dokumen \"{$document->title}\" ({$document->code})");
+
+        $document->delete();
+
+        return response()->json(['message' => 'Dokumen dihapus.']);
+    }
+
+    /**
+     * Aksi siklus hidup DI LUAR rantai maju otomatis (transition() di
+     * atas): bekukan, cairkan, cabut, batalkan, dan tandai digantikan.
+     * Wewenangnya sengaja sama untuk semua aksi (Document Controller +
+     * sysadmin) — bukan per tahap seperti transition() — karena
+     * tindakan-tindakan ini bersifat pengecualian/darurat, bukan bagian
+     * alur normal siapa-menyetujui-apa.
+     */
+    public function lifecycleAction(Request $request, Document $document): JsonResponse
+    {
+        $user = $request->user();
+        if (! Permissions::canPerformLifecycleActions($user->roleIds())) {
+            return response()->json(['message' => 'Hanya Document Controller atau System Administrator yang berwenang melakukan ini.'], 403);
+        }
+
+        $data = $request->validate([
+            'action' => ['required', Rule::in(['freeze', 'unfreeze', 'revoke', 'cancel', 'supersede'])],
+            'reason' => ['required', 'string', 'min:10', 'max:1000'],
+            'replacement_code' => ['required_if:action,supersede', 'nullable', 'string', 'exists:documents,code'],
+        ], [
+            'reason.min' => 'Alasan wajib diisi, minimal 10 karakter — ini akan tercatat permanen di Audit Trail.',
+            'replacement_code.required_if' => 'Kode dokumen pengganti wajib diisi untuk menandai dokumen ini digantikan.',
+            'replacement_code.exists' => 'Kode dokumen pengganti tidak ditemukan.',
+        ]);
+
+        try {
+            $document = $this->lifecycle->performAction($document, $data['action'], $user, $data['reason'], $data['replacement_code'] ?? null);
+        } catch (InvalidArgumentException $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        }
+
+        $document->load(['documentRelations.target:id,code,title,status,validity']);
+
+        return response()->json([
+            'document' => $document,
+            'available_lifecycle_actions' => $this->lifecycle->availableActions($document->status),
         ]);
     }
 

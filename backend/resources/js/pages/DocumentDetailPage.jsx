@@ -1,9 +1,29 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
-import { ArrowLeft, Download, ShieldCheck, Trash2, Upload } from 'lucide-react'
+import { Link, useNavigate, useParams } from 'react-router-dom'
+import {
+  ArrowLeft, ArrowLeftRight, Ban, Download, Eye, ShieldCheck, Snowflake, Sun,
+  Trash2, Upload, XCircle,
+} from 'lucide-react'
 import { api, ApiError } from '../api'
 import { Layout } from '../components/Layout'
-import { Button, Card, ClassificationBadge, StatusBadge, ValidityBadge } from '../components/ui'
+import { Button, Card, ClassificationBadge, Field, inputClass, Modal, StatusBadge, ValidityBadge } from '../components/ui'
+
+// Status yang pernah resmi dirilis — cermin dari Document::CONTROLLED_STATUSES
+// di backend. Berkas dokumen berstatus ini hanya bisa dilihat berwatermark
+// "uncontrolled copy"; unduhan berkas asli dibatasi untuk Document Controller
+// (lihat can.download_master, ditegakkan ulang di server lewat
+// DocumentFileController::download()/view()).
+const CONTROLLED_STATUSES = ['released', 'frozen', 'revoked', 'obsolete']
+
+const ACTION_META = {
+  freeze: { label: 'Bekukan', icon: Snowflake, variant: 'secondary' },
+  unfreeze: { label: 'Cairkan', icon: Sun, variant: 'secondary' },
+  revoke: { label: 'Cabut', icon: Ban, variant: 'danger' },
+  cancel: { label: 'Batalkan', icon: XCircle, variant: 'danger' },
+  supersede: { label: 'Tandai Digantikan', icon: ArrowLeftRight, variant: 'secondary' },
+}
+
+const RELATION_LABEL = { superseded_by: 'Digantikan oleh', supersedes: 'Menggantikan' }
 
 function UploadForm({ documentId, onUploaded }) {
   const [file, setFile] = useState(null)
@@ -45,9 +65,17 @@ function UploadForm({ documentId, onUploaded }) {
   )
 }
 
-function FileRow({ documentId, file, canManage, onChanged }) {
+function FileRow({ documentId, file, canManage, canRawDownload, isControlled, onChanged }) {
   const [busy, setBusy] = useState(false)
   const [verified, setVerified] = useState(null)
+
+  function handleView() {
+    // Dibuka di tab baru: browser menampilkan lewat penampil bawaannya
+    // (PDF/gambar), dan cetak/print-to-PDF dari sana otomatis ikut membawa
+    // watermark "UNCONTROLLED COPY" karena sudah ditempel sungguhan ke
+    // berkasnya di server (lihat WatermarkService) — bukan lapisan CSS.
+    window.open(`/api/documents/${documentId}/files/${file.id}/view`, '_blank', 'noopener')
+  }
 
   async function handleDownload() {
     const res = await fetch(`/api/documents/${documentId}/files/${file.id}/download`, { credentials: 'same-origin' })
@@ -97,18 +125,93 @@ function FileRow({ documentId, file, canManage, onChanged }) {
       </div>
       <div className="flex shrink-0 gap-1">
         <Button variant="ghost" size="sm" onClick={handleVerify} disabled={busy} title="Verifikasi checksum"><ShieldCheck size={13} /></Button>
-        <Button variant="ghost" size="sm" onClick={handleDownload} title="Unduh"><Download size={13} /></Button>
+        <Button variant="ghost" size="sm" onClick={handleView} title={isControlled ? 'Lihat dengan watermark uncontrolled copy' : 'Lihat dokumen'}>
+          <Eye size={13} />
+        </Button>
+        {(!isControlled || canRawDownload) && (
+          <Button variant="ghost" size="sm" onClick={handleDownload} title="Unduh berkas asli"><Download size={13} /></Button>
+        )}
         {canManage && <Button variant="ghost" size="sm" onClick={handleDelete} disabled={busy} title="Hapus"><Trash2 size={13} /></Button>}
       </div>
     </div>
   )
 }
 
+/** Modal alasan wajib untuk aksi siklus hidup pengecualian (bekukan/
+ *  cairkan/cabut/batalkan/tandai-digantikan) — semua tercatat permanen ke
+ *  Audit Trail (lihat DocumentLifecycle::performAction). */
+function LifecycleActionModal({ action, onClose, onSubmitted }) {
+  const [reason, setReason] = useState('')
+  const [replacementCode, setReplacementCode] = useState('')
+  const [error, setError] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+
+  if (!action) return null
+  const meta = ACTION_META[action]
+
+  async function handleSubmit(e) {
+    e.preventDefault()
+    setSubmitting(true)
+    setError('')
+    try {
+      await onSubmitted(action, reason, action === 'supersede' ? replacementCode : undefined)
+      setReason('')
+      setReplacementCode('')
+    } catch (err) {
+      setError(err instanceof ApiError ? (err.body?.errors?.reason?.[0] || err.body?.errors?.replacement_code?.[0] || err.message) : 'Gagal menyimpan.')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  return (
+    <Modal open={Boolean(action)} onClose={onClose} title={`${meta.label} Dokumen`}>
+      <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+        <p className="text-[12px] text-[var(--color-neutral-medium)]">
+          Tindakan ini di luar alur persetujuan normal dan wajib disertai alasan tertulis — akan
+          tercatat permanen di Audit Trail dan tidak bisa diubah/dihapus kemudian.
+        </p>
+        {action === 'supersede' && (
+          <Field label="Kode Dokumen Pengganti" hint="Kode dokumen yang menggantikan ini, mis. SOP-QA-002">
+            <input
+              className={`${inputClass} font-mono`}
+              value={replacementCode}
+              onChange={(e) => setReplacementCode(e.target.value.toUpperCase())}
+              required
+            />
+          </Field>
+        )}
+        <Field label="Alasan" hint="Minimal 10 karakter">
+          <textarea
+            className={`${inputClass} min-h-[80px] resize-y`}
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            minLength={10}
+            required
+          />
+        </Field>
+        {error && <div className="rounded-md border border-[#f3c9c8] bg-[#fbe7e6] px-3 py-2 text-[12px] text-[#7d2c2b]">{error}</div>}
+        <div className="flex justify-end gap-2">
+          <Button type="button" variant="ghost" onClick={onClose}>Batal</Button>
+          <Button type="submit" variant={meta.variant} disabled={submitting || reason.trim().length < 10}>
+            {submitting ? 'Menyimpan…' : `Konfirmasi ${meta.label}`}
+          </Button>
+        </div>
+      </form>
+    </Modal>
+  )
+}
+
 export default function DocumentDetailPage() {
   const { id } = useParams()
+  const navigate = useNavigate()
   const [data, setData] = useState(null)
   const [error, setError] = useState('')
   const [transitioning, setTransitioning] = useState(false)
+  const [lifecycleModalAction, setLifecycleModalAction] = useState(null)
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState('')
 
   const load = useCallback(async () => {
     try {
@@ -133,10 +236,33 @@ export default function DocumentDetailPage() {
     }
   }
 
+  async function handleLifecycleAction(action, reason, replacementCode) {
+    await api(`documents/${id}/lifecycle-action`, {
+      method: 'POST',
+      body: { action, reason, replacement_code: replacementCode || undefined },
+    })
+    setLifecycleModalAction(null)
+    await load()
+  }
+
+  async function handleDelete() {
+    setDeleting(true)
+    setDeleteError('')
+    try {
+      await api(`documents/${id}`, { method: 'DELETE' })
+      navigate('/documents')
+    } catch (err) {
+      setDeleteError(err instanceof ApiError ? err.message : 'Gagal menghapus dokumen.')
+      setDeleting(false)
+    }
+  }
+
   if (error) return <Layout><div className="mx-auto max-w-3xl text-[13px] text-[var(--color-brand-danger)]">{error}</div></Layout>
   if (!data) return <Layout><div className="mx-auto max-w-3xl text-[13px] text-[var(--color-neutral-medium)]">Memuat…</div></Layout>
 
-  const { document: doc, allowed_next, can } = data
+  const { document: doc, allowed_next, available_lifecycle_actions, can } = data
+  const isControlled = CONTROLLED_STATUSES.includes(doc.status)
+  const canDelete = can.delete && doc.status === 'draft'
 
   return (
     <Layout>
@@ -170,8 +296,23 @@ export default function DocumentDetailPage() {
           <div><dt className="text-[10.5px] uppercase text-[var(--color-neutral-medium)]">Tinjau ulang</dt><dd>{doc.review_date?.slice(0, 10) ?? '—'}</dd></div>
         </dl>
 
+        {doc.document_relations?.length > 0 && (
+          <div className="mt-4 flex flex-col gap-1.5 border-t border-[var(--color-neutral-border)] pt-4">
+            {doc.document_relations.map((rel) => (
+              <div key={rel.id} className="flex flex-wrap items-center gap-1.5 text-[12px]">
+                <span className="text-[var(--color-neutral-medium)]">{RELATION_LABEL[rel.type] || rel.type}:</span>
+                <Link to={`/documents/${rel.target.id}`} className="font-mono font-semibold text-[var(--color-brand-primary)] hover:underline">
+                  {rel.target.code}
+                </Link>
+                <span className="truncate text-[var(--color-neutral-medium)]">{rel.target.title}</span>
+                <StatusBadge status={rel.target.status} />
+              </div>
+            ))}
+          </div>
+        )}
+
         {can.transition && allowed_next.length > 0 && (
-          <div className="mt-4 flex gap-2 border-t border-[var(--color-neutral-border)] pt-4">
+          <div className="mt-4 flex flex-wrap gap-2 border-t border-[var(--color-neutral-border)] pt-4">
             {allowed_next.map((s) => (
               <Button key={s} variant="primary" size="sm" disabled={transitioning} onClick={() => handleTransition(s)}>
                 Dorong ke: {s}
@@ -179,13 +320,52 @@ export default function DocumentDetailPage() {
             ))}
           </div>
         )}
+
+        {can.lifecycle_action && available_lifecycle_actions?.length > 0 && (
+          <div className="mt-4 flex flex-wrap gap-2 border-t border-[var(--color-neutral-border)] pt-4">
+            {available_lifecycle_actions.map((action) => {
+              const meta = ACTION_META[action]
+              if (!meta) return null
+              const Icon = meta.icon
+              return (
+                <Button key={action} variant={meta.variant} size="sm" onClick={() => setLifecycleModalAction(action)}>
+                  <Icon size={12} /> {meta.label}
+                </Button>
+              )
+            })}
+          </div>
+        )}
+
+        {canDelete && (
+          <div className="mt-4 flex justify-end border-t border-[var(--color-neutral-border)] pt-4">
+            <Button variant="danger" size="sm" onClick={() => setDeleteModalOpen(true)}>
+              <Trash2 size={12} /> Hapus Dokumen
+            </Button>
+          </div>
+        )}
       </Card>
 
       <Card>
         <h2 className="mb-3 text-[13.5px] font-bold">Berkas Dokumen</h2>
+        {isControlled && (
+          <p className="mb-3 rounded-md border border-[var(--color-neutral-border)] bg-[var(--color-neutral-bg-soft)] px-3 py-2 text-[11.5px] text-[var(--color-neutral-medium)]">
+            Dokumen ini terkontrol. "Lihat" menampilkan salinan berwatermark <em>UNCONTROLLED COPY</em>
+            {' '}(termasuk saat dicetak/print-to-PDF); unduhan berkas asli hanya untuk Document Controller.
+          </p>
+        )}
         <div className="flex flex-col gap-2">
           {doc.files?.length ? (
-            doc.files.map((f) => <FileRow key={f.id} documentId={doc.id} file={f} canManage={can.upload_file} onChanged={load} />)
+            doc.files.map((f) => (
+              <FileRow
+                key={f.id}
+                documentId={doc.id}
+                file={f}
+                canManage={can.upload_file}
+                canRawDownload={can.download_master}
+                isControlled={isControlled}
+                onChanged={load}
+              />
+            ))
           ) : (
             <p className="text-[12.5px] italic text-[var(--color-neutral-soft)]">Belum ada berkas.</p>
           )}
@@ -197,6 +377,29 @@ export default function DocumentDetailPage() {
         )}
       </Card>
     </div>
+
+    <LifecycleActionModal
+      action={lifecycleModalAction}
+      onClose={() => setLifecycleModalAction(null)}
+      onSubmitted={handleLifecycleAction}
+    />
+
+    <Modal open={deleteModalOpen} onClose={() => setDeleteModalOpen(false)} title="Hapus Dokumen">
+      <div className="flex flex-col gap-3">
+        <p className="text-[12.5px] text-[var(--color-neutral-medium)]">
+          Hapus dokumen draft <span className="font-mono font-semibold text-[var(--color-neutral-dark)]">{doc.code}</span> — "{doc.title}"?
+          Gunakan ini hanya untuk membereskan salah input; dokumen yang sudah berjalan lewat
+          Review/Approval tidak bisa dihapus dan harus memakai Batalkan/Cabut.
+        </p>
+        {deleteError && <div className="rounded-md border border-[#f3c9c8] bg-[#fbe7e6] px-3 py-2 text-[12px] text-[#7d2c2b]">{deleteError}</div>}
+        <div className="flex justify-end gap-2">
+          <Button variant="ghost" onClick={() => setDeleteModalOpen(false)}>Batal</Button>
+          <Button variant="danger" disabled={deleting} onClick={handleDelete}>
+            {deleting ? 'Menghapus…' : 'Ya, Hapus'}
+          </Button>
+        </div>
+      </div>
+    </Modal>
     </Layout>
   )
 }
