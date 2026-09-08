@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\AuditLogController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CompanySettingController;
 use App\Http\Controllers\Api\DocumentController;
@@ -51,5 +52,8 @@ Route::middleware('auth')->group(function () {
         Route::get('documents/{document}/files/{file}/download', [DocumentFileController::class, 'download']);
         Route::get('documents/{document}/files/{file}/verify', [DocumentFileController::class, 'verify']);
         Route::delete('documents/{document}/files/{file}', [DocumentFileController::class, 'destroy']);
+
+        Route::get('audit-logs', [AuditLogController::class, 'index']);
+        Route::get('audit-logs/meta', [AuditLogController::class, 'meta']);
     });
 });

@@ -74,7 +74,7 @@ export const NAV_GROUPS = [
       { label: 'Pengaturan Perusahaan', path: '/settings', icon: Settings, perm: 'masterdata.manage' },
       { label: 'Integration & API', path: null, icon: Plug },
       { label: 'System Administration', path: null, icon: Cog },
-      { label: 'Audit Trail', path: null, icon: ClipboardList },
+      { label: 'Audit Trail', path: '/audit-trail', icon: ClipboardList, perm: 'audit.view' },
     ],
   },
 ]

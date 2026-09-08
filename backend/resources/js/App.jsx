@@ -5,6 +5,7 @@ import ChangePasswordPage from './pages/ChangePasswordPage'
 import DocumentsPage from './pages/DocumentsPage'
 import DocumentDetailPage from './pages/DocumentDetailPage'
 import SettingsPage from './pages/SettingsPage'
+import AuditTrailPage from './pages/AuditTrailPage'
 
 function FullScreenMessage({ text }) {
   return <div className="flex min-h-screen w-full items-center justify-center text-[13px] text-[var(--color-neutral-medium)]">{text}</div>
@@ -23,6 +24,7 @@ export default function App() {
       <Route path="/documents" element={<DocumentsPage />} />
       <Route path="/documents/:id" element={<DocumentDetailPage />} />
       <Route path="/settings" element={<SettingsPage />} />
+      <Route path="/audit-trail" element={<AuditTrailPage />} />
       <Route path="*" element={<Navigate to="/documents" replace />} />
     </Routes>
   )

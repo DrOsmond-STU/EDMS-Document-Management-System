@@ -37,7 +37,7 @@ export function Field({ label, children, hint }) {
 export const inputClass =
   'w-full rounded-md border border-[var(--color-neutral-border)] bg-white px-2.5 py-2 text-[13px] outline-none transition-colors placeholder:text-[var(--color-neutral-soft)] focus:border-[var(--color-brand-primary)] focus:ring-2 focus:ring-[var(--color-brand-primary)]/20'
 
-function BasePill({ bg, text, children }) {
+export function BasePill({ bg, text, children }) {
   return (
     <span
       className="inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2.5 py-0.5 text-[10.5px] font-semibold"
@@ -99,6 +99,35 @@ export function ClassificationBadge({ level }) {
       {CLASSIFICATION_LABEL[level] || level}
     </BasePill>
   )
+}
+
+// Warna aksi audit — hijau untuk yang membangun/menambah, biru untuk
+// perubahan, merah untuk yang menghapus/menandakan masalah keamanan,
+// ungu untuk sesi. Daftar ini mengikuti nilai action nyata yang benar-benar
+// ditulis AuditLogger di seluruh aplikasi (lihat App\Services\AuditLogger
+// pemanggilnya) — bukan daftar yang ditebak.
+const ACTION_COLOR = {
+  create: { bg: '#E5F5EC', text: '#1E8E5A' },
+  upload: { bg: '#E5F5EC', text: '#1E8E5A' },
+  login: { bg: '#EFE8FB', text: '#6B3FA0' },
+  update: { bg: '#EAF3FB', text: '#2A6FB3' },
+  status_change: { bg: '#EAF3FB', text: '#2A6FB3' },
+  password_change: { bg: '#EAF3FB', text: '#2A6FB3' },
+  download: { bg: '#EEF2F7', text: '#475569' },
+  logout: { bg: '#EEF2F7', text: '#475569' },
+  delete: { bg: '#FBE7E6', text: '#B23B3A' },
+  login_failed: { bg: '#FBE7E6', text: '#B23B3A' },
+  account_locked: { bg: '#FBE7E6', text: '#B23B3A' },
+}
+const ACTION_LABEL = {
+  create: 'Dibuat', upload: 'Diunggah', login: 'Masuk', update: 'Diperbarui',
+  status_change: 'Status Berubah', password_change: 'Ganti Password', download: 'Diunduh',
+  logout: 'Keluar', delete: 'Dihapus', login_failed: 'Gagal Masuk', account_locked: 'Akun Terkunci',
+}
+
+export function ActionBadge({ action }) {
+  const c = ACTION_COLOR[action] || { bg: '#EEF2F7', text: '#475569' }
+  return <BasePill bg={c.bg} text={c.text}>{ACTION_LABEL[action] || action}</BasePill>
 }
 
 export function StandardChip({ code }) {
