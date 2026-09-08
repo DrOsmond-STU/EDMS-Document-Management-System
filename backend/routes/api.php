@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\CompanySettingController;
 use App\Http\Controllers\Api\DocumentController;
 use App\Http\Controllers\Api\DocumentFileController;
 use App\Http\Controllers\Api\MasterDataController;
@@ -11,6 +12,11 @@ Route::get('csrf-cookie', fn () => response()->noContent());
 
 Route::post('auth/login', [AuthController::class, 'login'])
     ->middleware('throttle:10,1');
+
+// Publik (tanpa sesi) — nama & logo perusahaan wajib tampil di halaman
+// login sebelum siapa pun masuk.
+Route::get('company-settings', [CompanySettingController::class, 'show']);
+Route::get('company-settings/logo', [CompanySettingController::class, 'logo'])->name('company-settings.logo');
 
 Route::middleware('auth')->group(function () {
     Route::post('auth/logout', [AuthController::class, 'logout']);
@@ -24,6 +30,8 @@ Route::middleware('auth')->group(function () {
 
     Route::middleware('password.changed')->group(function () {
         Route::get('master-data', [MasterDataController::class, 'index']);
+        Route::post('company-settings', [CompanySettingController::class, 'update']);
+
         Route::get('documents', [DocumentController::class, 'index']);
         Route::post('documents', [DocumentController::class, 'store']);
         Route::get('documents/{document}', [DocumentController::class, 'show']);

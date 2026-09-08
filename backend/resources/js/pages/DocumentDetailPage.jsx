@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { ArrowLeft, Download, ShieldCheck, Trash2, Upload } from 'lucide-react'
 import { api, ApiError } from '../api'
+import { Layout } from '../components/Layout'
 import { Button, Card, StatusBadge } from '../components/ui'
 
 function UploadForm({ documentId, onUploaded }) {
@@ -132,13 +133,14 @@ export default function DocumentDetailPage() {
     }
   }
 
-  if (error) return <div className="mx-auto max-w-3xl px-4 py-8 text-[13px] text-[var(--color-brand-danger)]">{error}</div>
-  if (!data) return <div className="mx-auto max-w-3xl px-4 py-8 text-[13px] text-[var(--color-neutral-medium)]">Memuat…</div>
+  if (error) return <Layout><div className="mx-auto max-w-3xl text-[13px] text-[var(--color-brand-danger)]">{error}</div></Layout>
+  if (!data) return <Layout><div className="mx-auto max-w-3xl text-[13px] text-[var(--color-neutral-medium)]">Memuat…</div></Layout>
 
   const { document: doc, allowed_next, can } = data
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-8">
+    <Layout>
+    <div className="mx-auto max-w-3xl">
       <Link to="/documents" className="mb-4 inline-flex items-center gap-1 text-[12.5px] text-[var(--color-brand-primary)] hover:underline">
         <ArrowLeft size={13} /> Kembali ke Register
       </Link>
@@ -192,5 +194,6 @@ export default function DocumentDetailPage() {
         )}
       </Card>
     </div>
+    </Layout>
   )
 }

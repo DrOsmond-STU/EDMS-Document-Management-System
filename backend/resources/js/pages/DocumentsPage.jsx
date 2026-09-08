@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { FileText, Plus } from 'lucide-react'
-import { Logo } from '../components/Logo'
+import { Layout } from '../components/Layout'
 import { api, ApiError } from '../api'
 import { useAuth } from '../AuthContext'
 import { Button, Card, Field, StatusBadge, inputClass } from '../components/ui'
@@ -78,7 +78,7 @@ function CreateDocumentForm({ masterData, onCreated, onCancel }) {
 }
 
 export default function DocumentsPage() {
-  const { user, hasPermission, logout } = useAuth()
+  const { hasPermission } = useAuth()
   const [documents, setDocuments] = useState(null)
   const [masterData, setMasterData] = useState(null)
   const [showForm, setShowForm] = useState(false)
@@ -99,22 +99,20 @@ export default function DocumentsPage() {
   const canCreate = hasPermission('document.draft') || hasPermission('document.control')
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8">
+    <Layout>
+      <div className="mx-auto max-w-5xl">
       <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
         <div>
-          <Logo size={30} />
-          <p className="mt-2 text-[12.5px] text-[var(--color-neutral-medium)]">
-            Register Dokumen · {user?.name} · {user?.roles?.join(', ')}
+          <h1 className="text-[20px] font-bold tracking-tight text-[var(--color-neutral-dark)]">Register Dokumen</h1>
+          <p className="mt-0.5 text-[12.5px] text-[var(--color-neutral-medium)]">
+            Draft → Review → Approval → Released → Obsolete
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          {canCreate && (
-            <Button variant="primary" onClick={() => setShowForm((s) => !s)}>
-              <Plus size={14} /> Dokumen Baru
-            </Button>
-          )}
-          <Button variant="ghost" onClick={logout}>Keluar</Button>
-        </div>
+        {canCreate && (
+          <Button variant="primary" onClick={() => setShowForm((s) => !s)}>
+            <Plus size={14} /> Dokumen Baru
+          </Button>
+        )}
       </div>
 
       {showForm && masterData && (
@@ -162,6 +160,7 @@ export default function DocumentsPage() {
           </table>
         </div>
       )}
-    </div>
+      </div>
+    </Layout>
   )
 }

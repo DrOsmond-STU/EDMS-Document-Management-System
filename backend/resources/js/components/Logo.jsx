@@ -19,7 +19,26 @@ export function LogoMark({ size = 40 }) {
   )
 }
 
+import { useCompany } from '../CompanyContext'
+
+// Bila perusahaan sudah mengunggah logo asli lewat Pengaturan Perusahaan,
+// itu yang ditampilkan (dianggap satu lockup lengkap: gambar + nama sudah
+// menyatu). Sebelum ada logo yang diunggah, dipakai wordmark "DoGO" bawaan
+// sebagai placeholder produk — bukan logo perusahaan yang sesungguhnya.
 export function Logo({ size = 36, showTagline = false }) {
+  const { name, logo_url: logoUrl } = useCompany()
+
+  if (logoUrl) {
+    return (
+      <div className="flex items-center gap-2.5">
+        <img src={logoUrl} alt={name} style={{ height: size * 1.15, maxWidth: size * 4.5 }} className="object-contain" />
+        {showTagline && (
+          <p className="max-w-[220px] text-[11px] leading-snug text-[var(--color-neutral-medium)]">{name}</p>
+        )}
+      </div>
+    )
+  }
+
   return (
     <div className="flex items-center gap-2.5">
       <LogoMark size={size} />
