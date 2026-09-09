@@ -45,6 +45,12 @@ Route::middleware('auth')->group(function () {
 
     Route::middleware('password.changed')->group(function () {
         Route::get('master-data', [MasterDataController::class, 'index']);
+        Route::get('master-data/org-functions', [MasterDataController::class, 'functions']);
+        Route::post('master-data/org-functions', [MasterDataController::class, 'storeFunction']);
+        Route::patch('master-data/org-functions/{orgFunction}', [MasterDataController::class, 'updateFunction']);
+        Route::get('master-data/standards', [MasterDataController::class, 'standards']);
+        Route::post('master-data/standards', [MasterDataController::class, 'storeStandard']);
+        Route::patch('master-data/standards/{standard}', [MasterDataController::class, 'updateStandard']);
         Route::post('company-settings', [CompanySettingController::class, 'update']);
 
         Route::get('dashboard', [DashboardController::class, 'index']);

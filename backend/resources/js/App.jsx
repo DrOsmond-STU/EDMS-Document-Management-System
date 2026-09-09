@@ -9,6 +9,7 @@ import SettingsPage from './pages/SettingsPage'
 import NumberingSettingsPage from './pages/NumberingSettingsPage'
 import AuditTrailPage from './pages/AuditTrailPage'
 import UsersPage from './pages/UsersPage'
+import MasterDataPage from './pages/MasterDataPage'
 import ApprovalBoardPage from './pages/ApprovalBoardPage'
 import IntegrationsPage from './pages/IntegrationsPage'
 
@@ -33,6 +34,7 @@ export default function App() {
       <Route path="/settings/numbering" element={<NumberingSettingsPage />} />
       <Route path="/audit-trail" element={<AuditTrailPage />} />
       <Route path="/users" element={<UsersPage />} />
+      <Route path="/master-data" element={<MasterDataPage />} />
       <Route path="/approval-board" element={<ApprovalBoardPage />} />
       <Route path="/integrations" element={<IntegrationsPage />} />
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
