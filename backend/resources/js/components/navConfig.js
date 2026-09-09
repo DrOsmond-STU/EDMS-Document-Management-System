@@ -40,7 +40,7 @@ export const NAV_GROUPS = [
   {
     label: 'Governance & Compliance',
     items: [
-      { label: 'Compliance Matrix', path: null, icon: ShieldCheck },
+      { label: 'Compliance Matrix', path: '/compliance-matrix', icon: ShieldCheck, perm: 'reporting.view' },
       { label: 'Legal Register', path: null, icon: Scale },
       { label: 'Register Risiko', path: null, icon: AlertTriangle },
     ],
