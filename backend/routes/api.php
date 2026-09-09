@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\ApprovalBoardController;
 use App\Http\Controllers\Api\AuditLogController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CompanySettingController;
+use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\DocumentController;
 use App\Http\Controllers\Api\DocumentFileController;
 use App\Http\Controllers\Api\IntegrationSettingController;
@@ -45,6 +46,8 @@ Route::middleware('auth')->group(function () {
     Route::middleware('password.changed')->group(function () {
         Route::get('master-data', [MasterDataController::class, 'index']);
         Route::post('company-settings', [CompanySettingController::class, 'update']);
+
+        Route::get('dashboard', [DashboardController::class, 'index']);
 
         Route::get('approval-board', [ApprovalBoardController::class, 'index']);
 

@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import { useAuth } from './AuthContext'
 import LoginPage from './pages/LoginPage'
 import ChangePasswordPage from './pages/ChangePasswordPage'
+import DashboardPage from './pages/DashboardPage'
 import DocumentsPage from './pages/DocumentsPage'
 import DocumentDetailPage from './pages/DocumentDetailPage'
 import SettingsPage from './pages/SettingsPage'
@@ -24,7 +25,8 @@ export default function App() {
 
   return (
     <Routes>
-      <Route path="/" element={<Navigate to="/documents" replace />} />
+      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+      <Route path="/dashboard" element={<DashboardPage />} />
       <Route path="/documents" element={<DocumentsPage />} />
       <Route path="/documents/:id" element={<DocumentDetailPage />} />
       <Route path="/settings" element={<SettingsPage />} />
@@ -33,7 +35,7 @@ export default function App() {
       <Route path="/users" element={<UsersPage />} />
       <Route path="/approval-board" element={<ApprovalBoardPage />} />
       <Route path="/integrations" element={<IntegrationsPage />} />
-      <Route path="*" element={<Navigate to="/documents" replace />} />
+      <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
   )
 }

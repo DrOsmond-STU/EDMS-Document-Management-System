@@ -14,7 +14,7 @@ import {
 export const NAV_GROUPS = [
   {
     label: 'Analytics',
-    items: [{ label: 'Dashboard', path: null, icon: LayoutDashboard }],
+    items: [{ label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard }],
   },
   {
     label: 'Document Repository',
