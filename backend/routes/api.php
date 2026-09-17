@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\ComplianceMatrixController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\DocumentController;
 use App\Http\Controllers\Api\DocumentFileController;
+use App\Http\Controllers\Api\FindingController;
 use App\Http\Controllers\Api\IntegrationSettingController;
 use App\Http\Controllers\Api\LicenseController;
 use App\Http\Controllers\Api\MasterDataController;
@@ -64,6 +65,16 @@ Route::middleware('auth')->group(function () {
         Route::post('risks', [RiskController::class, 'store']);
         Route::patch('risks/{risk}', [RiskController::class, 'update']);
         Route::post('risks/{risk}/controls', [RiskController::class, 'addControl']);
+
+        Route::get('findings', [FindingController::class, 'index']);
+        Route::post('findings', [FindingController::class, 'store']);
+        Route::patch('findings/{finding}', [FindingController::class, 'update']);
+        Route::post('findings/{finding}/root-cause', [FindingController::class, 'addRootCause']);
+        Route::post('findings/{finding}/actions', [FindingController::class, 'addAction']);
+        Route::patch('findings/{finding}/actions/{action}', [FindingController::class, 'updateAction']);
+        Route::post('findings/{finding}/verifications', [FindingController::class, 'addVerification']);
+        Route::post('findings/{finding}/close', [FindingController::class, 'close']);
+        Route::post('findings/{finding}/reject', [FindingController::class, 'reject']);
 
         Route::get('documents', [DocumentController::class, 'index']);
         Route::post('documents', [DocumentController::class, 'store']);

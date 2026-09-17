@@ -12,6 +12,7 @@ import UsersPage from './pages/UsersPage'
 import MasterDataPage from './pages/MasterDataPage'
 import ComplianceMatrixPage from './pages/ComplianceMatrixPage'
 import RegisterRisikoPage from './pages/RegisterRisikoPage'
+import RegisterTemuanCapaPage from './pages/RegisterTemuanCapaPage'
 import ApprovalBoardPage from './pages/ApprovalBoardPage'
 import IntegrationsPage from './pages/IntegrationsPage'
 
@@ -39,6 +40,7 @@ export default function App() {
       <Route path="/master-data" element={<MasterDataPage />} />
       <Route path="/compliance-matrix" element={<ComplianceMatrixPage />} />
       <Route path="/risk-register" element={<RegisterRisikoPage />} />
+      <Route path="/findings" element={<RegisterTemuanCapaPage />} />
       <Route path="/approval-board" element={<ApprovalBoardPage />} />
       <Route path="/integrations" element={<IntegrationsPage />} />
       <Route path="*" element={<Navigate to="/dashboard" replace />} />

@@ -50,7 +50,7 @@ export const NAV_GROUPS = [
     items: [
       { label: 'Audit Internal', path: null, icon: ClipboardCheck },
       { label: 'Audit Eksternal', path: null, icon: Building2 },
-      { label: 'Register Temuan & CAPA', path: null, icon: ClipboardEdit },
+      { label: 'Register Temuan & CAPA', path: '/findings', icon: ClipboardEdit, perm: 'finding.manage' },
       { label: 'Tinjauan Manajemen', path: null, icon: Presentation },
     ],
   },
