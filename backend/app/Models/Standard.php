@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Standard extends Model
 {
@@ -21,5 +22,10 @@ class Standard extends Model
     public function documents(): BelongsToMany
     {
         return $this->belongsToMany(Document::class, 'document_standard', 'standard_code', 'document_id');
+    }
+
+    public function clauses(): HasMany
+    {
+        return $this->hasMany(StandardClause::class, 'standard_code');
     }
 }

@@ -58,6 +58,7 @@ Route::middleware('auth')->group(function () {
 
         Route::get('dashboard', [DashboardController::class, 'index']);
         Route::get('compliance-matrix', [ComplianceMatrixController::class, 'index']);
+        Route::patch('compliance-matrix/assessments', [ComplianceMatrixController::class, 'upsertAssessment']);
 
         Route::get('approval-board', [ApprovalBoardController::class, 'index']);
 

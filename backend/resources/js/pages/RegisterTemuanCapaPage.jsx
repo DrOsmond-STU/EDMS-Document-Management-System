@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { AlertTriangle, ChevronDown, ChevronUp, ClipboardEdit, Plus } from 'lucide-react'
 import { Layout } from '../components/Layout'
 import { api, ApiError } from '../api'
@@ -368,7 +369,7 @@ function FindingCard({ finding, functionLabel, canManage, canClose, onReload }) 
   )
 }
 
-function FindingFormModal({ open, onClose, functions, standards, onSaved }) {
+function FindingFormModal({ open, onClose, functions, standards, onSaved, prefill }) {
   const [form, setForm] = useState(null)
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -376,11 +377,11 @@ function FindingFormModal({ open, onClose, functions, standards, onSaved }) {
   useEffect(() => {
     if (!open) return
     setForm({
-      type: 'nc_minor', audit_source: 'internal', audit_reference: '', clause_reference: '',
-      title: '', description: '', evidence: '', function_id: '', owner: '', raised_by: '', due_date: '', standards: [],
+      type: prefill?.type ?? 'nc_minor', audit_source: 'internal', audit_reference: '', clause_reference: prefill?.clauseReference ?? '',
+      title: prefill?.title ?? '', description: prefill?.description ?? '', evidence: '', function_id: '', owner: '', raised_by: '', due_date: '', standards: [],
     })
     setError('')
-  }, [open])
+  }, [open, prefill])
 
   if (!form) return null
 
@@ -483,6 +484,25 @@ export default function RegisterTemuanCapaPage() {
   const [standards, setStandards] = useState([])
   const [error, setError] = useState('')
   const [formOpen, setFormOpen] = useState(false)
+  const [prefill, setPrefill] = useState(null)
+
+  // Datang dari tombol "Buat Temuan" di Compliance Matrix (gap/partial pada
+  // sebuah sel) — buka modal Temuan Baru langsung terisi, lalu bersihkan
+  // query string supaya refresh halaman tidak membuka modal berulang.
+  const [searchParams, setSearchParams] = useSearchParams()
+  useEffect(() => {
+    const title = searchParams.get('prefillTitle')
+    if (!title) return
+    setPrefill({
+      title,
+      description: searchParams.get('prefillDescription') ?? '',
+      clauseReference: searchParams.get('prefillClause') ?? '',
+      type: searchParams.get('prefillType') ?? 'nc_minor',
+    })
+    setFormOpen(true)
+    setSearchParams({}, { replace: true })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const [q, setQ] = useState('')
   const [source, setSource] = useState('')
@@ -601,10 +621,11 @@ export default function RegisterTemuanCapaPage() {
 
       <FindingFormModal
         open={formOpen}
-        onClose={() => setFormOpen(false)}
+        onClose={() => { setFormOpen(false); setPrefill(null) }}
         functions={functions}
         standards={standards}
-        onSaved={() => { setFormOpen(false); load() }}
+        prefill={prefill}
+        onSaved={() => { setFormOpen(false); setPrefill(null); load() }}
       />
     </Layout>
   )
