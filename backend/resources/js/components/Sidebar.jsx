@@ -39,7 +39,7 @@ export function Sidebar() {
             <div className="flex flex-col gap-0.5">
               {group.items.map((item) => {
                 const Icon = item.icon
-                const allowed = !item.perm || hasPermission(item.perm)
+                const allowed = !item.perm || (Array.isArray(item.perm) ? item.perm.some(hasPermission) : hasPermission(item.perm))
                 const enabled = Boolean(item.path) && allowed
 
                 if (!enabled) {

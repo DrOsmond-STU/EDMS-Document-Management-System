@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\DocumentController;
 use App\Http\Controllers\Api\DocumentFileController;
 use App\Http\Controllers\Api\DocumentFolderController;
+use App\Http\Controllers\Api\DraftingProjectController;
 use App\Http\Controllers\Api\FindingController;
 use App\Http\Controllers\Api\IntegrationSettingController;
 use App\Http\Controllers\Api\LegalRequirementController;
@@ -107,6 +108,27 @@ Route::middleware('auth')->group(function () {
         Route::post('findings/{finding}/verifications', [FindingController::class, 'addVerification']);
         Route::post('findings/{finding}/close', [FindingController::class, 'close']);
         Route::post('findings/{finding}/reject', [FindingController::class, 'reject']);
+
+        Route::prefix('drafting-projects')->controller(DraftingProjectController::class)->group(function () {
+            Route::get('/', 'index');
+            Route::post('/', 'store');
+            Route::get('{project}', 'show');
+            Route::post('{project}/assign', 'assign');
+            Route::post('{project}/reject', 'reject');
+            Route::post('{project}/finalize', 'finalize');
+            Route::post('{project}/return', 'returnToDrafter');
+            Route::post('{project}/ratify', 'ratify');
+            Route::get('{project}/final-file', 'finalFile');
+            Route::post('{project}/meetings', 'storeMeeting');
+            Route::patch('{project}/meetings/{meeting}', 'updateMeeting');
+            Route::post('{project}/meetings/{meeting}/minutes-file', 'uploadMinutes');
+            Route::get('{project}/meetings/{meeting}/minutes-file', 'minutesFile');
+            Route::post('{project}/meetings/{meeting}/photos', 'uploadPhoto');
+            Route::get('{project}/meetings/{meeting}/photos/{photo}', 'photo');
+            Route::post('{project}/meetings/{meeting}/attendees', 'storeAttendee');
+            Route::patch('{project}/meetings/{meeting}/attendees/{attendee}', 'signAttendee');
+            Route::get('{project}/meetings/{meeting}/attendees/{attendee}/signature', 'signature');
+        });
 
         Route::get('folders', [DocumentFolderController::class, 'index']);
         Route::post('folders', [DocumentFolderController::class, 'store']);

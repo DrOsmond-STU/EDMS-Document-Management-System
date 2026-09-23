@@ -9,7 +9,8 @@ import {
 // `path: null` berarti modul belum dibangun di v2 — ditampilkan supaya
 // pengguna melihat peta lengkap yang direncanakan, tapi non-aktif dengan
 // label "Segera". `perm` membatasi modul yang SUDAH jadi ke peran yang
-// berwenang; modul yang belum jadi tidak perlu perm (toh tidak bisa diklik).
+// berwenang (string, atau array = cukup salah satu); modul yang belum jadi
+// tidak perlu perm (toh tidak bisa diklik).
 // Dipakai bersama oleh Sidebar (navigasi) dan Topbar (breadcrumb bagian aktif).
 export const NAV_GROUPS = [
   {
@@ -27,7 +28,7 @@ export const NAV_GROUPS = [
     label: 'Document Lifecycle',
     items: [
       { label: 'Papan Approval', path: '/approval-board', icon: KanbanSquare },
-      { label: 'Tracking Penyusunan Dokumen', path: null, icon: GitBranch },
+      { label: 'Tracking Penyusunan Dokumen', path: '/drafting', icon: GitBranch, perm: ['document.request', 'document.draft', 'document.control', 'document.ratify', 'document.review', 'document.approve', 'audit.view'] },
     ],
   },
   {
