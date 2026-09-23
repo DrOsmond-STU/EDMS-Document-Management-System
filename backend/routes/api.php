@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CompanySettingController;
 use App\Http\Controllers\Api\ComplianceMatrixController;
 use App\Http\Controllers\Api\DashboardController;
+use App\Http\Controllers\Api\DocumentCommentController;
 use App\Http\Controllers\Api\DocumentController;
 use App\Http\Controllers\Api\DocumentFileController;
 use App\Http\Controllers\Api\DocumentFolderController;
@@ -17,6 +18,7 @@ use App\Http\Controllers\Api\LegalRequirementController;
 use App\Http\Controllers\Api\LicenseController;
 use App\Http\Controllers\Api\MasterDataController;
 use App\Http\Controllers\Api\MgmtReviewController;
+use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\NumberingSettingController;
 use App\Http\Controllers\Api\RecordController;
 use App\Http\Controllers\Api\RecordSeriesController;
@@ -132,6 +134,17 @@ Route::middleware('auth')->group(function () {
             Route::patch('{project}/meetings/{meeting}/attendees/{attendee}', 'signAttendee');
             Route::get('{project}/meetings/{meeting}/attendees/{attendee}/signature', 'signature');
         });
+
+        Route::get('documents/{document}/comments', [DocumentCommentController::class, 'index']);
+        Route::post('documents/{document}/comments', [DocumentCommentController::class, 'store']);
+        Route::patch('comments/{comment}', [DocumentCommentController::class, 'update']);
+        Route::delete('comments/{comment}', [DocumentCommentController::class, 'destroy']);
+        Route::post('comments/{comment}/resolve', [DocumentCommentController::class, 'resolve']);
+        Route::get('discussions', [DocumentCommentController::class, 'inbox']);
+
+        Route::get('notifications', [NotificationController::class, 'index']);
+        Route::post('notifications/read-all', [NotificationController::class, 'readAll']);
+        Route::post('notifications/{notification}/read', [NotificationController::class, 'read']);
 
         Route::get('folders', [DocumentFolderController::class, 'index']);
         Route::post('folders', [DocumentFolderController::class, 'store']);

@@ -24,6 +24,7 @@ import FoldersPage from './pages/FoldersPage'
 import DraftingListPage from './pages/DraftingListPage'
 import DraftingDetailPage from './pages/DraftingDetailPage'
 import ReportingPage from './pages/ReportingPage'
+import DiscussionsPage from './pages/DiscussionsPage'
 
 function FullScreenMessage({ text }) {
   return <div className="flex min-h-screen w-full items-center justify-center text-[13px] text-[var(--color-neutral-medium)]">{text}</div>
@@ -61,6 +62,7 @@ export default function App() {
       <Route path="/drafting" element={<DraftingListPage />} />
       <Route path="/drafting/:id" element={<DraftingDetailPage />} />
       <Route path="/reporting" element={<ReportingPage />} />
+      <Route path="/discussions" element={<DiscussionsPage />} />
       <Route path="/integrations" element={<IntegrationsPage />} />
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>

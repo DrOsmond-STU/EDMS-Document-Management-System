@@ -64,7 +64,7 @@ export const NAV_GROUPS = [
   },
   {
     label: 'Collaboration',
-    items: [{ label: 'Comment & Discussion', path: null, icon: MessagesSquare }],
+    items: [{ label: 'Comment & Discussion', path: '/discussions', icon: MessagesSquare }],
   },
   {
     label: 'Operasional',

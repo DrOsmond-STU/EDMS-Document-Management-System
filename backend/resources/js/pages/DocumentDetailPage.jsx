@@ -6,6 +6,7 @@ import {
 } from 'lucide-react'
 import { api, ApiError } from '../api'
 import { Layout } from '../components/Layout'
+import { DiscussionPanel } from '../components/DiscussionPanel'
 import { Button, Card, ClassificationBadge, Field, inputClass, Modal, StatusBadge, ValidityBadge } from '../components/ui'
 
 // Status yang pernah resmi dirilis — cermin dari Document::CONTROLLED_STATUSES
@@ -376,6 +377,8 @@ export default function DocumentDetailPage() {
           </div>
         )}
       </Card>
+
+      <DiscussionPanel documentId={doc.id} />
     </div>
 
     <LifecycleActionModal
