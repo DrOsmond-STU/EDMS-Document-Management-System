@@ -17,6 +17,12 @@ class DocumentPolicy
      *  Dokumen yang masih dalam proses hanya untuk yang terlibat. */
     public function view(User $user, Document $document): bool
     {
+        // Klasifikasi (Rahasia, Top Secret, dst.) membatasi SEMUA akses,
+        // termasuk bagi peran yang terlibat siklus dokumen.
+        if (! $document->classificationAllows($user)) {
+            return false;
+        }
+
         if ($document->status === 'released') {
             return $user->hasPermission(Permissions::DOCUMENT_VIEW_RELEASED);
         }
@@ -34,6 +40,10 @@ class DocumentPolicy
 
     public function update(User $user, Document $document): bool
     {
+        if (! $document->classificationAllows($user)) {
+            return false;
+        }
+
         // Dokumen yang sudah dirilis tidak boleh disunting diam-diam; harus
         // lewat revisi baru. Hanya Document Controller yang boleh menyentuh.
         if (in_array($document->status, ['released', 'obsolete'], true)) {
@@ -47,7 +57,8 @@ class DocumentPolicy
     /** Mendorong dokumen ke tahap berikutnya sesuai peran per status. */
     public function transition(User $user, Document $document): bool
     {
-        return Permissions::canTransitionFrom($user->roleIds(), $document->status);
+        return $document->classificationAllows($user)
+            && Permissions::canTransitionFrom($user->roleIds(), $document->status);
     }
 
     public function uploadFile(User $user, Document $document): bool
@@ -62,7 +73,7 @@ class DocumentPolicy
 
     public function delete(User $user, Document $document): bool
     {
-        return $user->hasPermission(Permissions::DOCUMENT_CONTROL);
+        return $document->classificationAllows($user) && $user->hasPermission(Permissions::DOCUMENT_CONTROL);
     }
 
     private function involvedInLifecycle(User $user): bool

@@ -66,6 +66,8 @@ class UserController extends Controller
 
         return response()->json([
             'roles' => Role::query()->orderBy('sort_order')->get(['id', 'label', 'summary']),
+            // Matriks izin klasifikasi — sumber aturan yang sama dengan DocumentPolicy.
+            'clearance' => Permissions::ROLE_CLEARANCE,
         ]);
     }
 

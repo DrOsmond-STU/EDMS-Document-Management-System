@@ -36,6 +36,7 @@ class ApprovalBoardController extends Controller
         $roleIds = $user->roleIds();
 
         $documents = Document::query()
+            ->classifiedFor($user)
             ->whereIn('status', self::BOARD_STATUSES)
             ->with(['orgFunction:id,name', 'owner:id,name', 'standards:code,name'])
             ->withCount('files')

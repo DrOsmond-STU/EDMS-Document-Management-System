@@ -175,6 +175,59 @@ function UserRow({ user, isSelf, onEdit, onToggleActive, onResetPassword, onDele
   )
 }
 
+const LEVELS = [
+  ['public', 'Publik'], ['internal', 'Internal'], ['restricted', 'Terbatas'],
+  ['confidential', 'Rahasia'], ['secret', 'Sangat Rahasia'], ['top_secret', 'Top Secret'],
+]
+
+/** Matriks: klasifikasi dokumen yang boleh dilihat tiap peran (dari server, sumber aturan yang sama dengan pemeriksaan akses). */
+function ClearanceMatrix({ roles, clearance }) {
+  const [open, setOpen] = useState(false)
+  if (!clearance || !roles?.length) return null
+  const idx = (k) => LEVELS.findIndex(([c]) => c === k)
+  return (
+    <Card className="mb-4">
+      <button type="button" onClick={() => setOpen((v) => !v)} className="flex w-full items-center justify-between text-left">
+        <span className="text-[13px] font-bold text-[var(--color-neutral-dark)]">Matriks Akses Klasifikasi Dokumen</span>
+        <span className="text-[11.5px] font-semibold text-[var(--color-brand-primary)]">{open ? 'Sembunyikan' : 'Tampilkan'}</span>
+      </button>
+      {open && (
+        <div className="mt-3 overflow-x-auto">
+          <table className="w-full min-w-[640px] text-[12px]">
+            <thead>
+              <tr className="border-b border-[var(--color-neutral-border)] text-[10.5px] uppercase tracking-wide text-[var(--color-neutral-medium)]">
+                <th className="py-1.5 pr-3 text-left font-semibold">Peran</th>
+                {LEVELS.map(([k, l]) => <th key={k} className="px-2 py-1.5 text-center font-semibold">{l}</th>)}
+              </tr>
+            </thead>
+            <tbody>
+              {roles.map((r) => {
+                const max = idx(clearance[r.id] ?? 'public')
+                return (
+                  <tr key={r.id} className="border-b border-[var(--color-neutral-border)] last:border-0">
+                    <td className="py-1.5 pr-3 font-semibold">{r.label}</td>
+                    {LEVELS.map(([k], i) => (
+                      <td key={k} className="px-2 py-1.5 text-center">
+                        {i <= max ? <span className="font-bold text-[#1e8e5a]">✓</span>
+                          : i === max + 1 && k !== 'top_secret' ? <span className="text-[#b9791c]" title="Hanya untuk dokumen milik fungsinya sendiri">fungsi sendiri</span>
+                            : <span className="text-[var(--color-neutral-soft)]">—</span>}
+                      </td>
+                    ))}
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+          <p className="mt-2 text-[11.5px] text-[var(--color-neutral-medium)]">
+            Pengguna melihat satu tingkat lebih tinggi untuk dokumen milik fungsinya sendiri (maksimal Sangat Rahasia). Top Secret hanya untuk Ratifier.
+            Pemilik & pembuat dokumen selalu bisa melihat dokumennya sendiri. Pengguna dengan beberapa peran memakai izin tertinggi.
+          </p>
+        </div>
+      )}
+    </Card>
+  )
+}
+
 export default function UsersPage() {
   const { user: currentUser, hasPermission } = useAuth()
   const canManage = hasPermission('users.manage')
@@ -281,13 +334,15 @@ export default function UsersPage() {
         <div>
           <h1 className="text-[20px] font-bold tracking-tight text-[var(--color-neutral-dark)]">Manajemen Pengguna & Hak Akses</h1>
           <p className="mt-0.5 text-[12.5px] text-[var(--color-neutral-medium)]">
-            {users ? `${users.total} pengguna` : 'Kelola akun dan peran — akses dicabut lewat nonaktifkan, bukan hapus, supaya jejak audit tetap utuh.'}
+            {users ? `${users.total} pengguna` : 'Kelola akun, peran, dan hak akses.'}
           </p>
         </div>
         <Button variant="primary" onClick={openCreate}><Plus size={14} /> Pengguna Baru</Button>
       </div>
 
       {error && <div className="mb-4 rounded-md border border-[#f3c9c8] bg-[#fbe7e6] px-3 py-2 text-[12px] text-[#7d2c2b]">{error}</div>}
+
+      <ClearanceMatrix roles={meta.roles} clearance={meta.clearance} />
 
       <div className="mb-4 grid grid-cols-2 gap-2 md:grid-cols-4">
         <div className="relative col-span-2 md:col-span-2">

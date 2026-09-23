@@ -149,6 +149,56 @@ final class Permissions
     ];
 
     /** @param list<string> $roleIds */
+    /**
+     * Tingkat klasifikasi dokumen, dari paling terbuka ke paling tertutup.
+     * Dipakai bersama oleh DocumentPolicy (satu dokumen) dan
+     * Document::scopeVisibleTo (daftar/pencarian) — satu sumber aturan.
+     */
+    public const CLASSIFICATION_LEVELS = [
+        'public' => 0, 'internal' => 1, 'restricted' => 2, 'confidential' => 3, 'secret' => 4, 'top_secret' => 5,
+    ];
+
+    /**
+     * Izin klasifikasi tertinggi per peran (need-to-know, ISO 27001 5.12).
+     * Pengguna mendapat SATU tingkat tambahan untuk dokumen milik fungsinya
+     * sendiri (maksimal Secret) — lihat clearanceFor(). Top Secret hanya
+     * untuk Ratifier (manajemen puncak); pemilik/pembuat dokumen selalu bisa
+     * melihat dokumennya sendiri. System Administrator sengaja hanya
+     * Internal: pengelola IT tidak perlu membaca isi dokumen bisnis.
+     */
+    public const ROLE_CLEARANCE = [
+        'viewer' => 'internal', 'requester' => 'internal', 'sysadmin' => 'internal',
+        'drafter' => 'restricted', 'reviewer' => 'restricted', 'function_head' => 'restricted',
+        'approver' => 'confidential', 'compliance_admin' => 'confidential',
+        'controller' => 'secret', 'auditor' => 'secret',
+        'ratifier' => 'top_secret',
+    ];
+
+    /** Batas atas bonus "fungsi sendiri" — Top Secret tidak pernah didapat lewat bonus. */
+    private const OWN_FUNCTION_CAP = 'secret';
+
+    /** Tingkat izin (0..5) seorang pengguna; $ownFunction = dokumen milik fungsinya sendiri. */
+    public static function clearanceFor(array $roleIds, bool $ownFunction = false): int
+    {
+        $level = self::CLASSIFICATION_LEVELS['public'];
+        foreach ($roleIds as $roleId) {
+            if (isset(self::ROLE_CLEARANCE[$roleId])) {
+                $level = max($level, self::CLASSIFICATION_LEVELS[self::ROLE_CLEARANCE[$roleId]]);
+            }
+        }
+        if ($ownFunction && $level < self::CLASSIFICATION_LEVELS[self::OWN_FUNCTION_CAP]) {
+            $level = min($level + 1, self::CLASSIFICATION_LEVELS[self::OWN_FUNCTION_CAP]);
+        }
+
+        return $level;
+    }
+
+    /** @return list<string> kode klasifikasi dengan tingkat <= $level */
+    public static function classificationsUpTo(int $level): array
+    {
+        return array_keys(array_filter(self::CLASSIFICATION_LEVELS, fn (int $l) => $l <= $level));
+    }
+
     public static function rolesHave(array $roleIds, string $permission): bool
     {
         foreach ($roleIds as $roleId) {

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Record;
 use App\Models\RecordSeries;
+use App\Models\User;
 use App\Services\AuditLogger;
 use App\Support\Permissions;
 use Illuminate\Database\Eloquent\Builder;
@@ -34,7 +35,7 @@ class RecordController extends Controller
             return response()->json(['message' => 'Anda tidak berwenang melihat Records Register.'], 403);
         }
 
-        $query = Record::query()->with(['series:id,code,name,disposition', 'orgFunction:id,name', 'document:id,code,title', 'disposer:id,name']);
+        $query = Record::query()->with(['series:id,code,name,disposition', 'orgFunction:id,name', 'disposer:id,name', ...$this->documentRelation($request->user())]);
 
         if ($q = trim((string) $request->string('q'))) {
             $query->where(fn ($w) => $w
@@ -247,6 +248,12 @@ class RecordController extends Controller
 
     private function present(Record $record): Record
     {
-        return $record->load(['series:id,code,name,disposition', 'orgFunction:id,name', 'document:id,code,title', 'disposer:id,name']);
+        return $record->load(['series:id,code,name,disposition', 'orgFunction:id,name', 'disposer:id,name', ...$this->documentRelation(request()->user())]);
+    }
+
+    /** Tautan dokumen asal hanya ditampilkan bila klasifikasinya boleh dilihat pengguna. */
+    private function documentRelation(User $user): array
+    {
+        return ['document' => fn ($q) => $q->classifiedFor($user)->select(['id', 'code', 'title'])];
     }
 }

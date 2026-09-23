@@ -43,11 +43,12 @@ class ComplianceMatrixController extends Controller
         }
         $clauses = $clauseQuery->get(['id', 'standard_code', 'code', 'title']);
 
-        $documents = Document::query()->orderBy('code')->get(['id', 'code', 'title', 'status']);
+        $documents = Document::query()->classifiedFor($request->user())->orderBy('code')->get(['id', 'code', 'title', 'status']);
 
         $clauseIds = $clauses->pluck('id');
         $assessments = ClauseAssessment::query()
             ->whereIn('clause_id', $clauseIds)
+            ->whereIn('document_id', $documents->pluck('id'))
             ->with('assessor:id,name')
             ->get()
             ->keyBy(fn (ClauseAssessment $a) => "{$a->clause_id}:{$a->document_id}");
@@ -104,6 +105,9 @@ class ComplianceMatrixController extends Controller
 
         $clause = StandardClause::findOrFail($data['clause_id']);
         $document = Document::findOrFail($data['document_id']);
+        if (! $document->classificationAllows($request->user())) {
+            return response()->json(['message' => 'Klasifikasi dokumen ini di atas izin akses Anda.'], 403);
+        }
 
         if ($data['status'] === null) {
             ClauseAssessment::where('clause_id', $data['clause_id'])->where('document_id', $data['document_id'])->delete();

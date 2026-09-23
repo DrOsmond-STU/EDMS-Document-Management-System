@@ -28,6 +28,7 @@ class DocumentController extends Controller
         $user = $request->user();
 
         $query = Document::query()
+            ->classifiedFor($user)
             ->with(['orgFunction:id,name', 'owner:id,name', 'standards:code,name'])
             ->withCount('files');
 
@@ -240,6 +241,9 @@ class DocumentController extends Controller
         $user = $request->user();
         if (! Permissions::canPerformLifecycleActions($user->roleIds())) {
             return response()->json(['message' => 'Hanya Document Controller atau System Administrator yang berwenang melakukan ini.'], 403);
+        }
+        if (! $document->classificationAllows($user)) {
+            return response()->json(['message' => 'Klasifikasi dokumen ini di atas izin akses Anda.'], 403);
         }
 
         $data = $request->validate([

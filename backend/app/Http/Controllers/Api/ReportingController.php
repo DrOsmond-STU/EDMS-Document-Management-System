@@ -15,6 +15,7 @@ use App\Models\MgmtReviewAction;
 use App\Models\Record;
 use App\Models\Risk;
 use App\Models\StandardClause;
+use App\Models\User;
 use App\Support\Permissions;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -45,7 +46,7 @@ class ReportingController extends Controller
             'governance' => $this->governanceKpis($from, $to),
             'monthly' => $this->monthly($year),
             'cycle_by_standard' => $this->cycleByStandard($from, $to),
-            'top_documents' => $this->topDocuments($from, $to),
+            'top_documents' => $this->topDocuments($from, $to, $request->user()),
         ]);
     }
 
@@ -260,12 +261,16 @@ class ReportingController extends Controller
         ])->sortBy('standard')->values()->all();
     }
 
-    private function topDocuments(Carbon $from, Carbon $to): array
+    private function topDocuments(Carbon $from, Carbon $to, User $user): array
     {
-        return AuditLog::whereIn('action', ['view', 'download'])->whereBetween('created_at', [$from, $to])
+        $rows = AuditLog::whereIn('action', ['view', 'download'])->whereBetween('created_at', [$from, $to])
             ->whereNotNull('entity_label')
             ->selectRaw('entity_label as code, count(*) as hits')->groupBy('entity_label')
-            ->orderByDesc('hits')->limit(5)->get()->toArray();
+            ->orderByDesc('hits')->limit(30)->get();
+        // Hanya kode dokumen yang boleh dilihat pengguna ini (klasifikasi).
+        $visible = Document::classifiedFor($user)->whereIn('code', $rows->pluck('code'))->pluck('code')->all();
+
+        return $rows->filter(fn ($r) => in_array($r->code, $visible, true))->take(5)->values()->toArray();
     }
 
     /** Cegah CSV/formula injection: sel teks yang diawali = + - @ tidak dieksekusi Excel sebagai rumus. */
