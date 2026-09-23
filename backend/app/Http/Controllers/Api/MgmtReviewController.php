@@ -85,6 +85,24 @@ class MgmtReviewController extends Controller
         return response()->json($this->present($mgmtReview->fresh()));
     }
 
+    /** Tinjauan yang sudah selesai adalah rekaman wajib klausul 9.3 — tidak bisa dihapus. */
+    public function destroy(Request $request, MgmtReview $mgmtReview): JsonResponse
+    {
+        if (! $request->user()->hasPermission(Permissions::MGMT_REVIEW_CHAIR)) {
+            return response()->json(['message' => 'Anda tidak berwenang menghapus tinjauan manajemen.'], 403);
+        }
+        if ($mgmtReview->status === 'completed') {
+            return response()->json(['message' => 'Tinjauan yang sudah selesai adalah rekaman wajib (klausul 9.3) dan tidak bisa dihapus.'], 422);
+        }
+
+        $mgmtReview->actions()->delete();
+        $mgmtReview->delete();
+        $this->audit->log($request->user(), 'delete', 'MgmtReview', $mgmtReview->code, $mgmtReview->title,
+            "Menghapus tinjauan manajemen \"{$mgmtReview->title}\" ({$mgmtReview->code}).");
+
+        return response()->json(['message' => 'Tinjauan manajemen dihapus.']);
+    }
+
     public function transition(Request $request, MgmtReview $mgmtReview): JsonResponse
     {
         if (! $request->user()->hasPermission(Permissions::MGMT_REVIEW_CHAIR)) {
@@ -154,13 +172,39 @@ class MgmtReviewController extends Controller
             abort(404);
         }
 
-        $data = $request->validate(['status' => ['required', 'string', Rule::in(self::ACTION_STATUSES)]]);
+        $data = $request->validate([
+            'status' => ['sometimes', 'string', Rule::in(self::ACTION_STATUSES)],
+            'description' => ['sometimes', 'string', 'max:2000'],
+            'pic' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'due_date' => ['sometimes', 'nullable', 'date'],
+        ]);
         $action->update($data);
 
         $this->audit->log($request->user(), 'update', 'MgmtReview', $mgmtReview->code, $mgmtReview->title,
-            "Mengubah status tindak lanjut tinjauan manajemen ({$mgmtReview->code}) menjadi {$data['status']}.");
+            isset($data['status']) && count($data) === 1
+                ? "Mengubah status tindak lanjut tinjauan manajemen ({$mgmtReview->code}) menjadi {$data['status']}."
+                : "Mengubah tindak lanjut tinjauan manajemen ({$mgmtReview->code}).");
 
         return response()->json($action->fresh());
+    }
+
+    public function destroyAction(Request $request, MgmtReview $mgmtReview, MgmtReviewAction $action): JsonResponse
+    {
+        if (! $request->user()->hasPermission(Permissions::MGMT_REVIEW_CHAIR)) {
+            return response()->json(['message' => 'Anda tidak berwenang menghapus tindak lanjut.'], 403);
+        }
+        if ($action->mgmt_review_id !== $mgmtReview->id) {
+            abort(404);
+        }
+        if ($action->status === 'completed') {
+            return response()->json(['message' => 'Tindak lanjut yang sudah selesai tidak bisa dihapus.'], 422);
+        }
+
+        $action->delete();
+        $this->audit->log($request->user(), 'delete', 'MgmtReview', $mgmtReview->code, $mgmtReview->title,
+            "Menghapus tindak lanjut tinjauan manajemen ({$mgmtReview->code}): ".mb_substr($action->description, 0, 120));
+
+        return response()->json(['message' => 'Tindak lanjut dihapus.']);
     }
 
     /**

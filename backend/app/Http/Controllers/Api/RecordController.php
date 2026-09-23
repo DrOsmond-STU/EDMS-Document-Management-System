@@ -114,6 +114,30 @@ class RecordController extends Controller
         return response()->json($this->present($record->fresh()));
     }
 
+    /**
+     * Hapus = salah input. Rekaman berstatus akhir (dimusnahkan/permanen)
+     * adalah bukti disposisi dan rekaman dalam legal hold wajib dijaga —
+     * keduanya tidak boleh dihapus.
+     */
+    public function destroy(Request $request, Record $record): JsonResponse
+    {
+        if (! $request->user()->hasPermission(Permissions::RECORDS_MANAGE)) {
+            return response()->json(['message' => 'Anda tidak berwenang menghapus rekaman.'], 403);
+        }
+        if (in_array($record->status, Record::FINAL_STATUSES, true)) {
+            return response()->json(['message' => 'Rekaman yang sudah dimusnahkan/diserahkan permanen adalah bukti disposisi dan tidak bisa dihapus.'], 422);
+        }
+        if ($record->legal_hold) {
+            return response()->json(['message' => 'Rekaman sedang dalam legal hold — lepaskan hold terlebih dahulu.'], 422);
+        }
+
+        $record->delete();
+        $this->audit->log($request->user(), 'delete', 'Record', $record->code, $record->title,
+            "Menghapus rekaman \"{$record->title}\" ({$record->code}).");
+
+        return response()->json(['message' => 'Rekaman dihapus.']);
+    }
+
     public function action(Request $request, Record $record): JsonResponse
     {
         $data = $request->validate([

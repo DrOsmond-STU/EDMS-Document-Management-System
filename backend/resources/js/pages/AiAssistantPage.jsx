@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { AlertTriangle, Check, Copy, FileText, GitBranch, History, Loader2, PenLine, Scale, Search, ShieldCheck, Sparkles } from 'lucide-react'
+import { AlertTriangle, Check, Copy, FileText, GitBranch, History, Loader2, PenLine, Scale, Search, ShieldCheck, Sparkles, Trash2 } from 'lucide-react'
 import { Layout } from '../components/Layout'
 import { api } from '../api'
-import { Button, Card, Field, inputClass, Modal, StandardChip } from '../components/ui'
+import { Button, Card, ConfirmDelete, Field, IconAction, inputClass, Modal, StandardChip, useConfirmDelete } from '../components/ui'
 import { CLASSIFICATION_LABEL, dt, errorText } from './drafting/shared'
 
 const ACTION_LABEL = {
@@ -466,14 +466,15 @@ function DraftTab({ status, preset, prefill, onRequest }) {
 
 // ------------------------------------------------------------------ Riwayat
 
-function HistoryTab({ history, onOpen }) {
+function HistoryTab({ history, onOpen, onChanged }) {
+  const del = useConfirmDelete()
   if (history.length === 0) return <Card><Empty>Belum ada riwayat pemakaian Asisten AI.</Empty></Card>
   return (
     <Card>
       <table className="w-full text-[12.5px]">
         <thead>
           <tr className="text-left text-[10.5px] font-bold uppercase tracking-wide text-[var(--color-neutral-medium)]">
-            <th className="pb-2">Waktu</th><th className="pb-2">Jenis</th><th className="pb-2">Topik / Judul</th><th className="pb-2 text-right">Token</th><th className="pb-2">Tindak lanjut</th>
+            <th className="pb-2">Waktu</th><th className="pb-2">Jenis</th><th className="pb-2">Topik / Judul</th><th className="pb-2 text-right">Token</th><th className="pb-2">Tindak lanjut</th><th className="pb-2" />
           </tr>
         </thead>
         <tbody className="divide-y divide-[var(--color-neutral-border)]">
@@ -484,10 +485,15 @@ function HistoryTab({ history, onOpen }) {
               <td className="py-2 pr-3 font-semibold">{h.subject}</td>
               <td className="whitespace-nowrap py-2 pr-3 text-right tabular-nums text-[var(--color-neutral-medium)]">{(h.input_tokens + h.output_tokens).toLocaleString('id-ID')}</td>
               <td className="whitespace-nowrap py-2">{h.followed_up_ref ? <span className="font-mono text-[11.5px] text-[#1e8e5a]">{h.followed_up_ref}</span> : <span className="text-[var(--color-neutral-medium)]">—</span>}</td>
+              <td className="py-1 text-right"><IconAction icon={Trash2} label="Hapus riwayat" danger onClick={() => del.ask(h)} /></td>
             </tr>
           ))}
         </tbody>
       </table>
+      <ConfirmDelete
+        open={del.open} onClose={del.close} title="Hapus riwayat AI?" what={del.target?.subject}
+        onConfirm={() => api(`ai/generations/${del.target.id}`, { method: 'DELETE' })} onDone={onChanged}
+      />
     </Card>
   )
 }
@@ -567,7 +573,7 @@ export default function AiAssistantPage() {
           <div className={tab === 'draft' ? '' : 'hidden'}>
             <DraftTab status={status} preset={preset.draft} prefill={draftPrefill} onRequest={(initial, id) => setRequest({ initial, id })} />
           </div>
-          {tab === 'history' && <HistoryTab history={status.history} onOpen={openHistory} />}
+          {tab === 'history' && <HistoryTab history={status.history} onOpen={openHistory} onChanged={load} />}
 
           <RequestModal open={!!request} onClose={() => setRequest(null)} initial={request?.initial ?? {}} generationId={request?.id} meta={status.meta} />
         </>

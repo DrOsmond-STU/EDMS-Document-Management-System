@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ChevronDown, ChevronUp, ClipboardCheck, Plus, Building2 } from 'lucide-react'
+import { ChevronDown, ChevronUp, ClipboardCheck, Pencil, Plus, Building2, Trash2 } from 'lucide-react'
 import { Layout } from '../components/Layout'
 import { api, ApiError } from '../api'
 import { useAuth } from '../AuthContext'
-import { Button, Card, Field, inputClass, Modal, StandardChip } from '../components/ui'
+import { Button, Card, ConfirmDelete, Field, IconAction, inputClass, Modal, StandardChip, useConfirmDelete } from '../components/ui'
 
 const STATUS_LABEL = { planned: 'Terjadwal', in_progress: 'Berlangsung', completed: 'Selesai', cancelled: 'Dibatalkan' }
 const STATUS_COLOR = {
@@ -40,7 +40,7 @@ function StatCard({ status, count }) {
   )
 }
 
-function AuditRow({ audit, functionLabel, canConduct, canPlan, onReload }) {
+function AuditRow({ audit, functionLabel, canConduct, canPlan, onReload, onEdit, onDelete }) {
   const [open, setOpen] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
@@ -82,10 +82,16 @@ function AuditRow({ audit, functionLabel, canConduct, canPlan, onReload }) {
         </td>
         <td className="py-2 pr-3 text-center">{audit.findings?.length ?? 0}</td>
         <td className="py-2 pr-3"><StatusBadge status={audit.status} /></td>
+        {canPlan && (
+          <td className="whitespace-nowrap py-1.5 text-right">
+            {['planned', 'in_progress'].includes(audit.status) && <IconAction icon={Pencil} label="Ubah audit" onClick={() => onEdit(audit)} />}
+            {audit.status !== 'completed' && (audit.findings?.length ?? 0) === 0 && <IconAction icon={Trash2} label="Hapus audit" danger onClick={() => onDelete(audit)} />}
+          </td>
+        )}
       </tr>
       {open && (
         <tr className="border-b border-dashed border-[var(--color-neutral-border)] bg-[var(--color-neutral-bg-soft)]">
-          <td colSpan={7} className="px-3 pb-4 pt-3" onClick={(e) => e.stopPropagation()}>
+          <td colSpan={canPlan ? 8 : 7} className="px-3 pb-4 pt-3" onClick={(e) => e.stopPropagation()}>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div>
                 <div className="mb-2 text-[11px] font-bold uppercase tracking-wide text-[var(--color-neutral-medium)]">Tujuan</div>
@@ -147,19 +153,24 @@ function AuditRow({ audit, functionLabel, canConduct, canPlan, onReload }) {
   )
 }
 
-function AuditFormModal({ open, onClose, type, functions, standards, users, onSaved }) {
+function AuditFormModal({ open, onClose, type, functions, standards, users, onSaved, audit = null }) {
   const [form, setForm] = useState(null)
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
     if (!open) return
-    setForm({
+    setForm(audit ? {
+      title: audit.title, objective: audit.objective ?? '', scope: audit.scope ?? '', function_id: audit.function_id ?? '',
+      lead_auditor_id: audit.lead_auditor_id ?? '', audit_team: audit.audit_team ?? '',
+      planned_start: audit.planned_start?.slice(0, 10) ?? '', planned_end: audit.planned_end?.slice(0, 10) ?? '',
+      standards: (audit.standards ?? []).map((st) => st.code),
+    } : {
       title: '', objective: '', scope: '', function_id: '', lead_auditor_id: '', audit_team: '',
       planned_start: '', planned_end: '', standards: [],
     })
     setError('')
-  }, [open])
+  }, [open, audit])
 
   if (!form) return null
 
@@ -176,7 +187,10 @@ function AuditFormModal({ open, onClose, type, functions, standards, users, onSa
     setSubmitting(true)
     setError('')
     try {
-      const result = await api('audits', { method: 'POST', body: { ...form, type, lead_auditor_id: form.lead_auditor_id || null } })
+      const body = { ...form, lead_auditor_id: form.lead_auditor_id || null, function_id: form.function_id || null }
+      const result = audit
+        ? await api(`audits/${audit.id}`, { method: 'PATCH', body })
+        : await api('audits', { method: 'POST', body: { ...body, type } })
       onSaved(result)
     } catch (err) {
       setError(err instanceof ApiError ? (err.body?.errors ? Object.values(err.body.errors).flat().join(' ') : err.body?.message || err.message) : 'Gagal menyimpan.')
@@ -186,7 +200,7 @@ function AuditFormModal({ open, onClose, type, functions, standards, users, onSa
   }
 
   return (
-    <Modal open={open} onClose={onClose} title={type === 'external' ? 'Jadwalkan Audit Eksternal' : 'Jadwalkan Audit Internal'}>
+    <Modal open={open} onClose={onClose} title={audit ? `Ubah Audit ${audit.code}` : type === 'external' ? 'Jadwalkan Audit Eksternal' : 'Jadwalkan Audit Internal'}>
       <form onSubmit={handleSubmit} className="flex flex-col gap-3">
         <Field label="Judul Audit"><input className={inputClass} value={form.title} onChange={(e) => set('title')(e.target.value)} required /></Field>
         <Field label="Tujuan" hint="Opsional"><textarea className={inputClass} rows={2} value={form.objective} onChange={(e) => set('objective')(e.target.value)} /></Field>
@@ -235,7 +249,7 @@ function AuditFormModal({ open, onClose, type, functions, standards, users, onSa
         {error && <div className="rounded-md border border-[#f3c9c8] bg-[#fbe7e6] px-3 py-2 text-[12px] text-[#7d2c2b]">{error}</div>}
         <div className="flex justify-end gap-2">
           <Button type="button" variant="ghost" onClick={onClose}>Batal</Button>
-          <Button type="submit" variant="primary" disabled={submitting}>{submitting ? 'Menyimpan…' : 'Jadwalkan Audit'}</Button>
+          <Button type="submit" variant="primary" disabled={submitting}>{submitting ? 'Menyimpan…' : audit ? 'Simpan Perubahan' : 'Jadwalkan Audit'}</Button>
         </div>
       </form>
     </Modal>
@@ -254,6 +268,8 @@ export default function AuditProgramPage({ type }) {
   const [users, setUsers] = useState([])
   const [error, setError] = useState('')
   const [formOpen, setFormOpen] = useState(false)
+  const [editing, setEditing] = useState(null)
+  const del = useConfirmDelete()
 
   const [status, setStatus] = useState('')
   const [functionId, setFunctionId] = useState('')
@@ -315,7 +331,7 @@ export default function AuditProgramPage({ type }) {
               : 'Program audit mutu internal — perencanaan, pelaksanaan, sampai temuan yang diangkat ke Register Temuan & CAPA.'}
           </p>
         </div>
-        {canPlan && <Button variant="primary" onClick={() => setFormOpen(true)}><Plus size={14} /> Jadwalkan Audit</Button>}
+        {canPlan && <Button variant="primary" onClick={() => { setEditing(null); setFormOpen(true) }}><Plus size={14} /> Jadwalkan Audit</Button>}
       </div>
 
       {error && <div className="mb-4 rounded-md border border-[#f3c9c8] bg-[#fbe7e6] px-3 py-2 text-[12px] text-[#7d2c2b]">{error}</div>}
@@ -359,11 +375,13 @@ export default function AuditProgramPage({ type }) {
                   <th className="py-2 pr-3 font-bold">Rencana</th>
                   <th className="py-2 pr-3 text-center font-bold">Temuan</th>
                   <th className="py-2 pr-3 font-bold">Status</th>
+                  {canPlan && <th className="py-2 text-right font-bold">Aksi</th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--color-neutral-border)]">
                 {audits.map((a) => (
-                  <AuditRow key={a.id} audit={a} functionLabel={functionLabel(a.function_id)} canConduct={canConduct} canPlan={canPlan} onReload={load} />
+                  <AuditRow key={a.id} audit={a} functionLabel={functionLabel(a.function_id)} canConduct={canConduct} canPlan={canPlan} onReload={load}
+                    onEdit={(x) => { setEditing(x); setFormOpen(true) }} onDelete={del.ask} />
                 ))}
               </tbody>
             </table>
@@ -373,12 +391,18 @@ export default function AuditProgramPage({ type }) {
 
       <AuditFormModal
         open={formOpen}
-        onClose={() => setFormOpen(false)}
+        audit={editing}
+        onClose={() => { setFormOpen(false); setEditing(null) }}
         type={type}
         functions={functions}
         standards={standards}
         users={users}
-        onSaved={() => { setFormOpen(false); load() }}
+        onSaved={() => { setFormOpen(false); setEditing(null); load() }}
+      />
+      <ConfirmDelete
+        open={del.open} onClose={del.close} title="Hapus rencana audit?" what={del.target && `${del.target.code} — ${del.target.title}`}
+        note="Audit yang sudah selesai atau sudah punya temuan tidak bisa dihapus — batalkan saja bila tidak jadi dilaksanakan."
+        onConfirm={() => api(`audits/${del.target.id}`, { method: 'DELETE' })} onDone={load}
       />
     </Layout>
   )

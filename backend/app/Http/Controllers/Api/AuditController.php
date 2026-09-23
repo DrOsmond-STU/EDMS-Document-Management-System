@@ -108,6 +108,27 @@ class AuditController extends Controller
         return response()->json($this->present($audit->fresh()));
     }
 
+    /** Audit selesai adalah rekaman program audit; audit yang sudah punya temuan tidak boleh hilang. */
+    public function destroy(Request $request, Audit $audit): JsonResponse
+    {
+        if (! $request->user()->hasPermission(Permissions::AUDIT_PLAN)) {
+            return response()->json(['message' => 'Anda tidak berwenang menghapus rencana audit.'], 403);
+        }
+        if ($audit->status === 'completed') {
+            return response()->json(['message' => 'Audit yang sudah selesai adalah rekaman program audit dan tidak bisa dihapus.'], 422);
+        }
+        $findings = $audit->findings()->count();
+        if ($findings > 0) {
+            return response()->json(['message' => "Audit ini sudah punya {$findings} temuan. Hapus/pindahkan temuannya dulu, atau batalkan audit."], 422);
+        }
+
+        $audit->delete();
+        $this->audit->log($request->user(), 'delete', 'Audit', $audit->code, $audit->title,
+            "Menghapus rencana audit \"{$audit->title}\" ({$audit->code}).");
+
+        return response()->json(['message' => 'Audit dihapus.']);
+    }
+
     public function transition(Request $request, Audit $audit): JsonResponse
     {
         $data = $request->validate([

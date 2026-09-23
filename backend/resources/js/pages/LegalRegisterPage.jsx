@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { AlertTriangle, CheckCircle2, ChevronDown, ChevronUp, CircleDashed, Clock, Plus, Scale, XCircle } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, ChevronDown, ChevronUp, CircleDashed, Clock, Pencil, Plus, Scale, Trash2, XCircle } from 'lucide-react'
 import { Layout } from '../components/Layout'
 import { api, ApiError } from '../api'
 import { useAuth } from '../AuthContext'
-import { Button, Card, Field, inputClass, Modal } from '../components/ui'
+import { Button, Card, ConfirmDelete, Field, IconAction, inputClass, Modal, useConfirmDelete } from '../components/ui'
 
 const TYPE_LABEL = {
   uu: 'Undang-Undang', pp: 'Peraturan Pemerintah', perpres: 'Peraturan Presiden', permen: 'Peraturan Menteri',
@@ -94,7 +94,7 @@ function EvaluateForm({ item, onDone }) {
   )
 }
 
-function ItemRow({ item, canManage, onReload }) {
+function ItemRow({ item, canManage, onReload, onEdit, onDelete }) {
   const [open, setOpen] = useState(false)
   const [error, setError] = useState('')
   const overdue = isOverdue(item)
@@ -143,10 +143,16 @@ function ItemRow({ item, canManage, onReload }) {
             </span>
           ) : <span className="text-[var(--color-neutral-soft)]">—</span>}
         </td>
+        {canManage && (
+          <td className="whitespace-nowrap py-1.5 text-right">
+            <IconAction icon={Pencil} label="Ubah peraturan" onClick={() => onEdit(item)} />
+            <IconAction icon={Trash2} label="Hapus peraturan" danger onClick={() => onDelete(item)} />
+          </td>
+        )}
       </tr>
       {open && (
         <tr className="border-b border-dashed border-[var(--color-neutral-border)] bg-[var(--color-neutral-bg-soft)]">
-          <td colSpan={7} className="px-3 pb-4 pt-3" onClick={(e) => e.stopPropagation()}>
+          <td colSpan={canManage ? 8 : 7} className="px-3 pb-4 pt-3" onClick={(e) => e.stopPropagation()}>
             <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
               <div className="space-y-3">
                 {[['Ringkasan', item.summary], ['Pasal yang Relevan', item.applicable_clauses], ['Kewajiban yang Harus Dipenuhi', item.obligations]].map(([label, value]) => (
@@ -200,19 +206,22 @@ function ItemRow({ item, canManage, onReload }) {
   )
 }
 
-function ItemFormModal({ open, onClose, functions, onSaved }) {
+function ItemFormModal({ open, onClose, functions, onSaved, item = null }) {
   const [form, setForm] = useState(null)
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
     if (!open) return
-    setForm({
+    const blank = {
       title: '', regulation_number: '', regulation_type: 'pp', issuer: '', issued_date: '', category: 'lingkungan',
       summary: '', applicable_clauses: '', obligations: '', function_id: '', owner: '', next_evaluation_at: '',
-    })
+    }
+    setForm(item
+      ? Object.fromEntries(Object.keys(blank).map((k) => [k, k.endsWith('_date') || k === 'next_evaluation_at' ? (item[k] ?? '').slice(0, 10) : (item[k] ?? '')]))
+      : blank)
     setError('')
-  }, [open])
+  }, [open, item])
 
   if (!form) return null
   const set = (k) => (e) => setForm({ ...form, [k]: e.target.value })
@@ -223,7 +232,9 @@ function ItemFormModal({ open, onClose, functions, onSaved }) {
     try {
       const body = { ...form }
       ;['issued_date', 'function_id', 'next_evaluation_at'].forEach((k) => { if (!body[k]) body[k] = null })
-      onSaved(await api('legal-requirements', { method: 'POST', body }))
+      onSaved(item
+        ? await api(`legal-requirements/${item.id}`, { method: 'PATCH', body })
+        : await api('legal-requirements', { method: 'POST', body }))
     } catch (err) {
       setError(err instanceof ApiError ? (err.body?.errors ? Object.values(err.body.errors).flat().join(' ') : err.body?.message || err.message) : 'Gagal menyimpan.')
     } finally {
@@ -232,7 +243,7 @@ function ItemFormModal({ open, onClose, functions, onSaved }) {
   }
 
   return (
-    <Modal open={open} onClose={onClose} title="Tambah Peraturan">
+    <Modal open={open} onClose={onClose} title={item ? `Ubah Peraturan ${item.code}` : 'Tambah Peraturan'}>
       <form onSubmit={handleSubmit} className="flex max-h-[75vh] flex-col gap-3 overflow-y-auto pr-1">
         <Field label="Judul Peraturan"><input className={inputClass} value={form.title} onChange={set('title')} required /></Field>
         <div className="grid grid-cols-2 gap-2">
@@ -285,6 +296,8 @@ export default function LegalRegisterPage() {
   const [functions, setFunctions] = useState([])
   const [error, setError] = useState('')
   const [formOpen, setFormOpen] = useState(false)
+  const [editing, setEditing] = useState(null)
+  const del = useConfirmDelete()
 
   const [q, setQ] = useState(() => new URLSearchParams(window.location.search).get('q') ?? '')
   const [category, setCategory] = useState('')
@@ -335,7 +348,7 @@ export default function LegalRegisterPage() {
             Daftar peraturan perundang-undangan & persyaratan lain yang berlaku, beserta evaluasi kepatuhan berkala (ISO 14001/45001 klausul 6.1.3 & 9.1.2).
           </p>
         </div>
-        {canManage && <Button variant="primary" onClick={() => setFormOpen(true)}><Plus size={14} /> Tambah Peraturan</Button>}
+        {canManage && <Button variant="primary" onClick={() => { setEditing(null); setFormOpen(true) }}><Plus size={14} /> Tambah Peraturan</Button>}
       </div>
 
       {error && <div className="mb-4 rounded-md border border-[#f3c9c8] bg-[#fbe7e6] px-3 py-2 text-[12px] text-[#7d2c2b]">{error}</div>}
@@ -388,17 +401,23 @@ export default function LegalRegisterPage() {
                   <th className="py-2 pr-3 font-bold">Penanggung Jawab</th>
                   <th className="py-2 pr-3 font-bold">Kepatuhan</th>
                   <th className="py-2 pr-3 font-bold">Evaluasi Berikutnya</th>
+                  {canManage && <th className="py-2 text-right font-bold">Aksi</th>}
                 </tr>
               </thead>
               <tbody>
-                {items.map((it) => <ItemRow key={it.id} item={it} canManage={canManage} onReload={load} />)}
+                {items.map((it) => <ItemRow key={it.id} item={it} canManage={canManage} onReload={load} onEdit={(x) => { setEditing(x); setFormOpen(true) }} onDelete={del.ask} />)}
               </tbody>
             </table>
           </div>
         )}
       </Card>
 
-      <ItemFormModal open={formOpen} onClose={() => setFormOpen(false)} functions={functions} onSaved={() => { setFormOpen(false); load() }} />
+      <ItemFormModal open={formOpen} item={editing} onClose={() => { setFormOpen(false); setEditing(null) }} functions={functions} onSaved={() => { setFormOpen(false); setEditing(null); load() }} />
+      <ConfirmDelete
+        open={del.open} onClose={del.close} title="Hapus peraturan?" what={del.target && `${del.target.code} — ${del.target.title}`}
+        note="Riwayat evaluasinya ikut tersembunyi, tetapi tetap tercatat di Audit Trail. Untuk peraturan yang dicabut/diganti, lebih tepat ubah statusnya."
+        onConfirm={() => api(`legal-requirements/${del.target.id}`, { method: 'DELETE' })} onDone={load}
+      />
     </Layout>
   )
 }

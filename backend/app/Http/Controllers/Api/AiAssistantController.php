@@ -83,6 +83,19 @@ class AiAssistantController extends Controller
         return response()->json(['generation' => $generation]);
     }
 
+    public function destroy(Request $request, AiGeneration $generation): JsonResponse
+    {
+        if (! $request->user()->hasPermission(Permissions::AI_USE) || $generation->user_id !== $request->user()->id) {
+            return $this->forbidden();
+        }
+
+        $generation->delete();
+        $this->audit->log($request->user(), 'delete', 'AiGeneration', (string) $generation->id, $generation->subject,
+            "Menghapus riwayat Asisten AI \"{$generation->subject}\".");
+
+        return response()->json(['message' => 'Riwayat dihapus.']);
+    }
+
     /** Pencarian & Regulasi: cek duplikat + rekomendasi jenis/standar/klausul/regulasi. */
     public function discover(Request $request): JsonResponse
     {

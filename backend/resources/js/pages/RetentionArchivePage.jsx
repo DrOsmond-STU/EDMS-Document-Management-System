@@ -4,7 +4,7 @@ import { Archive, Lock, Pencil, Plus, Timer, Trash2 } from 'lucide-react'
 import { Layout } from '../components/Layout'
 import { api } from '../api'
 import { useAuth } from '../AuthContext'
-import { Button, Card, Field, inputClass, Modal } from '../components/ui'
+import { Button, Card, ConfirmDelete, Field, IconAction, inputClass, Modal, useConfirmDelete } from '../components/ui'
 import { DISPOSITION_LABEL, RecordStatusBadge, d, errorText } from './records/shared'
 
 const WORKLISTS = {
@@ -145,6 +145,7 @@ export default function RetentionArchivePage() {
   const [error, setError] = useState('')
   const [seriesModal, setSeriesModal] = useState({ open: false, initial: null })
   const [disposeTarget, setDisposeTarget] = useState(null)
+  const del = useConfirmDelete()
 
   const loadSeries = useCallback(() => {
     if (!canView) return
@@ -297,7 +298,12 @@ export default function RetentionArchivePage() {
                     <td className="py-2 pr-3 text-[11.5px] text-[var(--color-neutral-medium)]">{s.legal_basis || '—'}</td>
                     <td className="py-2 pr-3 text-center tabular-nums">{s.records_count}</td>
                     <td className="py-2 pr-3 text-right">
-                      {canManage && <button type="button" className="text-[var(--color-neutral-medium)] hover:text-[var(--color-brand-primary)]" onClick={() => setSeriesModal({ open: true, initial: s })} title="Ubah"><Pencil size={14} /></button>}
+                      {canManage && (
+                        <span className="-my-1 inline-flex whitespace-nowrap">
+                          <IconAction icon={Pencil} label="Ubah seri" onClick={() => setSeriesModal({ open: true, initial: s })} />
+                          <IconAction icon={Trash2} label="Hapus seri" danger onClick={() => del.ask(s)} />
+                        </span>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -313,6 +319,11 @@ export default function RetentionArchivePage() {
         functions={functions}
         onClose={() => setSeriesModal({ open: false, initial: null })}
         onSaved={() => { setSeriesModal({ open: false, initial: null }); loadSeries(); loadWorklist() }}
+      />
+      <ConfirmDelete
+        open={del.open} onClose={del.close} title="Hapus seri rekaman?" what={del.target && `${del.target.code} — ${del.target.name}`}
+        note="Seri hanya bisa dihapus bila tidak ada rekaman di dalamnya. Bila masih dipakai, nonaktifkan saja lewat Ubah."
+        onConfirm={() => api(`record-series/${del.target.id}`, { method: 'DELETE' })} onDone={loadSeries}
       />
       <DisposeModal target={disposeTarget} onClose={() => setDisposeTarget(null)} onDone={() => { setDisposeTarget(null); loadWorklist(); loadSeries() }} />
     </Layout>

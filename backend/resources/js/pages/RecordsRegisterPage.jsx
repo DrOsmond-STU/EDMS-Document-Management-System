@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Archive, ChevronDown, ChevronUp, Plus } from 'lucide-react'
+import { Archive, ChevronDown, ChevronUp, Plus, Pencil, Trash2 } from 'lucide-react'
 import { Layout } from '../components/Layout'
 import { api } from '../api'
 import { useAuth } from '../AuthContext'
-import { Button, Card, Field, inputClass, Modal } from '../components/ui'
+import { Button, Card, ConfirmDelete, Field, IconAction, inputClass, Modal, useConfirmDelete } from '../components/ui'
 import {
   CLASSIFICATION_LABEL, DISPOSITION_LABEL, HoldBadge, MEDIUM_LABEL, RECORD_STATUS, RecordStatusBadge, d, errorText, today,
 } from './records/shared'
@@ -26,7 +26,7 @@ function StatCard({ status, count }) {
   )
 }
 
-function RecordRow({ record, canManage, onReload }) {
+function RecordRow({ record, canManage, onReload, onEdit, onDelete }) {
   const [open, setOpen] = useState(false)
   const [error, setError] = useState('')
   const final = ['destroyed', 'archived_permanent'].includes(record.status)
@@ -69,10 +69,16 @@ function RecordRow({ record, canManage, onReload }) {
             {record.legal_hold && !final && <HoldBadge />}
           </div>
         </td>
+        {canManage && (
+          <td className="whitespace-nowrap py-1.5 text-right">
+            {!final && <IconAction icon={Pencil} label="Ubah rekaman" onClick={() => onEdit(record)} />}
+            {!final && !record.legal_hold && <IconAction icon={Trash2} label="Hapus rekaman" danger onClick={() => onDelete(record)} />}
+          </td>
+        )}
       </tr>
       {open && (
         <tr className="border-b border-dashed border-[var(--color-neutral-border)] bg-[var(--color-neutral-bg-soft)]">
-          <td colSpan={7} className="px-3 pb-4 pt-3 text-[12.5px]" onClick={(e) => e.stopPropagation()}>
+          <td colSpan={canManage ? 8 : 7} className="px-3 pb-4 pt-3 text-[12.5px]" onClick={(e) => e.stopPropagation()}>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
               <div>
                 <div className="mb-1 text-[11px] font-bold uppercase tracking-wide text-[var(--color-neutral-medium)]">Deskripsi</div>
@@ -114,16 +120,19 @@ function RecordRow({ record, canManage, onReload }) {
   )
 }
 
-function RecordFormModal({ open, onClose, series, functions, onSaved }) {
+function RecordFormModal({ open, onClose, series, functions, onSaved, record = null }) {
   const [form, setForm] = useState(null)
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
     if (!open) return
-    setForm({ series_id: '', title: '', description: '', record_date: today(), medium: 'physical', location: '', classification: 'internal', function_id: '' })
+    setForm(record ? {
+      series_id: String(record.series_id), title: record.title, description: record.description ?? '', record_date: d(record.record_date),
+      medium: record.medium, location: record.location ?? '', classification: record.classification, function_id: record.function_id ?? '',
+    } : { series_id: '', title: '', description: '', record_date: today(), medium: 'physical', location: '', classification: 'internal', function_id: '' })
     setError('')
-  }, [open])
+  }, [open, record])
 
   const selected = useMemo(() => series.find((s) => String(s.id) === String(form?.series_id)), [series, form?.series_id])
   const preview = useMemo(() => {
@@ -141,7 +150,10 @@ function RecordFormModal({ open, onClose, series, functions, onSaved }) {
     e.preventDefault()
     setSubmitting(true); setError('')
     try {
-      onSaved(await api('records', { method: 'POST', body: { ...form, series_id: Number(form.series_id), function_id: form.function_id || null } }))
+      const body = { ...form, series_id: Number(form.series_id), function_id: form.function_id || null }
+      onSaved(record
+        ? await api(`records/${record.id}`, { method: 'PATCH', body })
+        : await api('records', { method: 'POST', body }))
     } catch (err) {
       setError(errorText(err, 'Gagal menyimpan.'))
     } finally {
@@ -150,12 +162,12 @@ function RecordFormModal({ open, onClose, series, functions, onSaved }) {
   }
 
   return (
-    <Modal open={open} onClose={onClose} title="Daftarkan Rekaman">
+    <Modal open={open} onClose={onClose} title={record ? `Ubah Rekaman ${record.code}` : 'Daftarkan Rekaman'}>
       <form onSubmit={handleSubmit} className="flex max-h-[75vh] flex-col gap-3 overflow-y-auto pr-1">
         <Field label="Seri Rekaman (JRA)">
           <select className={inputClass} value={form.series_id} onChange={set('series_id')} required>
             <option value="">— Pilih seri —</option>
-            {series.filter((s) => s.active).map((s) => <option key={s.id} value={s.id}>{s.code} — {s.name}</option>)}
+            {series.filter((s) => s.active || String(s.id) === String(form.series_id)).map((s) => <option key={s.id} value={s.id}>{s.code} — {s.name}</option>)}
           </select>
         </Field>
         {selected && (
@@ -209,6 +221,8 @@ export default function RecordsRegisterPage() {
   const [functions, setFunctions] = useState([])
   const [error, setError] = useState('')
   const [formOpen, setFormOpen] = useState(false)
+  const [editing, setEditing] = useState(null)
+  const del = useConfirmDelete()
   const [q, setQ] = useState(() => new URLSearchParams(window.location.search).get('q') ?? '')
   const [seriesId, setSeriesId] = useState('')
   const [status, setStatus] = useState('')
@@ -247,7 +261,7 @@ export default function RecordsRegisterPage() {
         </div>
         <div className="flex gap-2">
           <Link to="/retention"><Button variant="secondary">Jadwal Retensi & Arsip</Button></Link>
-          {canManage && <Button variant="primary" onClick={() => setFormOpen(true)} disabled={series.length === 0} title={series.length === 0 ? 'Buat seri rekaman di Jadwal Retensi terlebih dahulu' : ''}><Plus size={14} /> Daftarkan Rekaman</Button>}
+          {canManage && <Button variant="primary" onClick={() => { setEditing(null); setFormOpen(true) }} disabled={series.length === 0} title={series.length === 0 ? 'Buat seri rekaman di Jadwal Retensi terlebih dahulu' : ''}><Plus size={14} /> Daftarkan Rekaman</Button>}
         </div>
       </div>
 
@@ -301,15 +315,20 @@ export default function RecordsRegisterPage() {
                   <th className="py-2 pr-3 font-bold">Media</th>
                   <th className="py-2 pr-3 font-bold">Retensi</th>
                   <th className="py-2 pr-3 font-bold">Status</th>
+                  {canManage && <th className="py-2 text-right font-bold">Aksi</th>}
                 </tr>
               </thead>
-              <tbody>{records.map((r) => <RecordRow key={r.id} record={r} canManage={canManage} onReload={load} />)}</tbody>
+              <tbody>{records.map((r) => <RecordRow key={r.id} record={r} canManage={canManage} onReload={load} onEdit={(rec) => { setEditing(rec); setFormOpen(true) }} onDelete={del.ask} />)}</tbody>
             </table>
           </div>
         )}
       </Card>
 
-      <RecordFormModal open={formOpen} onClose={() => setFormOpen(false)} series={series} functions={functions} onSaved={() => { setFormOpen(false); load() }} />
+      <RecordFormModal open={formOpen} record={editing} onClose={() => { setFormOpen(false); setEditing(null) }} series={series} functions={functions} onSaved={() => { setFormOpen(false); setEditing(null); load() }} />
+      <ConfirmDelete
+        open={del.open} onClose={del.close} title="Hapus rekaman?" what={del.target && `${del.target.code} — ${del.target.title}`}
+        onConfirm={() => api(`records/${del.target.id}`, { method: 'DELETE' })} onDone={load}
+      />
     </Layout>
   )
 }

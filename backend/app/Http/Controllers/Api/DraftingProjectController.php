@@ -106,8 +106,11 @@ class DraftingProjectController extends Controller
                     && (! $project->drafter_id || $project->drafter_id === $user->id),
                 'control' => $user->hasPermission(Permissions::DOCUMENT_CONTROL),
                 'ratify' => $user->hasPermission(Permissions::DOCUMENT_RATIFY),
+                'edit' => $this->ownsOrControls($user, $project) && in_array($project->status, ['requested', 'in_progress'], true),
+                'delete' => $this->ownsOrControls($user, $project) && in_array($project->status, ['requested', 'rejected'], true),
             ],
             'drafters' => $user->hasPermission(Permissions::DOCUMENT_CONTROL) ? $this->drafters() : [],
+            'meta' => ['doc_types' => self::DOC_TYPES, 'classifications' => self::CLASSIFICATIONS],
         ]);
     }
 
@@ -153,6 +156,58 @@ class DraftingProjectController extends Controller
         $this->log($user, $project, 'create', "Mengajukan permintaan penyusunan \"{$project->title}\" ({$project->code}).");
 
         return response()->json($this->present($project), 201);
+    }
+
+    /** Ubah data permintaan — oleh pemohon atau Document Controller, selama belum difinalisasi. */
+    public function update(Request $request, DraftingProject $project): JsonResponse
+    {
+        $user = $request->user();
+        if (! $this->ownsOrControls($user, $project)) {
+            return $this->forbidden('Hanya pemohon atau Document Controller yang boleh mengubah permintaan ini.');
+        }
+        if (! in_array($project->status, ['requested', 'in_progress'], true)) {
+            return $this->fail('Permintaan yang sudah difinalisasi/disahkan/ditolak tidak bisa diubah.');
+        }
+
+        $data = $request->validate([
+            'title' => ['sometimes', 'string', 'max:255'],
+            'doc_type' => ['sometimes', Rule::in(self::DOC_TYPES)],
+            'function_id' => ['sometimes', 'exists:org_functions,id'],
+            'classification' => ['sometimes', Rule::in(self::CLASSIFICATIONS)],
+            'reason' => ['sometimes', 'string', 'max:5000'],
+            'standards' => ['sometimes', 'array'],
+            'standards.*' => ['string', 'exists:standards,code'],
+        ]);
+
+        DB::transaction(function () use ($project, $data) {
+            $project->fill(collect($data)->except('standards')->all())->save();
+            if (array_key_exists('standards', $data)) {
+                $project->standards()->sync($data['standards']);
+            }
+        });
+        $this->log($user, $project, 'update', "Mengubah data permintaan penyusunan \"{$project->title}\" ({$project->code}).");
+
+        return response()->json($this->present($project->fresh()));
+    }
+
+    /** Hapus permintaan yang belum dikerjakan (atau sudah ditolak) — oleh pemohon atau Document Controller. */
+    public function destroy(Request $request, DraftingProject $project): JsonResponse
+    {
+        $user = $request->user();
+        if (! $this->ownsOrControls($user, $project)) {
+            return $this->forbidden('Hanya pemohon atau Document Controller yang boleh menghapus permintaan ini.');
+        }
+        if (! in_array($project->status, ['requested', 'rejected'], true)) {
+            return $this->fail('Hanya permintaan yang belum dikerjakan atau sudah ditolak yang bisa dihapus. Proyek yang sedang berjalan bisa ditolak oleh Document Controller.');
+        }
+
+        DB::transaction(function () use ($project) {
+            $project->meetings()->delete();
+            $project->delete();
+        });
+        $this->log($user, $project, 'delete', "Menghapus permintaan penyusunan \"{$project->title}\" ({$project->code}).");
+
+        return response()->json(['message' => 'Permintaan dihapus.']);
     }
 
     public function assign(Request $request, DraftingProject $project): JsonResponse
@@ -359,7 +414,7 @@ class DraftingProjectController extends Controller
         ]);
 
         $meeting = DB::transaction(function () use ($project, $data, $request) {
-            $next = (int) $project->meetings()->lockForUpdate()->max('session_no') + 1;
+            $next = (int) $project->meetings()->withTrashed()->lockForUpdate()->max('session_no') + 1;
 
             return DraftingMeeting::create([
                 ...$data, 'drafting_project_id' => $project->id, 'session_no' => $next, 'created_by' => $request->user()->id,
@@ -393,6 +448,26 @@ class DraftingProjectController extends Controller
         $this->log($request->user(), $project, 'update', "Memperbarui rapat ke-{$meeting->session_no} {$project->code}.");
 
         return response()->json($meeting->fresh()->load(['photos', 'attendees']));
+    }
+
+    /** Rapat yang daftar hadirnya sudah ditandatangani adalah bukti proses — tidak bisa dihapus. */
+    public function destroyMeeting(Request $request, DraftingProject $project, DraftingMeeting $meeting): JsonResponse
+    {
+        $this->assertMeeting($project, $meeting);
+        if (! $this->canWork($request->user(), $project)) {
+            return $this->forbidden('Anda tidak berwenang menghapus rapat ini.');
+        }
+        if ($meeting->attendees()->whereNotNull('signed_at')->exists()) {
+            return $this->fail('Rapat yang daftar hadirnya sudah ditandatangani tidak bisa dihapus.');
+        }
+
+        DB::transaction(function () use ($meeting) {
+            $meeting->attendees()->delete();
+            $meeting->delete();
+        });
+        $this->log($request->user(), $project, 'delete', "Menghapus rapat ke-{$meeting->session_no} {$project->code} ({$meeting->agenda}).");
+
+        return response()->json(['message' => 'Rapat dihapus.']);
     }
 
     public function uploadMinutes(Request $request, DraftingProject $project, DraftingMeeting $meeting): JsonResponse
@@ -486,6 +561,42 @@ class DraftingProjectController extends Controller
         return response()->json($attendee->fresh());
     }
 
+    public function updateAttendee(Request $request, DraftingProject $project, DraftingMeeting $meeting, DraftingMeetingAttendee $attendee): JsonResponse
+    {
+        $this->assertMeeting($project, $meeting);
+        abort_unless($attendee->drafting_meeting_id === $meeting->id, 404);
+        if (! $this->canWork($request->user(), $project)) {
+            return $this->forbidden('Anda tidak berwenang mengubah daftar hadir.');
+        }
+        if ($attendee->signed_at) {
+            return $this->fail('Peserta yang sudah menandatangani tidak bisa diubah.');
+        }
+
+        $attendee->update($request->validate([
+            'name' => ['sometimes', 'string', 'max:255'],
+            'position' => ['sometimes', 'nullable', 'string', 'max:255'],
+        ]));
+
+        return response()->json($attendee->fresh());
+    }
+
+    public function destroyAttendee(Request $request, DraftingProject $project, DraftingMeeting $meeting, DraftingMeetingAttendee $attendee): JsonResponse
+    {
+        $this->assertMeeting($project, $meeting);
+        abort_unless($attendee->drafting_meeting_id === $meeting->id, 404);
+        if (! $this->canWork($request->user(), $project)) {
+            return $this->forbidden('Anda tidak berwenang mengubah daftar hadir.');
+        }
+        if ($attendee->signed_at) {
+            return $this->fail('Peserta yang sudah menandatangani tidak bisa dihapus dari daftar hadir.');
+        }
+
+        $attendee->delete();
+        $this->log($request->user(), $project, 'update', "Menghapus peserta \"{$attendee->name}\" dari daftar hadir rapat ke-{$meeting->session_no} {$project->code}.");
+
+        return response()->json(['message' => 'Peserta dihapus.']);
+    }
+
     public function signature(Request $request, DraftingProject $project, DraftingMeeting $meeting, DraftingMeetingAttendee $attendee): Response
     {
         $this->assertMeeting($project, $meeting);
@@ -520,6 +631,11 @@ class DraftingProjectController extends Controller
     {
         // PNG data URL dari kanvas; batas ~300 KB mencegah gambar raksasa masuk DB.
         return ['string', 'max:400000', 'regex:/^data:image\/png;base64,[A-Za-z0-9+\/=]+$/'];
+    }
+
+    private function ownsOrControls(User $user, DraftingProject $project): bool
+    {
+        return $project->requester_id === $user->id || $user->hasPermission(Permissions::DOCUMENT_CONTROL);
     }
 
     private function assertMeeting(DraftingProject $project, DraftingMeeting $meeting): void

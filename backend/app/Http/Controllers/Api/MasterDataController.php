@@ -10,6 +10,7 @@ use App\Services\AuditLogger;
 use App\Support\Permissions;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Master Data — kelola daftar acuan bersama (fungsi/departemen & standar)
@@ -156,6 +157,55 @@ class MasterDataController extends Controller
             "Memperbarui standar \"{$model->name}\" ({$model->code}).");
 
         return response()->json($model->fresh());
+    }
+
+    /**
+     * Master data dihapus sungguhan HANYA bila tidak dipakai di mana pun
+     * (termasuk data yang sudah dihapus lunak) — kalau masih dipakai,
+     * nonaktifkan saja supaya riwayat tetap utuh.
+     */
+    public function destroyFunction(Request $request, string $orgFunction): JsonResponse
+    {
+        if (! $this->authorized($request)) {
+            return $this->forbidden();
+        }
+        $function = OrgFunction::findOrFail($orgFunction);
+
+        $used = collect(['documents', 'users', 'risks', 'findings', 'audits', 'drafting_projects', 'record_series', 'legal_requirements'])
+            ->sum(fn ($table) => DB::table($table)->where('function_id', $function->id)->count());
+        if ($used > 0) {
+            return response()->json(['message' => "Fungsi \"{$function->name}\" masih dipakai {$used} data (dokumen, pengguna, risiko, dll.). Nonaktifkan saja agar tidak muncul di pilihan baru."], 422);
+        }
+
+        $function->delete();
+        $this->audit->log($request->user(), 'delete', 'OrgFunction', $function->id, $function->name,
+            "Menghapus fungsi/departemen \"{$function->name}\" ({$function->id}).");
+
+        return response()->json(['message' => 'Fungsi dihapus.']);
+    }
+
+    public function destroyStandard(Request $request, string $standard): JsonResponse
+    {
+        if (! $this->authorized($request)) {
+            return $this->forbidden();
+        }
+        $model = Standard::findOrFail($standard);
+
+        $used = collect(['document_standard', 'risk_standard', 'finding_standard', 'audit_standard', 'drafting_project_standard'])
+            ->sum(fn ($table) => DB::table($table)->where('standard_code', $model->code)->count())
+            + DB::table('clause_assessments')->whereIn('clause_id', DB::table('standard_clauses')->where('standard_code', $model->code)->select('id'))->count();
+        if ($used > 0) {
+            return response()->json(['message' => "Standar {$model->code} masih dipakai {$used} data (dokumen, risiko, temuan, audit, penilaian klausul, dll.). Nonaktifkan saja agar tidak muncul di pilihan baru."], 422);
+        }
+
+        DB::transaction(function () use ($model) {
+            DB::table('standard_clauses')->where('standard_code', $model->code)->delete();
+            $model->delete();
+        });
+        $this->audit->log($request->user(), 'delete', 'Standard', $model->code, $model->name,
+            "Menghapus standar \"{$model->name}\" ({$model->code}) beserta taksonomi klausulnya.");
+
+        return response()->json(['message' => 'Standar dihapus.']);
     }
 
     private function authorized(Request $request): bool

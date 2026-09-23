@@ -3,12 +3,15 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Risk extends Model
 {
+    use SoftDeletes;
+
     protected $fillable = [
         'code', 'title', 'description', 'category', 'function_id', 'owner',
         'inherent_likelihood', 'inherent_impact', 'inherent_level',
@@ -58,7 +61,7 @@ class Risk extends Model
      */
     public static function nextCode(): string
     {
-        $last = static::orderByDesc('code')->lockForUpdate()->value('code');
+        $last = static::withTrashed()->orderByDesc('code')->lockForUpdate()->value('code');
 
         $next = 1;
         if ($last !== null && preg_match('/(\d+)$/', $last, $m)) {

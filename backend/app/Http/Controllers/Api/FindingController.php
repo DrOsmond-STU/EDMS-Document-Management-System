@@ -223,13 +223,74 @@ class FindingController extends Controller
             return response()->json(['message' => 'Tindakan tidak ditemukan pada temuan ini.'], 404);
         }
 
-        $data = $request->validate(['status' => ['required', 'string', Rule::in(self::ACTION_STATUSES)]]);
+        $data = $request->validate([
+            'status' => ['sometimes', 'string', Rule::in(self::ACTION_STATUSES)],
+            'type' => ['sometimes', 'string', Rule::in(self::ACTION_TYPES)],
+            'description' => ['sometimes', 'string', 'max:2000'],
+            'pic' => ['sometimes', 'string', 'max:255'],
+            'due_date' => ['sometimes', 'nullable', 'date'],
+        ]);
+        $editsContent = array_diff_key($data, ['status' => true]) !== [];
+        if ($editsContent && in_array($finding->status, ['closed', 'rejected'], true)) {
+            return response()->json(['message' => 'Temuan yang sudah ditutup/ditolak tidak bisa diubah.'], 422);
+        }
         $action->update($data);
 
         $this->audit->log($request->user(), 'update', 'Finding', $finding->code, $finding->title,
-            "Memperbarui status tindakan CAPA menjadi \"{$data['status']}\" pada temuan \"{$finding->title}\" ({$finding->code}).");
+            isset($data['status']) && count($data) === 1
+                ? "Memperbarui status tindakan CAPA menjadi \"{$data['status']}\" pada temuan \"{$finding->title}\" ({$finding->code})."
+                : "Mengubah tindakan CAPA pada temuan \"{$finding->title}\" ({$finding->code}).");
 
         return response()->json($this->present($finding->fresh()));
+    }
+
+    public function destroyAction(Request $request, Finding $finding, FindingAction $action): JsonResponse
+    {
+        if (! $request->user()->hasPermission(Permissions::FINDING_MANAGE)) {
+            return response()->json(['message' => 'Anda tidak berwenang menghapus tindakan CAPA.'], 403);
+        }
+        if ($action->finding_id !== $finding->id) {
+            return response()->json(['message' => 'Tindakan tidak ditemukan pada temuan ini.'], 404);
+        }
+        if (in_array($finding->status, ['closed', 'rejected'], true)) {
+            return response()->json(['message' => 'Temuan yang sudah ditutup/ditolak tidak bisa diubah.'], 422);
+        }
+        if ($action->status === 'completed') {
+            return response()->json(['message' => 'Tindakan CAPA yang sudah selesai tidak bisa dihapus.'], 422);
+        }
+
+        DB::transaction(function () use ($finding, $action) {
+            $action->delete();
+            // Tanpa tindakan tersisa, status kembali ke tahap sebelum CAPA.
+            if ($finding->status === 'capa_in_progress' && ! $finding->actions()->exists()) {
+                $finding->update(['status' => $finding->root_cause ? 'root_cause_analysis' : 'open']);
+            }
+        });
+
+        $this->audit->log($request->user(), 'delete', 'Finding', $finding->code, $finding->title,
+            "Menghapus tindakan CAPA pada temuan \"{$finding->title}\" ({$finding->code}): ".mb_substr($action->description, 0, 120));
+
+        return response()->json($this->present($finding->fresh()));
+    }
+
+    /** Salah input bisa dihapus selama belum diverifikasi/ditutup — setelah itu ia rekaman CAPA. */
+    public function destroy(Request $request, Finding $finding): JsonResponse
+    {
+        if (! $request->user()->hasPermission(Permissions::FINDING_MANAGE)) {
+            return response()->json(['message' => 'Anda tidak berwenang menghapus temuan.'], 403);
+        }
+        if ($finding->status === 'closed' || $finding->verifications()->exists()) {
+            return response()->json(['message' => 'Temuan yang sudah diverifikasi/ditutup adalah rekaman CAPA dan tidak bisa dihapus. Gunakan Tolak bila temuan tidak valid.'], 422);
+        }
+
+        DB::transaction(function () use ($finding) {
+            $finding->actions()->delete();
+            $finding->delete();
+        });
+        $this->audit->log($request->user(), 'delete', 'Finding', $finding->code, $finding->title,
+            "Menghapus temuan \"{$finding->title}\" ({$finding->code}).");
+
+        return response()->json(['message' => 'Temuan dihapus.']);
     }
 
     public function addVerification(Request $request, Finding $finding): JsonResponse

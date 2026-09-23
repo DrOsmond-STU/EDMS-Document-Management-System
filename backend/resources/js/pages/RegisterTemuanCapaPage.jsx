@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { AlertTriangle, ChevronDown, ChevronUp, ClipboardEdit, Plus } from 'lucide-react'
+import { AlertTriangle, Check, ChevronDown, ChevronUp, ClipboardEdit, Pencil, Plus, Trash2, X } from 'lucide-react'
 import { Layout } from '../components/Layout'
 import { api, ApiError } from '../api'
 import { useAuth } from '../AuthContext'
-import { BasePill, Button, Card, Field, inputClass, Modal, StandardChip } from '../components/ui'
+import { BasePill, Button, Card, ConfirmDelete, Field, IconAction, inputClass, Modal, StandardChip, useConfirmDelete } from '../components/ui'
 
 // Label & warna diambil dari purwarupa lama (halaman Register Temuan & CAPA
 // di dms.semestateknologiutama.com) — lihat catatan ekstraksi di riwayat
@@ -96,8 +96,8 @@ function ProgressBar({ finding }) {
   )
 }
 
-function AddRootCauseForm({ finding, onSaved }) {
-  const [text, setText] = useState('')
+function AddRootCauseForm({ finding, onSaved, initial = '', onCancel }) {
+  const [text, setText] = useState(initial)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
 
@@ -120,6 +120,7 @@ function AddRootCauseForm({ finding, onSaved }) {
     <form onSubmit={handleSubmit} className="mt-2 flex flex-col gap-1.5 sm:flex-row">
       <input className={`${inputClass} flex-1`} placeholder="Isi akar masalah…" value={text} onChange={(e) => setText(e.target.value)} required />
       <Button type="submit" variant="secondary" size="sm" disabled={submitting}>{submitting ? '…' : 'Simpan'}</Button>
+      {onCancel && <Button type="button" variant="ghost" size="sm" onClick={onCancel}>Batal</Button>}
       {error && <p className="text-[11px] text-[#b23b3a]">{error}</p>}
     </form>
   )
@@ -201,7 +202,7 @@ function AddVerificationForm({ finding, onSaved }) {
   )
 }
 
-function FindingCard({ finding, functionLabel, canManage, canClose, onReload }) {
+function FindingCard({ finding, functionLabel, canManage, canClose, onReload, onEdit, onDelete }) {
   const [open, setOpen] = useState(false)
   const [closing, setClosing] = useState(false)
   const [closeError, setCloseError] = useState('')
@@ -209,6 +210,23 @@ function FindingCard({ finding, functionLabel, canManage, canClose, onReload }) 
   const [showReject, setShowReject] = useState(false)
   const overdue = isOverdue(finding)
   const finished = ['closed', 'rejected'].includes(finding.status)
+  const [editingRoot, setEditingRoot] = useState(false)
+  const [editingAction, setEditingAction] = useState(null)
+  const [actionError, setActionError] = useState('')
+  const delAction = useConfirmDelete()
+
+  async function saveAction(e) {
+    e?.preventDefault()
+    setActionError('')
+    try {
+      const { id, ...body } = editingAction
+      await api(`findings/${finding.id}/actions/${id}`, { method: 'PATCH', body: { ...body, due_date: body.due_date || null } })
+      setEditingAction(null)
+      onReload()
+    } catch (err) {
+      setActionError(err instanceof ApiError ? err.message : 'Gagal mengubah tindakan.')
+    }
+  }
 
   async function handleClose() {
     setClosing(true)
@@ -269,12 +287,16 @@ function FindingCard({ finding, functionLabel, canManage, canClose, onReload }) 
             </div>
           )}
         </div>
+        <div className="flex items-center gap-1">
+        {canManage && !finished && <IconAction icon={Pencil} label="Ubah temuan" onClick={() => onEdit(finding)} />}
+        {canManage && finding.status !== 'closed' && finding.verifications.length === 0 && <IconAction icon={Trash2} label="Hapus temuan" danger onClick={() => onDelete(finding)} />}
         <button
           type="button" onClick={() => setOpen((v) => !v)}
           className="flex items-center gap-1 rounded-md border border-[var(--color-neutral-border)] px-2 py-1 text-[11.5px] font-semibold hover:bg-[var(--color-neutral-bg-soft)]"
         >
           {open ? <ChevronUp size={13} /> : <ChevronDown size={13} />} {open ? 'Tutup' : 'Rincian & CAPA'}
         </button>
+        </div>
       </div>
 
       <div className="mt-3 grid grid-cols-2 gap-3 text-[12px] sm:grid-cols-4">
@@ -295,9 +317,14 @@ function FindingCard({ finding, functionLabel, canManage, canClose, onReload }) 
 
           <div>
             <div className="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-[var(--color-neutral-medium)]">Akar Masalah (Root Cause)</div>
-            {finding.root_cause
-              ? <p className="text-[12.5px] leading-relaxed">{finding.root_cause}</p>
-              : <p className="text-[11.5px] italic text-[var(--color-neutral-soft)]">Belum ada akar masalah tercatat.</p>}
+            {editingRoot ? (
+              <AddRootCauseForm finding={finding} initial={finding.root_cause} onCancel={() => setEditingRoot(false)} onSaved={() => { setEditingRoot(false); onReload() }} />
+            ) : finding.root_cause ? (
+              <div className="flex items-start gap-2">
+                <p className="flex-1 text-[12.5px] leading-relaxed">{finding.root_cause}</p>
+                {canManage && !finished && <IconAction icon={Pencil} label="Ubah akar masalah" onClick={() => setEditingRoot(true)} />}
+              </div>
+            ) : <p className="text-[11.5px] italic text-[var(--color-neutral-soft)]">Belum ada akar masalah tercatat.</p>}
             {canManage && !finding.root_cause && !finished && <AddRootCauseForm finding={finding} onSaved={onReload} />}
           </div>
 
@@ -307,10 +334,22 @@ function FindingCard({ finding, functionLabel, canManage, canClose, onReload }) 
               <ul className="mb-2 space-y-1.5">
                 {finding.actions.map((a) => (
                   <li key={a.id} className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-[var(--color-neutral-border)] bg-white px-3 py-2 text-[12.5px]">
+                    {editingAction?.id === a.id ? (
+                      <form onSubmit={saveAction} className="grid w-full grid-cols-1 gap-1.5 sm:grid-cols-[130px_1fr_130px_130px_auto]">
+                        <select className={inputClass} value={editingAction.type} onChange={(e) => setEditingAction({ ...editingAction, type: e.target.value })}>
+                          {Object.entries(ACTION_TYPE_LABEL).map(([k, l]) => <option key={k} value={k}>{l}</option>)}
+                        </select>
+                        <input className={inputClass} value={editingAction.description} onChange={(e) => setEditingAction({ ...editingAction, description: e.target.value })} required autoFocus />
+                        <input className={inputClass} placeholder="PIC" value={editingAction.pic} onChange={(e) => setEditingAction({ ...editingAction, pic: e.target.value })} required />
+                        <input type="date" className={inputClass} value={editingAction.due_date} onChange={(e) => setEditingAction({ ...editingAction, due_date: e.target.value })} />
+                        <span className="flex"><IconAction icon={Check} label="Simpan" onClick={saveAction} /><IconAction icon={X} label="Batal" onClick={() => setEditingAction(null)} /></span>
+                      </form>
+                    ) : (<>
                     <div className="min-w-0">
                       <span className="mr-1.5 font-semibold">{ACTION_TYPE_LABEL[a.type]}</span>{a.description}
                       <div className="text-[10.5px] text-[var(--color-neutral-medium)]">PIC: {a.pic}{a.due_date ? ` · Tenggat ${a.due_date.slice(0, 10)}` : ''}</div>
                     </div>
+                    <div className="flex items-center gap-1">
                     {canManage && !finished ? (
                       <select className={`${inputClass} w-auto`} value={a.status} onChange={(e) => markActionStatus(a.id, e.target.value)}>
                         {Object.entries(ACTION_STATUS_LABEL).map(([k, l]) => <option key={k} value={k}>{l}</option>)}
@@ -318,11 +357,24 @@ function FindingCard({ finding, functionLabel, canManage, canClose, onReload }) 
                     ) : (
                       <BasePill bg="#eef0ea" text="#5b6055">{ACTION_STATUS_LABEL[a.status]}</BasePill>
                     )}
+                    {canManage && !finished && (
+                      <>
+                        <IconAction icon={Pencil} label="Ubah tindakan" onClick={() => setEditingAction({ id: a.id, type: a.type, description: a.description, pic: a.pic, due_date: a.due_date?.slice(0, 10) ?? '' })} />
+                        {a.status !== 'completed' && <IconAction icon={Trash2} label="Hapus tindakan" danger onClick={() => delAction.ask(a)} />}
+                      </>
+                    )}
+                    </div>
+                    </>)}
                   </li>
                 ))}
               </ul>
             )}
+            {actionError && <p className="mb-1.5 text-[11.5px] text-[#b23b3a]">{actionError}</p>}
             {canManage && !finished && <AddActionForm finding={finding} onSaved={onReload} />}
+            <ConfirmDelete
+              open={delAction.open} onClose={delAction.close} title="Hapus tindakan CAPA?" what={delAction.target?.description}
+              onConfirm={() => api(`findings/${finding.id}/actions/${delAction.target.id}`, { method: 'DELETE' })} onDone={onReload}
+            />
           </div>
 
           <div>
@@ -369,20 +421,31 @@ function FindingCard({ finding, functionLabel, canManage, canClose, onReload }) 
   )
 }
 
-function FindingFormModal({ open, onClose, functions, standards, onSaved, prefill }) {
+function FindingFormModal({ open, onClose, functions, standards, onSaved, prefill, finding = null }) {
   const [form, setForm] = useState(null)
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
     if (!open) return
+    if (finding) {
+      setForm({
+        type: finding.type, audit_source: finding.audit_source, audit_id: finding.audit_id ?? null,
+        audit_reference: finding.audit_reference ?? '', clause_reference: finding.clause_reference ?? '',
+        title: finding.title, description: finding.description ?? '', evidence: finding.evidence ?? '', function_id: finding.function_id ?? '',
+        owner: finding.owner ?? '', raised_by: finding.raised_by ?? '', due_date: finding.due_date?.slice(0, 10) ?? '',
+        standards: (finding.standards ?? []).map((st) => st.code),
+      })
+      setError('')
+      return
+    }
     setForm({
       type: prefill?.type ?? 'nc_minor', audit_source: prefill?.auditSource ?? 'internal', audit_id: prefill?.auditId ?? null,
       audit_reference: prefill?.auditReference ?? '', clause_reference: prefill?.clauseReference ?? '',
       title: prefill?.title ?? '', description: prefill?.description ?? '', evidence: '', function_id: '', owner: '', raised_by: '', due_date: '', standards: [],
     })
     setError('')
-  }, [open, prefill])
+  }, [open, prefill, finding])
 
   if (!form) return null
 
@@ -399,7 +462,10 @@ function FindingFormModal({ open, onClose, functions, standards, onSaved, prefil
     setSubmitting(true)
     setError('')
     try {
-      const result = await api('findings', { method: 'POST', body: form })
+      const body = { ...form, function_id: form.function_id || null, due_date: form.due_date || null }
+      const result = finding
+        ? await api(`findings/${finding.id}`, { method: 'PATCH', body })
+        : await api('findings', { method: 'POST', body })
       onSaved(result)
     } catch (err) {
       setError(err instanceof ApiError ? (err.body?.errors ? Object.values(err.body.errors).flat().join(' ') : err.body?.message || err.message) : 'Gagal menyimpan.')
@@ -409,7 +475,7 @@ function FindingFormModal({ open, onClose, functions, standards, onSaved, prefil
   }
 
   return (
-    <Modal open={open} onClose={onClose} title="Temuan Baru">
+    <Modal open={open} onClose={onClose} title={finding ? `Ubah Temuan ${finding.code}` : 'Temuan Baru'}>
       <form onSubmit={handleSubmit} className="flex flex-col gap-3">
         <div className="grid grid-cols-2 gap-2">
           <Field label="Jenis">
@@ -467,7 +533,7 @@ function FindingFormModal({ open, onClose, functions, standards, onSaved, prefil
         {error && <div className="rounded-md border border-[#f3c9c8] bg-[#fbe7e6] px-3 py-2 text-[12px] text-[#7d2c2b]">{error}</div>}
         <div className="flex justify-end gap-2">
           <Button type="button" variant="ghost" onClick={onClose}>Batal</Button>
-          <Button type="submit" variant="primary" disabled={submitting}>{submitting ? 'Menyimpan…' : 'Simpan Temuan'}</Button>
+          <Button type="submit" variant="primary" disabled={submitting}>{submitting ? 'Menyimpan…' : finding ? 'Simpan Perubahan' : 'Simpan Temuan'}</Button>
         </div>
       </form>
     </Modal>
@@ -486,6 +552,8 @@ export default function RegisterTemuanCapaPage() {
   const [error, setError] = useState('')
   const [formOpen, setFormOpen] = useState(false)
   const [prefill, setPrefill] = useState(null)
+  const [editing, setEditing] = useState(null)
+  const del = useConfirmDelete()
 
   // Datang dari tombol "Buat Temuan" di Compliance Matrix (gap/partial pada
   // sebuah sel) — buka modal Temuan Baru langsung terisi, lalu bersihkan
@@ -572,7 +640,7 @@ export default function RegisterTemuanCapaPage() {
             Ketidaksesuaian, OFI, observasi, dan strength dari audit internal maupun eksternal — lengkap dengan akar masalah (RCA), tindakan koreksi/preventif, verifikasi efektivitas, sampai penutupan.
           </p>
         </div>
-        {canManage && <Button variant="primary" onClick={() => setFormOpen(true)}><Plus size={14} /> Temuan Baru</Button>}
+        {canManage && <Button variant="primary" onClick={() => { setEditing(null); setFormOpen(true) }}><Plus size={14} /> Temuan Baru</Button>}
       </div>
 
       {error && <div className="mb-4 rounded-md border border-[#f3c9c8] bg-[#fbe7e6] px-3 py-2 text-[12px] text-[#7d2c2b]">{error}</div>}
@@ -618,7 +686,8 @@ export default function RegisterTemuanCapaPage() {
         ) : (
           <div className="flex flex-col gap-3">
             {findings.map((f) => (
-              <FindingCard key={f.id} finding={f} functionLabel={functionLabel(f.function_id)} canManage={canManage} canClose={canClose} onReload={load} />
+              <FindingCard key={f.id} finding={f} functionLabel={functionLabel(f.function_id)} canManage={canManage} canClose={canClose} onReload={load}
+                onEdit={(x) => { setEditing(x); setFormOpen(true) }} onDelete={del.ask} />
             ))}
           </div>
         )}
@@ -626,11 +695,17 @@ export default function RegisterTemuanCapaPage() {
 
       <FindingFormModal
         open={formOpen}
-        onClose={() => { setFormOpen(false); setPrefill(null) }}
+        finding={editing}
+        onClose={() => { setFormOpen(false); setPrefill(null); setEditing(null) }}
         functions={functions}
         standards={standards}
         prefill={prefill}
-        onSaved={() => { setFormOpen(false); setPrefill(null); load() }}
+        onSaved={() => { setFormOpen(false); setPrefill(null); setEditing(null); load() }}
+      />
+      <ConfirmDelete
+        open={del.open} onClose={del.close} title="Hapus temuan?" what={del.target && `${del.target.code} — ${del.target.title}`}
+        note="Temuan yang sudah diverifikasi/ditutup adalah rekaman CAPA dan tidak bisa dihapus — gunakan Tolak bila temuan tidak valid. Tindakan CAPA-nya ikut terhapus."
+        onConfirm={() => api(`findings/${del.target.id}`, { method: 'DELETE' })} onDone={load}
       />
     </Layout>
   )

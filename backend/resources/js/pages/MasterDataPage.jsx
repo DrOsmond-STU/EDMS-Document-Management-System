@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Database, FileText, Layers, Plus, ShieldCheck, ShieldOff } from 'lucide-react'
+import { Database, FileText, Layers, Plus, ShieldCheck, ShieldOff, Trash2 } from 'lucide-react'
 import { Layout } from '../components/Layout'
 import { api, ApiError } from '../api'
 import { useAuth } from '../AuthContext'
-import { BasePill, Button, Card, Field, inputClass, Modal } from '../components/ui'
+import { BasePill, Button, Card, ConfirmDelete, Field, inputClass, Modal, useConfirmDelete } from '../components/ui'
 
 const TABS = [
   { key: 'functions', label: 'Fungsi & Departemen' },
@@ -70,7 +70,7 @@ function EntryFormModal({ open, onClose, idLabel, idHint, editing, onSaved, endp
   )
 }
 
-function EntryTable({ rows, idKey, countColumns, onEdit, onToggleActive, busyId }) {
+function EntryTable({ rows, idKey, countColumns, onEdit, onToggleActive, onDelete, busyId }) {
   if (rows.length === 0) {
     return (
       <Card className="flex flex-col items-center gap-2 py-14 text-center">
@@ -115,6 +115,9 @@ function EntryTable({ rows, idKey, countColumns, onEdit, onToggleActive, busyId 
                   >
                     {row.active ? <ShieldOff size={13} /> : <ShieldCheck size={13} />}
                   </Button>
+                  <Button variant="ghost" size="sm" title="Hapus" onClick={() => onDelete(row)} className="hover:!bg-[#fbe7e6] hover:!text-[#b23b3a]">
+                    <Trash2 size={13} />
+                  </Button>
                 </div>
               </td>
             </tr>
@@ -136,6 +139,7 @@ export default function MasterDataPage() {
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState(null)
   const [busyId, setBusyId] = useState(null)
+  const del = useConfirmDelete()
 
   const load = useCallback(() => {
     if (!canManage) return
@@ -192,7 +196,7 @@ export default function MasterDataPage() {
             <Database size={18} /> Master Data
           </h1>
           <p className="mt-0.5 text-[12.5px] text-[var(--color-neutral-medium)]">
-            Data acuan yang dirujuk lintas modul — kode sudah tertanam di nomor dokumen, jadi hanya bisa dinonaktifkan, bukan dihapus.
+            Data acuan yang dirujuk lintas modul. Entri yang belum pernah dipakai bisa dihapus; yang sudah dipakai cukup dinonaktifkan agar riwayat tetap utuh.
           </p>
         </div>
         <Button variant="primary" onClick={openCreate}><Plus size={14} /> Entri Baru</Button>
@@ -231,6 +235,7 @@ export default function MasterDataPage() {
             ]}
             onEdit={openEdit}
             onToggleActive={(row) => handleToggleActive(row, 'master-data/org-functions', 'id')}
+            onDelete={(row) => del.ask({ path: `master-data/org-functions/${row.id}`, label: `${row.id} — ${row.name}` })}
             busyId={busyId}
           />
         )
@@ -244,6 +249,7 @@ export default function MasterDataPage() {
             countColumns={[{ key: 'documents_count', label: 'Dokumen' }]}
             onEdit={openEdit}
             onToggleActive={(row) => handleToggleActive(row, 'master-data/standards', 'code')}
+            onDelete={(row) => del.ask({ path: `master-data/standards/${row.code}`, label: `${row.code} — ${row.name}` })}
             busyId={busyId}
           />
         )
@@ -257,6 +263,11 @@ export default function MasterDataPage() {
         editing={editing}
         endpoint={isFunctions ? 'master-data/org-functions' : 'master-data/standards'}
         onSaved={handleSaved}
+      />
+      <ConfirmDelete
+        open={del.open} onClose={del.close} title={isFunctions ? 'Hapus fungsi/departemen?' : 'Hapus standar?'} what={del.target?.label}
+        note="Hanya bisa dihapus bila belum dipakai di dokumen, pengguna, risiko, temuan, audit, dll. Bila sudah dipakai, gunakan Nonaktifkan agar riwayat tetap utuh."
+        onConfirm={() => api(del.target.path, { method: 'DELETE' })} onDone={load}
       />
     </Layout>
   )

@@ -3,11 +3,14 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class LegalRequirement extends Model
 {
+    use SoftDeletes;
+
     protected $fillable = [
         'code', 'title', 'regulation_number', 'regulation_type', 'issuer', 'issued_date', 'category',
         'summary', 'applicable_clauses', 'obligations', 'function_id', 'owner', 'status',
@@ -36,7 +39,7 @@ class LegalRequirement extends Model
     /** Kode berurut sederhana (LEG-0001, dst.) — pola sama dengan Risk/Finding. */
     public static function nextCode(): string
     {
-        $last = static::orderByDesc('code')->lockForUpdate()->value('code');
+        $last = static::withTrashed()->orderByDesc('code')->lockForUpdate()->value('code');
 
         $next = 1;
         if ($last !== null && preg_match('/(\d+)$/', $last, $m)) {

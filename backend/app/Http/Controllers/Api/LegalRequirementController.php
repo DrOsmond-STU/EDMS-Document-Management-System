@@ -113,6 +113,19 @@ class LegalRequirementController extends Controller
         return response()->json($this->present($legalRequirement->fresh()));
     }
 
+    public function destroy(Request $request, LegalRequirement $legalRequirement): JsonResponse
+    {
+        if (! $request->user()->hasPermission(Permissions::LEGAL_MANAGE)) {
+            return response()->json(['message' => 'Anda tidak berwenang menghapus peraturan.'], 403);
+        }
+
+        $legalRequirement->delete();
+        $this->audit->log($request->user(), 'delete', 'LegalRequirement', $legalRequirement->code, $legalRequirement->title,
+            "Menghapus peraturan \"{$legalRequirement->title}\" ({$legalRequirement->code}) dari Legal Register.");
+
+        return response()->json(['message' => 'Peraturan dihapus.']);
+    }
+
     public function evaluate(Request $request, LegalRequirement $legalRequirement): JsonResponse
     {
         if (! $request->user()->hasPermission(Permissions::LEGAL_MANAGE)) {

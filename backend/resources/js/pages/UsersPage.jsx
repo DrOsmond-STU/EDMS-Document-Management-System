@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useState } from 'react'
 import {
-  ChevronLeft, ChevronRight, Copy, KeyRound, Plus, Search, ShieldOff, ShieldCheck, Users as UsersIcon,
+  ChevronLeft, ChevronRight, Copy, KeyRound, Plus, Search, ShieldOff, ShieldCheck, Trash2, Users as UsersIcon,
 } from 'lucide-react'
 import { Layout } from '../components/Layout'
 import { api, ApiError } from '../api'
 import { useAuth } from '../AuthContext'
-import { BasePill, Button, Card, Field, inputClass, Modal, StandardChip } from '../components/ui'
+import { BasePill, Button, Card, ConfirmDelete, Field, inputClass, Modal, StandardChip, useConfirmDelete } from '../components/ui'
 
 /** Ditampilkan SEKALI persis setelah server membuat/mereset password —
  *  tidak pernah disimpan atau ditampilkan lagi setelah modal ini ditutup
@@ -128,7 +128,7 @@ function UserFormModal({ open, onClose, roles, functions, editingUser, onSaved }
   )
 }
 
-function UserRow({ user, isSelf, onEdit, onToggleActive, onResetPassword, busy }) {
+function UserRow({ user, isSelf, onEdit, onToggleActive, onResetPassword, onDelete, busy }) {
   return (
     <tr className="border-b border-[var(--color-neutral-border)] align-top last:border-b-0 hover:bg-[var(--color-neutral-bg)]">
       <td className="px-3 py-2.5">
@@ -164,6 +164,11 @@ function UserRow({ user, isSelf, onEdit, onToggleActive, onResetPassword, busy }
           >
             {user.active ? <ShieldOff size={13} /> : <ShieldCheck size={13} />}
           </Button>
+          {!isSelf && (
+            <Button variant="ghost" size="sm" disabled={busy} title="Hapus akun" onClick={() => onDelete(user)} className="hover:!bg-[#fbe7e6] hover:!text-[#b23b3a]">
+              <Trash2 size={13} />
+            </Button>
+          )}
         </div>
       </td>
     </tr>
@@ -187,6 +192,7 @@ export default function UsersPage() {
   const [editingUser, setEditingUser] = useState(null)
   const [tempPasswordInfo, setTempPasswordInfo] = useState(null)
   const [busyId, setBusyId] = useState(null)
+  const del = useConfirmDelete()
 
   const fetchUsers = useCallback(() => {
     if (!canManage) return
@@ -329,6 +335,7 @@ export default function UsersPage() {
                     onEdit={openEdit}
                     onToggleActive={handleToggleActive}
                     onResetPassword={handleResetPassword}
+                    onDelete={del.ask}
                     busy={busyId === u.id}
                   />
                 ))}
@@ -359,6 +366,12 @@ export default function UsersPage() {
         functions={functions}
         editingUser={editingUser}
         onSaved={handleSaved}
+      />
+
+      <ConfirmDelete
+        open={del.open} onClose={del.close} title="Hapus akun pengguna?" what={del.target && `${del.target.name} (${del.target.email})`}
+        note="Akses dicabut seketika dan akun hilang dari daftar. Nama tetap tampil di riwayat dokumen & Audit Trail, dan alamat email bisa dipakai lagi untuk akun baru."
+        onConfirm={() => api(`users/${del.target.id}`, { method: 'DELETE' })} onDone={fetchUsers}
       />
 
       {tempPasswordInfo && (

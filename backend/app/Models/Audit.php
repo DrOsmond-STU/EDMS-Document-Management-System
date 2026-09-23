@@ -3,12 +3,15 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Audit extends Model
 {
+    use SoftDeletes;
+
     protected $fillable = [
         'code', 'type', 'title', 'objective', 'scope', 'function_id',
         'lead_auditor_id', 'audit_team', 'planned_start', 'planned_end',
@@ -54,7 +57,7 @@ class Audit extends Model
     public static function nextCode(string $type): string
     {
         $prefix = $type === 'external' ? 'AUD-EXT-' : 'AUD-INT-';
-        $last = static::where('type', $type)->orderByDesc('code')->lockForUpdate()->value('code');
+        $last = static::withTrashed()->where('type', $type)->orderByDesc('code')->lockForUpdate()->value('code');
 
         $next = 1;
         if ($last !== null && preg_match('/(\d+)$/', $last, $m)) {

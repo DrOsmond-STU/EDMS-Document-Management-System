@@ -86,6 +86,23 @@ class RecordSeriesController extends Controller
         return response()->json($recordSeries->fresh()->load('orgFunction:id,name')->loadCount('records'));
     }
 
+    public function destroy(Request $request, RecordSeries $recordSeries): JsonResponse
+    {
+        if (! $request->user()->hasPermission(Permissions::RECORDS_MANAGE)) {
+            return response()->json(['message' => 'Anda tidak berwenang mengelola Jadwal Retensi.'], 403);
+        }
+        $count = $recordSeries->records()->count();
+        if ($count > 0) {
+            return response()->json(['message' => "Seri ini masih dipakai {$count} rekaman. Pindahkan/hapus rekamannya dulu, atau nonaktifkan seri ini."], 422);
+        }
+
+        $recordSeries->delete();
+        $this->audit->log($request->user(), 'delete', 'RecordSeries', $recordSeries->code, $recordSeries->name,
+            "Menghapus seri rekaman \"{$recordSeries->name}\" ({$recordSeries->code}) dari Jadwal Retensi.");
+
+        return response()->json(['message' => 'Seri rekaman dihapus.']);
+    }
+
     private function rules(bool $sometimes = false): array
     {
         $rule = fn (array $rules) => $sometimes ? array_merge(['sometimes'], $rules) : $rules;

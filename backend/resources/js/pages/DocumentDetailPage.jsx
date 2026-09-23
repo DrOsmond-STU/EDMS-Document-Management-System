@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
-  ArrowLeft, ArrowLeftRight, Ban, Download, Eye, ShieldCheck, Snowflake, Sun,
+  ArrowLeft, ArrowLeftRight, Ban, Download, Eye, Pencil, ShieldCheck, Snowflake, Sun,
   Trash2, Upload, XCircle,
 } from 'lucide-react'
 import { api, ApiError } from '../api'
@@ -204,6 +204,98 @@ function LifecycleActionModal({ action, onClose, onSubmitted }) {
   )
 }
 
+const CLASSIFICATION_OPTIONS = [
+  ['public', 'Publik'], ['internal', 'Internal'], ['restricted', 'Terbatas'],
+  ['confidential', 'Rahasia'], ['secret', 'Sangat Rahasia'], ['top_secret', 'Top Secret'],
+]
+
+/** Ubah metadata dokumen — nomor, jenis, dan fungsi tidak bisa diubah karena membentuk nomor dokumen. */
+function EditMetadataModal({ doc, onClose, onSaved }) {
+  const [form, setForm] = useState(() => ({
+    title: doc.title, classification: doc.classification, owner_id: doc.owner_id ?? '',
+    review_date: doc.review_date?.slice(0, 10) ?? '', expiry_date: doc.expiry_date?.slice(0, 10) ?? '',
+    keywords: (doc.keywords ?? []).join(', '), content: doc.content ?? '',
+    standards: (doc.standards ?? []).map((s) => s.code),
+  }))
+  const [users, setUsers] = useState([])
+  const [standards, setStandards] = useState([])
+  const [error, setError] = useState('')
+  const [busy, setBusy] = useState(false)
+
+  useEffect(() => {
+    api('master-data').then((m) => { setUsers(m.users ?? []); setStandards(m.standards ?? []) }).catch(() => {})
+  }, [])
+
+  const set = (k) => (e) => setForm({ ...form, [k]: e.target.value })
+
+  async function submit(e) {
+    e.preventDefault()
+    setBusy(true); setError('')
+    try {
+      await api(`documents/${doc.id}`, {
+        method: 'PATCH',
+        body: {
+          ...form,
+          owner_id: form.owner_id ? Number(form.owner_id) : null,
+          review_date: form.review_date || null,
+          expiry_date: form.expiry_date || null,
+          keywords: form.keywords.split(',').map((k) => k.trim()).filter(Boolean),
+        },
+      })
+      onSaved()
+    } catch (err) {
+      setError(err instanceof ApiError ? (err.body?.errors ? Object.values(err.body.errors).flat().join(' ') : err.message) : 'Gagal menyimpan.')
+      setBusy(false)
+    }
+  }
+
+  return (
+    <Modal open onClose={onClose} title={`Ubah Metadata ${doc.code}`}>
+      <form onSubmit={submit} className="flex max-h-[75vh] flex-col gap-3 overflow-y-auto pr-1">
+        <Field label="Judul"><input className={inputClass} value={form.title} onChange={set('title')} required maxLength={255} /></Field>
+        <div className="grid grid-cols-2 gap-2">
+          <Field label="Klasifikasi">
+            <select className={inputClass} value={form.classification} onChange={set('classification')}>
+              {CLASSIFICATION_OPTIONS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}
+            </select>
+          </Field>
+          <Field label="Pemilik">
+            <select className={inputClass} value={form.owner_id} onChange={set('owner_id')}>
+              <option value="">— Tidak ditentukan —</option>
+              {users.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
+            </select>
+          </Field>
+          <Field label="Tinjau ulang"><input type="date" className={inputClass} value={form.review_date} onChange={set('review_date')} /></Field>
+          <Field label="Kedaluwarsa" hint="Opsional"><input type="date" className={inputClass} value={form.expiry_date} onChange={set('expiry_date')} /></Field>
+        </div>
+        {standards.length > 0 && (
+          <Field label="Standar Terkait">
+            <div className="flex flex-wrap gap-1.5">
+              {standards.map((st) => {
+                const on = form.standards.includes(st.code)
+                return (
+                  <button type="button" key={st.code} onClick={() => setForm({ ...form, standards: on ? form.standards.filter((c) => c !== st.code) : [...form.standards, st.code] })}
+                    className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold ${on ? 'border-[var(--color-brand-primary)] bg-[var(--color-brand-primary)] text-white' : 'border-[var(--color-neutral-border)] text-[var(--color-neutral-medium)]'}`}>
+                    {st.code}
+                  </button>
+                )
+              })}
+            </div>
+          </Field>
+        )}
+        <Field label="Kata Kunci" hint="Pisahkan dengan koma"><input className={inputClass} value={form.keywords} onChange={set('keywords')} /></Field>
+        <Field label="Ringkasan Isi" hint="Opsional — ikut diindeks pencarian"><textarea className={inputClass} rows={4} value={form.content} onChange={set('content')} /></Field>
+        <p className="text-[11px] text-[var(--color-neutral-medium)]">Nomor, jenis, dan fungsi tidak bisa diubah karena membentuk nomor dokumen.</p>
+        {error && <div className="rounded-md border border-[#f3c9c8] bg-[#fbe7e6] px-3 py-2 text-[12px] text-[#7d2c2b]">{error}</div>}
+        <div className="flex justify-end gap-2">
+          <Button type="button" variant="ghost" onClick={onClose}>Batal</Button>
+          <Button type="submit" variant="primary" disabled={busy}>{busy ? 'Menyimpan…' : 'Simpan Perubahan'}</Button>
+        </div>
+      </form>
+    </Modal>
+  )
+}
+
 export default function DocumentDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -214,6 +306,7 @@ export default function DocumentDetailPage() {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState('')
+  const [editOpen, setEditOpen] = useState(false)
 
   const load = useCallback(async () => {
     try {
@@ -280,6 +373,9 @@ export default function DocumentDetailPage() {
             <h1 className="text-[19px] font-bold tracking-tight">{doc.title}</h1>
           </div>
           <div className="flex flex-shrink-0 items-center gap-1.5">
+            {can.update && (
+              <Button variant="secondary" size="sm" onClick={() => setEditOpen(true)}><Pencil size={12} /> Ubah</Button>
+            )}
             <StatusBadge status={doc.status} />
             <ValidityBadge validity={doc.display_validity ?? doc.validity} />
           </div>
@@ -337,6 +433,8 @@ export default function DocumentDetailPage() {
             })}
           </div>
         )}
+
+        {editOpen && <EditMetadataModal doc={doc} onClose={() => setEditOpen(false)} onSaved={() => { setEditOpen(false); load() }} />}
 
         {canDelete && (
           <div className="mt-4 flex justify-end border-t border-[var(--color-neutral-border)] pt-4">

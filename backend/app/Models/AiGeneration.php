@@ -3,10 +3,13 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class AiGeneration extends Model
 {
+    use SoftDeletes;
+
     protected $fillable = ['user_id', 'kind', 'subject', 'model', 'input_tokens', 'output_tokens', 'result', 'followed_up_at', 'followed_up_ref'];
 
     protected function casts(): array

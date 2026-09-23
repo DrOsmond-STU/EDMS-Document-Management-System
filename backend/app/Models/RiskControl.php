@@ -3,10 +3,13 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class RiskControl extends Model
 {
+    use SoftDeletes;
+
     protected $fillable = ['risk_id', 'description', 'created_by'];
 
     public function risk(): BelongsTo

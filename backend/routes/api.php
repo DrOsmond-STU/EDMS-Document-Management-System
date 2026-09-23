@@ -64,9 +64,11 @@ Route::middleware('auth')->group(function () {
         Route::get('master-data/org-functions', [MasterDataController::class, 'functions']);
         Route::post('master-data/org-functions', [MasterDataController::class, 'storeFunction']);
         Route::patch('master-data/org-functions/{orgFunction}', [MasterDataController::class, 'updateFunction']);
+        Route::delete('master-data/org-functions/{orgFunction}', [MasterDataController::class, 'destroyFunction']);
         Route::get('master-data/standards', [MasterDataController::class, 'standards']);
         Route::post('master-data/standards', [MasterDataController::class, 'storeStandard']);
         Route::patch('master-data/standards/{standard}', [MasterDataController::class, 'updateStandard']);
+        Route::delete('master-data/standards/{standard}', [MasterDataController::class, 'destroyStandard']);
         Route::post('company-settings', [CompanySettingController::class, 'update']);
 
         Route::get('dashboard', [DashboardController::class, 'index']);
@@ -84,38 +86,49 @@ Route::middleware('auth')->group(function () {
         Route::post('risks', [RiskController::class, 'store']);
         Route::patch('risks/{risk}', [RiskController::class, 'update']);
         Route::post('risks/{risk}/controls', [RiskController::class, 'addControl']);
+        Route::delete('risks/{risk}', [RiskController::class, 'destroy']);
+        Route::patch('risks/{risk}/controls/{control}', [RiskController::class, 'updateControl']);
+        Route::delete('risks/{risk}/controls/{control}', [RiskController::class, 'destroyControl']);
 
         Route::get('record-series', [RecordSeriesController::class, 'index']);
         Route::post('record-series', [RecordSeriesController::class, 'store']);
         Route::patch('record-series/{recordSeries}', [RecordSeriesController::class, 'update']);
+        Route::delete('record-series/{recordSeries}', [RecordSeriesController::class, 'destroy']);
         Route::get('records', [RecordController::class, 'index']);
         Route::post('records', [RecordController::class, 'store']);
         Route::patch('records/{record}', [RecordController::class, 'update']);
+        Route::delete('records/{record}', [RecordController::class, 'destroy']);
         Route::post('records/{record}/action', [RecordController::class, 'action']);
 
         Route::get('legal-requirements', [LegalRequirementController::class, 'index']);
         Route::post('legal-requirements', [LegalRequirementController::class, 'store']);
         Route::patch('legal-requirements/{legalRequirement}', [LegalRequirementController::class, 'update']);
+        Route::delete('legal-requirements/{legalRequirement}', [LegalRequirementController::class, 'destroy']);
         Route::post('legal-requirements/{legalRequirement}/evaluations', [LegalRequirementController::class, 'evaluate']);
 
         Route::get('audits', [AuditController::class, 'index']);
         Route::post('audits', [AuditController::class, 'store']);
         Route::patch('audits/{audit}', [AuditController::class, 'update']);
+        Route::delete('audits/{audit}', [AuditController::class, 'destroy']);
         Route::post('audits/{audit}/transition', [AuditController::class, 'transition']);
 
         Route::get('mgmt-reviews', [MgmtReviewController::class, 'index']);
         Route::post('mgmt-reviews', [MgmtReviewController::class, 'store']);
         Route::patch('mgmt-reviews/{mgmtReview}', [MgmtReviewController::class, 'update']);
+        Route::delete('mgmt-reviews/{mgmtReview}', [MgmtReviewController::class, 'destroy']);
         Route::post('mgmt-reviews/{mgmtReview}/transition', [MgmtReviewController::class, 'transition']);
         Route::post('mgmt-reviews/{mgmtReview}/actions', [MgmtReviewController::class, 'addAction']);
         Route::patch('mgmt-reviews/{mgmtReview}/actions/{action}', [MgmtReviewController::class, 'updateAction']);
+        Route::delete('mgmt-reviews/{mgmtReview}/actions/{action}', [MgmtReviewController::class, 'destroyAction']);
 
         Route::get('findings', [FindingController::class, 'index']);
         Route::post('findings', [FindingController::class, 'store']);
         Route::patch('findings/{finding}', [FindingController::class, 'update']);
+        Route::delete('findings/{finding}', [FindingController::class, 'destroy']);
         Route::post('findings/{finding}/root-cause', [FindingController::class, 'addRootCause']);
         Route::post('findings/{finding}/actions', [FindingController::class, 'addAction']);
         Route::patch('findings/{finding}/actions/{action}', [FindingController::class, 'updateAction']);
+        Route::delete('findings/{finding}/actions/{action}', [FindingController::class, 'destroyAction']);
         Route::post('findings/{finding}/verifications', [FindingController::class, 'addVerification']);
         Route::post('findings/{finding}/close', [FindingController::class, 'close']);
         Route::post('findings/{finding}/reject', [FindingController::class, 'reject']);
@@ -124,6 +137,8 @@ Route::middleware('auth')->group(function () {
             Route::get('/', 'index');
             Route::post('/', 'store');
             Route::get('{project}', 'show');
+            Route::patch('{project}', 'update');
+            Route::delete('{project}', 'destroy');
             Route::post('{project}/assign', 'assign');
             Route::post('{project}/reject', 'reject');
             Route::post('{project}/finalize', 'finalize');
@@ -132,12 +147,15 @@ Route::middleware('auth')->group(function () {
             Route::get('{project}/final-file', 'finalFile');
             Route::post('{project}/meetings', 'storeMeeting');
             Route::patch('{project}/meetings/{meeting}', 'updateMeeting');
+            Route::delete('{project}/meetings/{meeting}', 'destroyMeeting');
             Route::post('{project}/meetings/{meeting}/minutes-file', 'uploadMinutes');
             Route::get('{project}/meetings/{meeting}/minutes-file', 'minutesFile');
             Route::post('{project}/meetings/{meeting}/photos', 'uploadPhoto');
             Route::get('{project}/meetings/{meeting}/photos/{photo}', 'photo');
             Route::post('{project}/meetings/{meeting}/attendees', 'storeAttendee');
             Route::patch('{project}/meetings/{meeting}/attendees/{attendee}', 'signAttendee');
+            Route::put('{project}/meetings/{meeting}/attendees/{attendee}', 'updateAttendee');
+            Route::delete('{project}/meetings/{meeting}/attendees/{attendee}', 'destroyAttendee');
             Route::get('{project}/meetings/{meeting}/attendees/{attendee}/signature', 'signature');
         });
 
@@ -190,12 +208,14 @@ Route::middleware('auth')->group(function () {
         Route::post('users', [UserController::class, 'store']);
         Route::patch('users/{user}', [UserController::class, 'update']);
         Route::post('users/{user}/reset-password', [UserController::class, 'resetPassword']);
+        Route::delete('users/{user}', [UserController::class, 'destroy']);
 
         Route::get('system/info', [SystemAdminController::class, 'index']);
         Route::post('system/cache-clear', [SystemAdminController::class, 'clearCache']);
 
         Route::get('ai/status', [AiAssistantController::class, 'status']);
         Route::get('ai/generations/{generation}', [AiAssistantController::class, 'show']);
+        Route::delete('ai/generations/{generation}', [AiAssistantController::class, 'destroy']);
         Route::post('ai/discover', [AiAssistantController::class, 'discover']);
         Route::post('ai/draft', [AiAssistantController::class, 'draft']);
 

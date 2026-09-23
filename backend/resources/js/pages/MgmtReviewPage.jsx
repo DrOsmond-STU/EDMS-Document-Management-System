@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { AlertTriangle, CalendarCheck, ChevronDown, ChevronUp, ClipboardCheck, Plus, Presentation, ShieldAlert } from 'lucide-react'
+import { AlertTriangle, CalendarCheck, ChevronDown, ChevronUp, ClipboardCheck, Check, Pencil, Plus, Presentation, ShieldAlert, Trash2, X } from 'lucide-react'
 import { Layout } from '../components/Layout'
 import { api, ApiError } from '../api'
 import { useAuth } from '../AuthContext'
-import { Button, Card, Field, inputClass, Modal } from '../components/ui'
+import { Button, Card, ConfirmDelete, Field, IconAction, inputClass, Modal, useConfirmDelete } from '../components/ui'
 
 const STATUS_LABEL = { scheduled: 'Terjadwal', completed: 'Selesai', cancelled: 'Dibatalkan' }
 const STATUS_COLOR = {
@@ -76,6 +76,21 @@ function ActionItems({ review, canChair, onReload }) {
     }
   }
 
+  const [editing, setEditing] = useState(null) // { id, description, pic, due_date }
+  const delAction = useConfirmDelete()
+
+  async function saveEdit(e) {
+    e?.preventDefault()
+    setError('')
+    try {
+      await api(`mgmt-reviews/${review.id}/actions/${editing.id}`, { method: 'PATCH', body: { description: editing.description, pic: editing.pic || null, due_date: editing.due_date || null } })
+      setEditing(null)
+      onReload()
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Gagal mengubah tindak lanjut.')
+    }
+  }
+
   async function setStatus(action, status) {
     try {
       await api(`mgmt-reviews/${review.id}/actions/${action.id}`, { method: 'PATCH', body: { status } })
@@ -98,6 +113,14 @@ function ActionItems({ review, canChair, onReload }) {
             const overdue = a.due_date && a.due_date.slice(0, 10) < today && a.status !== 'completed'
             return (
               <li key={a.id} className="flex items-start justify-between gap-2 rounded-md border border-[var(--color-neutral-border)] bg-white px-3 py-2 text-[12.5px]">
+                {editing?.id === a.id ? (
+                  <form onSubmit={saveEdit} className="grid flex-1 grid-cols-1 gap-1.5 sm:grid-cols-[1fr_120px_130px_auto]">
+                    <input className={inputClass} value={editing.description} onChange={(e) => setEditing({ ...editing, description: e.target.value })} required autoFocus />
+                    <input className={inputClass} placeholder="PIC" value={editing.pic} onChange={(e) => setEditing({ ...editing, pic: e.target.value })} />
+                    <input type="date" className={inputClass} value={editing.due_date} onChange={(e) => setEditing({ ...editing, due_date: e.target.value })} />
+                    <span className="flex"><IconAction icon={Check} label="Simpan" onClick={saveEdit} /><IconAction icon={X} label="Batal" onClick={() => setEditing(null)} /></span>
+                  </form>
+                ) : (<>
                 <div>
                   <div className="text-[var(--color-neutral-dark)]">{a.description}</div>
                   <div className="text-[10.5px] text-[var(--color-neutral-medium)]">
@@ -111,6 +134,13 @@ function ActionItems({ review, canChair, onReload }) {
                   </select>
                 ) : (
                   <span className="text-[11px] font-semibold text-[var(--color-neutral-medium)]">{ACTION_STATUS_LABEL[a.status]}</span>
+                )}
+                </>)}
+                {canChair && editing?.id !== a.id && (
+                  <span className="-my-1 flex shrink-0">
+                    <IconAction icon={Pencil} label="Ubah tindak lanjut" onClick={() => setEditing({ id: a.id, description: a.description, pic: a.pic ?? '', due_date: a.due_date?.slice(0, 10) ?? '' })} />
+                    {a.status !== 'completed' && <IconAction icon={Trash2} label="Hapus tindak lanjut" danger onClick={() => delAction.ask(a)} />}
+                  </span>
                 )}
               </li>
             )
@@ -128,6 +158,10 @@ function ActionItems({ review, canChair, onReload }) {
         </form>
       )}
       {error && <p className="mt-1.5 text-[11.5px] text-[#b23b3a]">{error}</p>}
+      <ConfirmDelete
+        open={delAction.open} onClose={delAction.close} title="Hapus tindak lanjut?" what={delAction.target?.description}
+        onConfirm={() => api(`mgmt-reviews/${review.id}/actions/${delAction.target.id}`, { method: 'DELETE' })} onDone={onReload}
+      />
     </div>
   )
 }
@@ -153,7 +187,7 @@ function MinutesSection({ title, fields, review, editable, form, setForm }) {
   )
 }
 
-function ReviewRow({ review, canChair, onReload }) {
+function ReviewRow({ review, canChair, onReload, onEdit, onDelete }) {
   const [open, setOpen] = useState(false)
   const [form, setForm] = useState({})
   const [busy, setBusy] = useState(false)
@@ -215,10 +249,16 @@ function ReviewRow({ review, canChair, onReload }) {
           {openActions > 0 && <span className="ml-1 text-[10.5px] text-[#b9791c]">({openActions} terbuka)</span>}
         </td>
         <td className="py-2 pr-3"><StatusBadge status={review.status} /></td>
+        {canChair && (
+          <td className="whitespace-nowrap py-1.5 text-right">
+            {review.status === 'scheduled' && <IconAction icon={Pencil} label="Ubah jadwal rapat" onClick={() => onEdit(review)} />}
+            {review.status !== 'completed' && <IconAction icon={Trash2} label="Hapus rapat" danger onClick={() => onDelete(review)} />}
+          </td>
+        )}
       </tr>
       {open && (
         <tr className="border-b border-dashed border-[var(--color-neutral-border)] bg-[var(--color-neutral-bg-soft)]">
-          <td colSpan={6} className="px-3 pb-4 pt-3" onClick={(e) => e.stopPropagation()}>
+          <td colSpan={canChair ? 7 : 6} className="px-3 pb-4 pt-3" onClick={(e) => e.stopPropagation()}>
             <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
               <MinutesSection title="Input Tinjauan (Klausul 9.3.2)" fields={INPUT_FIELDS} review={review} editable={editable} form={form} setForm={setForm} />
               <div className="space-y-5">
@@ -242,16 +282,18 @@ function ReviewRow({ review, canChair, onReload }) {
   )
 }
 
-function ReviewFormModal({ open, onClose, users, onSaved }) {
+function ReviewFormModal({ open, onClose, users, onSaved, review = null }) {
   const [form, setForm] = useState(null)
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
     if (!open) return
-    setForm({ title: '', meeting_date: '', chair_id: '', attendees: '' })
+    setForm(review
+      ? { title: review.title, meeting_date: review.meeting_date?.slice(0, 10) ?? '', chair_id: review.chair_id ?? '', attendees: review.attendees ?? '' }
+      : { title: '', meeting_date: '', chair_id: '', attendees: '' })
     setError('')
-  }, [open])
+  }, [open, review])
 
   if (!form) return null
 
@@ -259,7 +301,10 @@ function ReviewFormModal({ open, onClose, users, onSaved }) {
     e.preventDefault()
     setSubmitting(true); setError('')
     try {
-      const result = await api('mgmt-reviews', { method: 'POST', body: { ...form, chair_id: form.chair_id || null } })
+      const body = { ...form, chair_id: form.chair_id || null }
+      const result = review
+        ? await api(`mgmt-reviews/${review.id}`, { method: 'PATCH', body })
+        : await api('mgmt-reviews', { method: 'POST', body })
       onSaved(result)
     } catch (err) {
       setError(err instanceof ApiError ? (err.body?.errors ? Object.values(err.body.errors).flat().join(' ') : err.body?.message || err.message) : 'Gagal menyimpan.')
@@ -269,7 +314,7 @@ function ReviewFormModal({ open, onClose, users, onSaved }) {
   }
 
   return (
-    <Modal open={open} onClose={onClose} title="Jadwalkan Tinjauan Manajemen">
+    <Modal open={open} onClose={onClose} title={review ? `Ubah Rapat ${review.code}` : 'Jadwalkan Tinjauan Manajemen'}>
       <form onSubmit={handleSubmit} className="flex flex-col gap-3">
         <Field label="Judul Rapat"><input className={inputClass} value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="mis. Tinjauan Manajemen Semester 1 2026" required /></Field>
         <div className="grid grid-cols-2 gap-2">
@@ -285,7 +330,7 @@ function ReviewFormModal({ open, onClose, users, onSaved }) {
         {error && <div className="rounded-md border border-[#f3c9c8] bg-[#fbe7e6] px-3 py-2 text-[12px] text-[#7d2c2b]">{error}</div>}
         <div className="flex justify-end gap-2">
           <Button type="button" variant="ghost" onClick={onClose}>Batal</Button>
-          <Button type="submit" variant="primary" disabled={submitting}>{submitting ? 'Menyimpan…' : 'Jadwalkan'}</Button>
+          <Button type="submit" variant="primary" disabled={submitting}>{submitting ? 'Menyimpan…' : review ? 'Simpan Perubahan' : 'Jadwalkan'}</Button>
         </div>
       </form>
     </Modal>
@@ -303,6 +348,8 @@ export default function MgmtReviewPage() {
   const [status, setStatus] = useState('')
   const [error, setError] = useState('')
   const [formOpen, setFormOpen] = useState(false)
+  const [editing, setEditing] = useState(null)
+  const del = useConfirmDelete()
 
   const load = useCallback(() => {
     if (!canView) return
@@ -344,7 +391,7 @@ export default function MgmtReviewPage() {
             Rapat tinjauan manajemen sesuai ISO 9001 klausul 9.3 — input, notulen, keputusan, dan tindak lanjut hingga tuntas.
           </p>
         </div>
-        {canChair && <Button variant="primary" onClick={() => setFormOpen(true)}><Plus size={14} /> Jadwalkan Rapat</Button>}
+        {canChair && <Button variant="primary" onClick={() => { setEditing(null); setFormOpen(true) }}><Plus size={14} /> Jadwalkan Rapat</Button>}
       </div>
 
       {error && <div className="mb-4 rounded-md border border-[#f3c9c8] bg-[#fbe7e6] px-3 py-2 text-[12px] text-[#7d2c2b]">{error}</div>}
@@ -391,17 +438,23 @@ export default function MgmtReviewPage() {
                   <th className="py-2 pr-3 font-bold">Pimpinan</th>
                   <th className="py-2 pr-3 text-center font-bold">Tindak Lanjut</th>
                   <th className="py-2 pr-3 font-bold">Status</th>
+                  {canChair && <th className="py-2 text-right font-bold">Aksi</th>}
                 </tr>
               </thead>
               <tbody>
-                {reviews.map((r) => <ReviewRow key={r.id} review={r} canChair={canChair} onReload={load} />)}
+                {reviews.map((r) => <ReviewRow key={r.id} review={r} canChair={canChair} onReload={load} onEdit={(x) => { setEditing(x); setFormOpen(true) }} onDelete={del.ask} />)}
               </tbody>
             </table>
           </div>
         )}
       </Card>
 
-      <ReviewFormModal open={formOpen} onClose={() => setFormOpen(false)} users={users} onSaved={() => { setFormOpen(false); load() }} />
+      <ReviewFormModal open={formOpen} review={editing} onClose={() => { setFormOpen(false); setEditing(null) }} users={users} onSaved={() => { setFormOpen(false); setEditing(null); load() }} />
+      <ConfirmDelete
+        open={del.open} onClose={del.close} title="Hapus rapat tinjauan?" what={del.target && `${del.target.code} — ${del.target.title}`}
+        note="Tinjauan yang sudah selesai adalah rekaman wajib klausul 9.3 dan tidak bisa dihapus. Tindak lanjutnya ikut terhapus."
+        onConfirm={() => api(`mgmt-reviews/${del.target.id}`, { method: 'DELETE' })} onDone={load}
+      />
     </Layout>
   )
 }

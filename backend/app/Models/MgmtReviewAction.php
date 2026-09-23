@@ -3,10 +3,13 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class MgmtReviewAction extends Model
 {
+    use SoftDeletes;
+
     protected $fillable = ['mgmt_review_id', 'description', 'pic', 'due_date', 'status', 'created_by'];
 
     protected function casts(): array

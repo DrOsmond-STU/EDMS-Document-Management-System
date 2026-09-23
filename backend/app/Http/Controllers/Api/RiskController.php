@@ -166,6 +166,52 @@ class RiskController extends Controller
         return response()->json($control->load('creator:id,name'), 201);
     }
 
+    /** Soft delete: risiko hilang dari register & perhitungan, jejaknya tetap di Audit Trail. */
+    public function destroy(Request $request, Risk $risk): JsonResponse
+    {
+        if (! $request->user()->hasPermission(Permissions::RISK_MANAGE)) {
+            return response()->json(['message' => 'Anda tidak berwenang menghapus risiko.'], 403);
+        }
+
+        $risk->delete();
+        $this->audit->log($request->user(), 'delete', 'Risk', $risk->code, $risk->title,
+            "Menghapus risiko \"{$risk->title}\" ({$risk->code}).");
+
+        return response()->json(['message' => 'Risiko dihapus.']);
+    }
+
+    public function updateControl(Request $request, Risk $risk, RiskControl $control): JsonResponse
+    {
+        if (! $request->user()->hasPermission(Permissions::RISK_MANAGE)) {
+            return response()->json(['message' => 'Anda tidak berwenang mengubah kontrol.'], 403);
+        }
+        if ($control->risk_id !== $risk->id) {
+            return response()->json(['message' => 'Kontrol tidak ditemukan pada risiko ini.'], 404);
+        }
+
+        $control->update($request->validate(['description' => ['required', 'string', 'max:2000']]));
+        $this->audit->log($request->user(), 'update', 'Risk', $risk->code, $risk->title,
+            "Mengubah kontrol pada risiko \"{$risk->title}\" ({$risk->code}).");
+
+        return response()->json($control->fresh()->load('creator:id,name'));
+    }
+
+    public function destroyControl(Request $request, Risk $risk, RiskControl $control): JsonResponse
+    {
+        if (! $request->user()->hasPermission(Permissions::RISK_MANAGE)) {
+            return response()->json(['message' => 'Anda tidak berwenang menghapus kontrol.'], 403);
+        }
+        if ($control->risk_id !== $risk->id) {
+            return response()->json(['message' => 'Kontrol tidak ditemukan pada risiko ini.'], 404);
+        }
+
+        $control->delete();
+        $this->audit->log($request->user(), 'delete', 'Risk', $risk->code, $risk->title,
+            "Menghapus kontrol pada risiko \"{$risk->title}\" ({$risk->code}): ".mb_substr($control->description, 0, 120));
+
+        return response()->json(['message' => 'Kontrol dihapus.']);
+    }
+
     private function validateRisk(Request $request, bool $sometimes = false): array
     {
         $rule = fn (array $rules) => $sometimes ? array_merge(['sometimes'], $rules) : $rules;

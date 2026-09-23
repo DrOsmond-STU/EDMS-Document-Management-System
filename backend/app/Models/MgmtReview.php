@@ -3,11 +3,14 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class MgmtReview extends Model
 {
+    use SoftDeletes;
+
     protected $fillable = [
         'code', 'title', 'meeting_date', 'chair_id', 'attendees', 'status',
         'previous_actions_status', 'internal_external_changes', 'performance_summary',
@@ -38,7 +41,7 @@ class MgmtReview extends Model
     /** Kode berurut sederhana (MR-0001, dst.) — pola sama dengan Risk/Finding/Audit. */
     public static function nextCode(): string
     {
-        $last = static::orderByDesc('code')->lockForUpdate()->value('code');
+        $last = static::withTrashed()->orderByDesc('code')->lockForUpdate()->value('code');
 
         $next = 1;
         if ($last !== null && preg_match('/(\d+)$/', $last, $m)) {

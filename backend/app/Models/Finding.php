@@ -3,12 +3,15 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Finding extends Model
 {
+    use SoftDeletes;
+
     protected $fillable = [
         'code', 'type', 'status', 'audit_source', 'audit_reference', 'audit_id', 'clause_reference',
         'title', 'description', 'evidence', 'function_id', 'owner', 'raised_by', 'due_date',
@@ -53,7 +56,7 @@ class Finding extends Model
     /** Kode berurut sederhana (FIND-0001, dst.) — pola sama dengan Risk::nextCode(). */
     public static function nextCode(): string
     {
-        $last = static::orderByDesc('code')->lockForUpdate()->value('code');
+        $last = static::withTrashed()->orderByDesc('code')->lockForUpdate()->value('code');
 
         $next = 1;
         if ($last !== null && preg_match('/(\d+)$/', $last, $m)) {

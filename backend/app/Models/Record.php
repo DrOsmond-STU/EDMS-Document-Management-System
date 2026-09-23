@@ -3,11 +3,14 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
 
 class Record extends Model
 {
+    use SoftDeletes;
+
     /** Status akhir — rekaman di status ini tidak bisa diubah lagi. */
     public const FINAL_STATUSES = ['destroyed', 'archived_permanent'];
 
@@ -62,7 +65,7 @@ class Record extends Model
     /** Kode berurut sederhana (REC-00001, dst.) — rekaman jauh lebih banyak dari dokumen, jadi 5 digit. */
     public static function nextCode(): string
     {
-        $last = static::orderByDesc('code')->lockForUpdate()->value('code');
+        $last = static::withTrashed()->orderByDesc('code')->lockForUpdate()->value('code');
 
         $next = 1;
         if ($last !== null && preg_match('/(\d+)$/', $last, $m)) {

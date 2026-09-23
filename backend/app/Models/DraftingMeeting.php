@@ -3,11 +3,14 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class DraftingMeeting extends Model
 {
+    use SoftDeletes;
+
     protected $fillable = [
         'drafting_project_id', 'session_no', 'agenda', 'scheduled_at', 'location', 'held_at',
         'budget', 'minutes', 'minutes_file_path', 'minutes_file_name', 'created_by',

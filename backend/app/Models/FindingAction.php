@@ -3,10 +3,13 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class FindingAction extends Model
 {
+    use SoftDeletes;
+
     protected $fillable = ['finding_id', 'type', 'description', 'pic', 'due_date', 'status', 'created_by'];
 
     protected function casts(): array

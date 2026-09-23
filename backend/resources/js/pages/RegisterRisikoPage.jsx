@@ -1,9 +1,9 @@
 import { Fragment, useCallback, useEffect, useMemo, useState } from 'react'
-import { AlertTriangle, ChevronDown, ChevronUp, Plus, Shield } from 'lucide-react'
+import { AlertTriangle, Check, ChevronDown, ChevronUp, Pencil, Plus, Shield, Trash2, X } from 'lucide-react'
 import { Layout } from '../components/Layout'
 import { api, ApiError } from '../api'
 import { useAuth } from '../AuthContext'
-import { Button, Card, Field, inputClass, Modal, StandardChip } from '../components/ui'
+import { Button, Card, ConfirmDelete, Field, IconAction, inputClass, Modal, StandardChip, useConfirmDelete } from '../components/ui'
 
 // Label & warna diambil dari purwarupa lama (halaman Register Risiko di
 // dms.semestateknologiutama.com) supaya istilah & tampilan konsisten —
@@ -105,6 +105,20 @@ function ControlsPanel({ risk, canManage, onControlAdded }) {
   const [description, setDescription] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
+  const [editing, setEditing] = useState(null) // { id, description }
+  const del = useConfirmDelete()
+
+  async function saveEdit(e) {
+    e.preventDefault()
+    setError('')
+    try {
+      await api(`risks/${risk.id}/controls/${editing.id}`, { method: 'PATCH', body: { description: editing.description } })
+      setEditing(null)
+      onControlAdded()
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Gagal mengubah kontrol.')
+    }
+  }
 
   async function handleAdd(e) {
     e.preventDefault()
@@ -129,8 +143,24 @@ function ControlsPanel({ risk, canManage, onControlAdded }) {
       {risk.controls?.length > 0 && (
         <ul className="mb-3 space-y-1.5">
           {risk.controls.map((c) => (
-            <li key={c.id} className="rounded-md border border-[var(--color-neutral-border)] bg-white px-3 py-2 text-[12.5px]">
-              {c.description}
+            <li key={c.id} className="flex items-start gap-2 rounded-md border border-[var(--color-neutral-border)] bg-white px-3 py-2 text-[12.5px]">
+              {editing?.id === c.id ? (
+                <form onSubmit={saveEdit} className="flex flex-1 gap-1.5">
+                  <input className={`${inputClass} flex-1`} value={editing.description} onChange={(e) => setEditing({ ...editing, description: e.target.value })} required autoFocus />
+                  <IconAction icon={Check} label="Simpan" onClick={saveEdit} />
+                  <IconAction icon={X} label="Batal" onClick={() => setEditing(null)} />
+                </form>
+              ) : (
+                <>
+                  <span className="flex-1">{c.description}</span>
+                  {canManage && (
+                    <span className="-my-1 flex shrink-0">
+                      <IconAction icon={Pencil} label="Ubah kontrol" onClick={() => setEditing({ id: c.id, description: c.description })} />
+                      <IconAction icon={Trash2} label="Hapus kontrol" danger onClick={() => del.ask(c)} />
+                    </span>
+                  )}
+                </>
+              )}
             </li>
           ))}
         </ul>
@@ -142,11 +172,15 @@ function ControlsPanel({ risk, canManage, onControlAdded }) {
         </form>
       )}
       {error && <p className="mt-1.5 text-[11.5px] text-[#b23b3a]">{error}</p>}
+      <ConfirmDelete
+        open={del.open} onClose={del.close} title="Hapus kontrol?" what={del.target?.description}
+        onConfirm={() => api(`risks/${risk.id}/controls/${del.target.id}`, { method: 'DELETE' })} onDone={onControlAdded}
+      />
     </div>
   )
 }
 
-function RiskRow({ risk, functionLabel, canManage, onReload }) {
+function RiskRow({ risk, functionLabel, canManage, onReload, onEdit, onDelete }) {
   const [open, setOpen] = useState(false)
 
   return (
@@ -179,10 +213,16 @@ function RiskRow({ risk, functionLabel, canManage, onReload }) {
         </td>
         <td className="py-2 pr-3">{(TREATMENT_LABEL[risk.treatment] ?? risk.treatment).split('—')[0].trim()}</td>
         <td className="py-2 pr-3">{STATUS_LABEL[risk.status] ?? risk.status}</td>
+        {canManage && (
+          <td className="whitespace-nowrap py-1.5 text-right">
+            <IconAction icon={Pencil} label="Ubah risiko" onClick={() => onEdit(risk)} />
+            <IconAction icon={Trash2} label="Hapus risiko" danger onClick={() => onDelete(risk)} />
+          </td>
+        )}
       </tr>
       {open && (
         <tr className="border-b border-dashed border-[var(--color-neutral-border)] bg-[var(--color-neutral-bg-soft)]">
-          <td colSpan={8} className="px-3 pb-4 pt-3" onClick={(e) => e.stopPropagation()}>
+          <td colSpan={canManage ? 9 : 8} className="px-3 pb-4 pt-3" onClick={(e) => e.stopPropagation()}>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div>
                 <div className="mb-2 text-[11px] font-bold uppercase tracking-wide text-[var(--color-neutral-medium)]">Deskripsi</div>
@@ -201,20 +241,26 @@ function RiskRow({ risk, functionLabel, canManage, onReload }) {
   )
 }
 
-function RiskFormModal({ open, onClose, functions, standards, onSaved }) {
+function RiskFormModal({ open, onClose, functions, standards, onSaved, risk = null }) {
   const [form, setForm] = useState(null)
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
     if (!open) return
-    setForm({
+    setForm(risk ? {
+      title: risk.title, description: risk.description ?? '', category: risk.category, function_id: risk.function_id ?? '',
+      owner: risk.owner ?? '', standards: (risk.standards ?? []).map((st) => st.code),
+      inherent_likelihood: risk.inherent_likelihood, inherent_impact: risk.inherent_impact,
+      residual_likelihood: risk.residual_likelihood, residual_impact: risk.residual_impact,
+      treatment: risk.treatment, treatment_plan: risk.treatment_plan ?? '', status: risk.status,
+    } : {
       title: '', description: '', category: 'operational', function_id: '', owner: '',
       standards: [], inherent_likelihood: 3, inherent_impact: 3, residual_likelihood: 2, residual_impact: 2,
       treatment: 'reduce', treatment_plan: '',
     })
     setError('')
-  }, [open])
+  }, [open, risk])
 
   if (!form) return null
 
@@ -231,7 +277,10 @@ function RiskFormModal({ open, onClose, functions, standards, onSaved }) {
     setSubmitting(true)
     setError('')
     try {
-      const result = await api('risks', { method: 'POST', body: form })
+      const body = { ...form, function_id: form.function_id || null }
+      const result = risk
+        ? await api(`risks/${risk.id}`, { method: 'PATCH', body })
+        : await api('risks', { method: 'POST', body })
       onSaved(result)
     } catch (err) {
       setError(err instanceof ApiError ? (err.body?.errors ? Object.values(err.body.errors).flat().join(' ') : err.body?.message || err.message) : 'Gagal menyimpan.')
@@ -241,7 +290,7 @@ function RiskFormModal({ open, onClose, functions, standards, onSaved }) {
   }
 
   return (
-    <Modal open={open} onClose={onClose} title="Risiko Baru">
+    <Modal open={open} onClose={onClose} title={risk ? `Ubah Risiko ${risk.code}` : 'Risiko Baru'}>
       <form onSubmit={handleSubmit} className="flex flex-col gap-3">
         <Field label="Judul Risiko"><input className={inputClass} value={form.title} onChange={(e) => set('title')(e.target.value)} required /></Field>
         <Field label="Deskripsi"><textarea className={inputClass} rows={2} value={form.description} onChange={(e) => set('description')(e.target.value)} /></Field>
@@ -317,11 +366,18 @@ function RiskFormModal({ open, onClose, functions, standards, onSaved }) {
           </select>
         </Field>
         <Field label="Rencana Perlakuan" hint="Opsional"><textarea className={inputClass} rows={2} value={form.treatment_plan} onChange={(e) => set('treatment_plan')(e.target.value)} /></Field>
+        {risk && (
+          <Field label="Status">
+            <select className={inputClass} value={form.status} onChange={(e) => set('status')(e.target.value)}>
+              {Object.entries(STATUS_LABEL).map(([k, l]) => <option key={k} value={k}>{l}</option>)}
+            </select>
+          </Field>
+        )}
 
         {error && <div className="rounded-md border border-[#f3c9c8] bg-[#fbe7e6] px-3 py-2 text-[12px] text-[#7d2c2b]">{error}</div>}
         <div className="flex justify-end gap-2">
           <Button type="button" variant="ghost" onClick={onClose}>Batal</Button>
-          <Button type="submit" variant="primary" disabled={submitting}>{submitting ? 'Menyimpan…' : 'Simpan Risiko'}</Button>
+          <Button type="submit" variant="primary" disabled={submitting}>{submitting ? 'Menyimpan…' : risk ? 'Simpan Perubahan' : 'Simpan Risiko'}</Button>
         </div>
       </form>
     </Modal>
@@ -338,6 +394,8 @@ export default function RegisterRisikoPage() {
   const [standards, setStandards] = useState([])
   const [error, setError] = useState('')
   const [formOpen, setFormOpen] = useState(false)
+  const [editing, setEditing] = useState(null)
+  const del = useConfirmDelete()
 
   const [q, setQ] = useState(() => new URLSearchParams(window.location.search).get('q') ?? '')
   const [category, setCategory] = useState('')
@@ -398,7 +456,7 @@ export default function RegisterRisikoPage() {
             Manajemen risiko berbasis ISO 31000 & ISO 9001 klausul 6.1 — identifikasi, analisis, evaluasi, perlakuan, dan pemantauan risiko lintas fungsi.
           </p>
         </div>
-        {canManage && <Button variant="primary" onClick={() => setFormOpen(true)}><Plus size={14} /> Risiko Baru</Button>}
+        {canManage && <Button variant="primary" onClick={() => { setEditing(null); setFormOpen(true) }}><Plus size={14} /> Risiko Baru</Button>}
       </div>
 
       {error && <div className="mb-4 rounded-md border border-[#f3c9c8] bg-[#fbe7e6] px-3 py-2 text-[12px] text-[#7d2c2b]">{error}</div>}
@@ -441,7 +499,7 @@ export default function RegisterRisikoPage() {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[860px] text-[12.5px]">
+              <table className="w-full min-w-[920px] text-[12.5px]">
                 <thead className="text-left text-[10.5px] uppercase tracking-wide text-[var(--color-neutral-medium)]">
                   <tr className="border-b border-[var(--color-neutral-border)]">
                     <th className="py-2 pr-3 font-bold">Kode</th>
@@ -452,11 +510,13 @@ export default function RegisterRisikoPage() {
                     <th className="py-2 pr-3 text-center font-bold">Residual</th>
                     <th className="py-2 pr-3 font-bold">Perlakuan</th>
                     <th className="py-2 pr-3 font-bold">Status</th>
+                    {canManage && <th className="py-2 text-right font-bold">Aksi</th>}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[var(--color-neutral-border)]">
                   {risks.map((r) => (
-                    <RiskRow key={r.id} risk={r} functionLabel={functionLabel(r.function_id)} canManage={canManage} onReload={load} />
+                    <RiskRow key={r.id} risk={r} functionLabel={functionLabel(r.function_id)} canManage={canManage} onReload={load}
+                      onEdit={(risk) => { setEditing(risk); setFormOpen(true) }} onDelete={del.ask} />
                   ))}
                 </tbody>
               </table>
@@ -476,10 +536,16 @@ export default function RegisterRisikoPage() {
 
       <RiskFormModal
         open={formOpen}
-        onClose={() => setFormOpen(false)}
+        risk={editing}
+        onClose={() => { setFormOpen(false); setEditing(null) }}
         functions={functions}
         standards={standards}
-        onSaved={() => { setFormOpen(false); load() }}
+        onSaved={() => { setFormOpen(false); setEditing(null); load() }}
+      />
+      <ConfirmDelete
+        open={del.open} onClose={del.close} title="Hapus risiko?"
+        what={del.target && `${del.target.code} — ${del.target.title}`}
+        onConfirm={() => api(`risks/${del.target.id}`, { method: 'DELETE' })} onDone={load}
       />
     </Layout>
   )

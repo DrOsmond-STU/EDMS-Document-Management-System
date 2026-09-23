@@ -9,16 +9,18 @@ use App\Services\AuditLogger;
 use App\Support\Permissions;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
 /**
  * Manajemen Pengguna & Hak Akses — CRUD akun dan penetapan peran, khusus
- * users.manage (sysadmin). Tidak ada hapus akun sungguhan: dokumen yang
- * dimiliki/dibuat/diaudit seorang pengguna harus tetap bisa ditelusuri
- * (owner_id/created_by nullOnDelete di database tidak berarti kita boleh
- * menghilangkan jejaknya begitu saja) — akses dicabut lewat nonaktifkan.
+ * users.manage (sysadmin). Hapus akun bukan hapus baris: dokumen yang
+ * dimiliki/dibuat/diaudit seorang pengguna harus tetap bisa ditelusuri,
+ * jadi destroy() menonaktifkan akun, mengakhiri sesinya, menyembunyikannya
+ * dari daftar (deleted_at), dan membebaskan alamat emailnya — namanya tetap
+ * tampil di riwayat lama.
  * Tidak ada pengiriman email (MAIL_MAILER=log di hosting ini): password
  * awal/reset ditampilkan SEKALI di respons untuk disampaikan admin secara
  * manual, lalu wajib diganti pengguna sendiri di login pertama
@@ -34,7 +36,7 @@ class UserController extends Controller
             return $this->forbidden();
         }
 
-        $query = User::query()->with(['roles:id,label', 'orgFunction:id,name']);
+        $query = User::query()->whereNull('deleted_at')->with(['roles:id,label', 'orgFunction:id,name']);
 
         if ($request->filled('q')) {
             $term = '%'.$request->string('q').'%';
@@ -103,6 +105,7 @@ class UserController extends Controller
             return $this->forbidden();
         }
 
+        abort_if($user->deleted_at !== null, 404);
         $data = $this->validateUser($request, isCreate: false, userId: $user->id);
         $actor = $request->user();
         $isSelf = $actor->id === $user->id;
@@ -150,12 +153,44 @@ class UserController extends Controller
         return response()->json($user->fresh()->load(['roles:id,label', 'orgFunction:id,name']));
     }
 
+    public function destroy(Request $request, User $user): JsonResponse
+    {
+        if (! $this->authorized($request)) {
+            return $this->forbidden();
+        }
+        abort_if($user->deleted_at !== null, 404);
+        if ($request->user()->id === $user->id) {
+            return response()->json(['message' => 'Anda tidak bisa menghapus akun Anda sendiri.'], 422);
+        }
+
+        $email = $user->email;
+        DB::transaction(function () use ($user) {
+            $user->forceFill([
+                'active' => false,
+                'deleted_at' => now(),
+                // Alamat email dibebaskan agar bisa dipakai akun baru; aslinya tercatat di Audit Trail.
+                'email' => "deleted-{$user->id}-".now()->format('YmdHis').'@deleted.invalid',
+                'remember_token' => null,
+            ])->save();
+            $user->roles()->detach();
+            if (config('session.driver') === 'database') {
+                DB::table(config('session.table', 'sessions'))->where('user_id', $user->id)->delete();
+            }
+        });
+
+        $this->audit->log($request->user(), 'delete', 'User', (string) $user->id, $user->name,
+            "Menghapus akun \"{$user->name}\" ({$email}) — akses dicabut, nama tetap tampil di riwayat.");
+
+        return response()->json(['message' => 'Akun dihapus.']);
+    }
+
     public function resetPassword(Request $request, User $user): JsonResponse
     {
         if (! $this->authorized($request)) {
             return $this->forbidden();
         }
 
+        abort_if($user->deleted_at !== null, 404);
         $tempPassword = Str::password(12);
 
         $user->forceFill([

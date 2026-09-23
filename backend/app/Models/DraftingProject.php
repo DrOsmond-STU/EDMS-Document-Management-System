@@ -3,12 +3,15 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class DraftingProject extends Model
 {
+    use SoftDeletes;
+
     public const STAGE_LABELS = [
         'Permintaan', 'Undangan Rapat', 'Rapat (anggaran & foto)', 'Bukti Notulen',
         'Daftar Hadir & TTD', 'Finalisasi', 'Pengesahan', 'Masuk Register Utama',
@@ -123,7 +126,7 @@ class DraftingProject extends Model
     public static function nextCode(): string
     {
         $prefix = 'REQ-'.now()->format('Y').'-';
-        $last = static::where('code', 'like', $prefix.'%')->orderByDesc('code')->lockForUpdate()->value('code');
+        $last = static::withTrashed()->where('code', 'like', $prefix.'%')->orderByDesc('code')->lockForUpdate()->value('code');
 
         $next = 1;
         if ($last !== null && preg_match('/(\d+)$/', $last, $m)) {

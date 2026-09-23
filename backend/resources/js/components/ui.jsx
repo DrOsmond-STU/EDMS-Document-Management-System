@@ -1,6 +1,6 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { Lock, X } from 'lucide-react'
+import { Lock, Trash2, X } from 'lucide-react'
 
 export function Button({ variant = 'secondary', size = 'md', className = '', ...props }) {
   const variants = {
@@ -163,7 +163,7 @@ export function Modal({ open, onClose, title, children }) {
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4" onClick={onClose}>
       <div
-        className="w-full max-w-md rounded-xl border border-[var(--color-neutral-border)] bg-[var(--color-surface)] p-5 shadow-xl"
+        className="max-h-[92vh] w-full max-w-md overflow-y-auto rounded-xl border border-[var(--color-neutral-border)] bg-[var(--color-surface)] p-5 shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-3 flex items-center justify-between gap-3">
@@ -188,4 +188,64 @@ export function StandardChip({ code }) {
       {code}
     </span>
   )
+}
+
+/** Tombol ikon kecil untuk aksi per baris (ubah/hapus). */
+export function IconAction({ icon: Icon, label, onClick, danger = false }) {
+  return (
+    <button
+      type="button" title={label} aria-label={label}
+      onClick={(e) => { e.stopPropagation(); onClick?.(e) }}
+      className={`inline-flex h-7 w-7 items-center justify-center rounded-md transition-colors ${danger
+        ? 'text-[var(--color-neutral-medium)] hover:bg-[#fbe7e6] hover:text-[#b23b3a]'
+        : 'text-[var(--color-neutral-medium)] hover:bg-[var(--color-neutral-bg)] hover:text-[var(--color-brand-primary)]'}`}
+    >
+      <Icon size={14} />
+    </button>
+  )
+}
+
+/**
+ * Konfirmasi hapus standar untuk semua register. `onConfirm` mengembalikan
+ * promise; bila server menolak (mis. data masih dipakai), pesannya
+ * ditampilkan di dialog — bukan hilang diam-diam.
+ */
+export function ConfirmDelete({ open, onClose, title = 'Hapus data?', what, note, onConfirm, onDone }) {
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+  useEffect(() => { if (open) { setBusy(false); setError('') } }, [open])
+
+  async function confirm() {
+    setBusy(true); setError('')
+    try {
+      await onConfirm()
+      onClose?.()
+      onDone?.()
+    } catch (err) {
+      setError(err?.body?.message || err?.message || 'Gagal menghapus.')
+      setBusy(false)
+    }
+  }
+
+  return (
+    <Modal open={open} onClose={busy ? undefined : onClose} title={title}>
+      <p className="text-[13px] text-[var(--color-neutral-dark)]">Anda akan menghapus <b>{what}</b>.</p>
+      <p className="mt-1.5 text-[12px] text-[var(--color-neutral-medium)]">
+        {note ?? 'Data hilang dari daftar & perhitungan, tetapi tetap tercatat di Audit Trail.'}
+      </p>
+      {error && <div className="mt-3 rounded-md border border-[#f3c9c8] bg-[#fbe7e6] px-3 py-2 text-[12px] text-[#7d2c2b]">{error}</div>}
+      <div className="mt-4 flex justify-end gap-2">
+        <Button type="button" variant="ghost" onClick={onClose} disabled={busy}>Batal</Button>
+        <Button type="button" variant="danger" onClick={confirm} disabled={busy}>
+          <Trash2 size={13} /> {busy ? 'Menghapus…' : 'Hapus'}
+        </Button>
+      </div>
+    </Modal>
+  )
+}
+
+/** State kecil untuk ConfirmDelete: `ask(item)` membuka dialog untuk item tsb. */
+export function useConfirmDelete() {
+  const [target, setTarget] = useState(null)
+  return { target, ask: setTarget, close: () => setTarget(null), open: target !== null }
 }
