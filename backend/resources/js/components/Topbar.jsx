@@ -220,7 +220,7 @@ export function Topbar() {
 
   function handleSearch(e) {
     e.preventDefault()
-    navigate(`/documents?q=${encodeURIComponent(query)}`)
+    navigate(`/knowledge?q=${encodeURIComponent(query)}`)
   }
 
   return (

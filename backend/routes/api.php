@@ -14,6 +14,7 @@ use App\Http\Controllers\Api\DocumentFolderController;
 use App\Http\Controllers\Api\DraftingProjectController;
 use App\Http\Controllers\Api\FindingController;
 use App\Http\Controllers\Api\IntegrationSettingController;
+use App\Http\Controllers\Api\KnowledgeController;
 use App\Http\Controllers\Api\LegalRequirementController;
 use App\Http\Controllers\Api\LicenseController;
 use App\Http\Controllers\Api\MasterDataController;
@@ -68,6 +69,9 @@ Route::middleware('auth')->group(function () {
         Route::post('company-settings', [CompanySettingController::class, 'update']);
 
         Route::get('dashboard', [DashboardController::class, 'index']);
+        Route::get('search', [KnowledgeController::class, 'search']);
+        Route::get('knowledge/overview', [KnowledgeController::class, 'overview']);
+        Route::get('documents/{document}/related', [KnowledgeController::class, 'related']);
         Route::get('reporting/kpi', [ReportingController::class, 'index']);
         Route::get('reporting/kpi.csv', [ReportingController::class, 'export']);
         Route::get('compliance-matrix', [ComplianceMatrixController::class, 'index']);

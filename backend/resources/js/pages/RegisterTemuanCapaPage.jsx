@@ -509,7 +509,7 @@ export default function RegisterTemuanCapaPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const [q, setQ] = useState('')
+  const [q, setQ] = useState(() => new URLSearchParams(window.location.search).get('q') ?? '')
   const [source, setSource] = useState('')
   const [type, setType] = useState('')
   const [status, setStatus] = useState('')

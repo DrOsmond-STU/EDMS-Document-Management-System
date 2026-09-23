@@ -257,7 +257,7 @@ export default function AuditProgramPage({ type }) {
 
   const [status, setStatus] = useState('')
   const [functionId, setFunctionId] = useState('')
-  const [q, setQ] = useState('')
+  const [q, setQ] = useState(() => new URLSearchParams(window.location.search).get('q') ?? '')
 
   const load = useCallback(() => {
     if (!canView) return

@@ -286,7 +286,7 @@ export default function LegalRegisterPage() {
   const [error, setError] = useState('')
   const [formOpen, setFormOpen] = useState(false)
 
-  const [q, setQ] = useState('')
+  const [q, setQ] = useState(() => new URLSearchParams(window.location.search).get('q') ?? '')
   const [category, setCategory] = useState('')
   const [compliance, setCompliance] = useState('')
   const [status, setStatus] = useState('active')

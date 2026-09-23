@@ -7,6 +7,7 @@ import {
 import { api, ApiError } from '../api'
 import { Layout } from '../components/Layout'
 import { DiscussionPanel } from '../components/DiscussionPanel'
+import { RelatedDocuments } from '../components/RelatedDocuments'
 import { Button, Card, ClassificationBadge, Field, inputClass, Modal, StatusBadge, ValidityBadge } from '../components/ui'
 
 // Status yang pernah resmi dirilis — cermin dari Document::CONTROLLED_STATUSES
@@ -378,7 +379,10 @@ export default function DocumentDetailPage() {
         )}
       </Card>
 
-      <DiscussionPanel documentId={doc.id} />
+      <div className="mt-4 space-y-4">
+        <RelatedDocuments documentId={doc.id} />
+        <DiscussionPanel documentId={doc.id} />
+      </div>
     </div>
 
     <LifecycleActionModal

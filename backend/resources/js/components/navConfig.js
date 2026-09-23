@@ -58,7 +58,7 @@ export const NAV_GROUPS = [
   {
     label: 'Search & AI',
     items: [
-      { label: 'Knowledge Base & Discovery', path: null, icon: Search },
+      { label: 'Knowledge Base & Discovery', path: '/knowledge', icon: Search },
       { label: 'Asisten AI', path: null, icon: Sparkles },
     ],
   },

@@ -209,7 +209,7 @@ export default function RecordsRegisterPage() {
   const [functions, setFunctions] = useState([])
   const [error, setError] = useState('')
   const [formOpen, setFormOpen] = useState(false)
-  const [q, setQ] = useState('')
+  const [q, setQ] = useState(() => new URLSearchParams(window.location.search).get('q') ?? '')
   const [seriesId, setSeriesId] = useState('')
   const [status, setStatus] = useState('')
   const [medium, setMedium] = useState('')

@@ -98,9 +98,9 @@ export default function DocumentsPage() {
 
   const [keyword, setKeyword] = useState(params.get('q') ?? '')
   const [status, setStatus] = useState('')
-  const [functionId, setFunctionId] = useState('')
-  const [type, setType] = useState('')
-  const [standard, setStandard] = useState('')
+  const [functionId, setFunctionId] = useState(params.get('function_id') ?? '')
+  const [type, setType] = useState(params.get('type') ?? '')
+  const [standard, setStandard] = useState(params.get('standard') ?? '')
   const [classification, setClassification] = useState('')
   const [page, setPage] = useState(1)
 
