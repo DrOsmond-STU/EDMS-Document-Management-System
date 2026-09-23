@@ -51,7 +51,7 @@ export const NAV_GROUPS = [
       { label: 'Audit Internal', path: '/audit-internal', icon: ClipboardCheck, perm: 'audit.view' },
       { label: 'Audit Eksternal', path: '/audit-external', icon: Building2, perm: 'audit.view' },
       { label: 'Register Temuan & CAPA', path: '/findings', icon: ClipboardEdit, perm: 'finding.manage' },
-      { label: 'Tinjauan Manajemen', path: null, icon: Presentation },
+      { label: 'Tinjauan Manajemen', path: '/management-review', icon: Presentation, perm: 'mgmt_review.view' },
     ],
   },
   {

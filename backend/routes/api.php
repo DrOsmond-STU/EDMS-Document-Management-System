@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\FindingController;
 use App\Http\Controllers\Api\IntegrationSettingController;
 use App\Http\Controllers\Api\LicenseController;
 use App\Http\Controllers\Api\MasterDataController;
+use App\Http\Controllers\Api\MgmtReviewController;
 use App\Http\Controllers\Api\NumberingSettingController;
 use App\Http\Controllers\Api\RiskController;
 use App\Http\Controllers\Api\UserController;
@@ -72,6 +73,13 @@ Route::middleware('auth')->group(function () {
         Route::post('audits', [AuditController::class, 'store']);
         Route::patch('audits/{audit}', [AuditController::class, 'update']);
         Route::post('audits/{audit}/transition', [AuditController::class, 'transition']);
+
+        Route::get('mgmt-reviews', [MgmtReviewController::class, 'index']);
+        Route::post('mgmt-reviews', [MgmtReviewController::class, 'store']);
+        Route::patch('mgmt-reviews/{mgmtReview}', [MgmtReviewController::class, 'update']);
+        Route::post('mgmt-reviews/{mgmtReview}/transition', [MgmtReviewController::class, 'transition']);
+        Route::post('mgmt-reviews/{mgmtReview}/actions', [MgmtReviewController::class, 'addAction']);
+        Route::patch('mgmt-reviews/{mgmtReview}/actions/{action}', [MgmtReviewController::class, 'updateAction']);
 
         Route::get('findings', [FindingController::class, 'index']);
         Route::post('findings', [FindingController::class, 'store']);
