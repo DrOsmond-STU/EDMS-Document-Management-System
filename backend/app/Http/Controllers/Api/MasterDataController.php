@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\OrgFunction;
 use App\Models\Standard;
+use App\Models\User;
 use App\Services\AuditLogger;
 use App\Support\Permissions;
 use Illuminate\Http\JsonResponse;
@@ -35,6 +36,9 @@ class MasterDataController extends Controller
         return response()->json([
             'functions' => OrgFunction::where('active', true)->orderBy('name')->get(['id', 'name']),
             'standards' => Standard::where('active', true)->orderBy('code')->get(['code', 'name']),
+            // id+nama saja (bukan email/peran) — dipakai untuk dropdown penunjukan
+            // penanggung jawab (mis. lead auditor, pemilik risiko berakun) lintas modul.
+            'users' => User::where('active', true)->orderBy('name')->get(['id', 'name']),
         ]);
     }
 

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\ApprovalBoardController;
+use App\Http\Controllers\Api\AuditController;
 use App\Http\Controllers\Api\AuditLogController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\CompanySettingController;
@@ -66,6 +67,11 @@ Route::middleware('auth')->group(function () {
         Route::post('risks', [RiskController::class, 'store']);
         Route::patch('risks/{risk}', [RiskController::class, 'update']);
         Route::post('risks/{risk}/controls', [RiskController::class, 'addControl']);
+
+        Route::get('audits', [AuditController::class, 'index']);
+        Route::post('audits', [AuditController::class, 'store']);
+        Route::patch('audits/{audit}', [AuditController::class, 'update']);
+        Route::post('audits/{audit}/transition', [AuditController::class, 'transition']);
 
         Route::get('findings', [FindingController::class, 'index']);
         Route::post('findings', [FindingController::class, 'store']);

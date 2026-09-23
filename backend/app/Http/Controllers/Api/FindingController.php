@@ -37,7 +37,7 @@ class FindingController extends Controller
             return response()->json(['message' => 'Anda tidak berwenang melihat Register Temuan & CAPA.'], 403);
         }
 
-        $query = Finding::query()->with(['orgFunction:id,name', 'standards:code,name', 'actions', 'verifications']);
+        $query = Finding::query()->with(['orgFunction:id,name', 'standards:code,name', 'actions', 'verifications', 'audit:id,code,type,title']);
 
         if ($q = trim((string) $request->string('q'))) {
             $query->where(fn ($w) => $w
@@ -57,6 +57,9 @@ class FindingController extends Controller
         }
         if ($functionId = $request->string('function_id')->toString()) {
             $query->where('function_id', $functionId);
+        }
+        if ($auditId = $request->string('audit_id')->toString()) {
+            $query->where('audit_id', $auditId);
         }
 
         $findings = $query->orderByDesc('id')->get();
@@ -83,6 +86,7 @@ class FindingController extends Controller
             'type' => ['required', 'string', Rule::in(self::TYPES)],
             'audit_source' => ['required', 'string', Rule::in(self::AUDIT_SOURCES)],
             'audit_reference' => ['nullable', 'string', 'max:255'],
+            'audit_id' => ['nullable', 'integer', 'exists:audits,id'],
             'clause_reference' => ['nullable', 'string', 'max:255'],
             'title' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:5000'],
@@ -123,6 +127,7 @@ class FindingController extends Controller
             'type' => ['sometimes', 'string', Rule::in(self::TYPES)],
             'audit_source' => ['sometimes', 'string', Rule::in(self::AUDIT_SOURCES)],
             'audit_reference' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'audit_id' => ['sometimes', 'nullable', 'integer', 'exists:audits,id'],
             'clause_reference' => ['sometimes', 'nullable', 'string', 'max:255'],
             'title' => ['sometimes', 'string', 'max:255'],
             'description' => ['sometimes', 'nullable', 'string', 'max:5000'],
@@ -317,7 +322,7 @@ class FindingController extends Controller
 
     private function present(Finding $finding): Finding
     {
-        return $finding->load(['orgFunction:id,name', 'standards:code,name', 'actions', 'verifications']);
+        return $finding->load(['orgFunction:id,name', 'standards:code,name', 'actions', 'verifications', 'audit:id,code,type,title']);
     }
 
     private function canView(Request $request): bool

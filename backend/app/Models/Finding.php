@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Finding extends Model
 {
     protected $fillable = [
-        'code', 'type', 'status', 'audit_source', 'audit_reference', 'clause_reference',
+        'code', 'type', 'status', 'audit_source', 'audit_reference', 'audit_id', 'clause_reference',
         'title', 'description', 'evidence', 'function_id', 'owner', 'raised_by', 'due_date',
         'root_cause', 'rejection_reason', 'created_by',
     ];
@@ -23,6 +23,11 @@ class Finding extends Model
     public function orgFunction(): BelongsTo
     {
         return $this->belongsTo(OrgFunction::class, 'function_id');
+    }
+
+    public function audit(): BelongsTo
+    {
+        return $this->belongsTo(Audit::class);
     }
 
     public function creator(): BelongsTo

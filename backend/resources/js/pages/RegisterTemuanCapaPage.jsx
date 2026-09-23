@@ -377,7 +377,8 @@ function FindingFormModal({ open, onClose, functions, standards, onSaved, prefil
   useEffect(() => {
     if (!open) return
     setForm({
-      type: prefill?.type ?? 'nc_minor', audit_source: 'internal', audit_reference: '', clause_reference: prefill?.clauseReference ?? '',
+      type: prefill?.type ?? 'nc_minor', audit_source: prefill?.auditSource ?? 'internal', audit_id: prefill?.auditId ?? null,
+      audit_reference: prefill?.auditReference ?? '', clause_reference: prefill?.clauseReference ?? '',
       title: prefill?.title ?? '', description: prefill?.description ?? '', evidence: '', function_id: '', owner: '', raised_by: '', due_date: '', standards: [],
     })
     setError('')
@@ -492,12 +493,16 @@ export default function RegisterTemuanCapaPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   useEffect(() => {
     const title = searchParams.get('prefillTitle')
-    if (!title) return
+    const auditId = searchParams.get('prefillAuditId')
+    if (!title && !auditId) return
     setPrefill({
-      title,
+      title: title ?? '',
       description: searchParams.get('prefillDescription') ?? '',
       clauseReference: searchParams.get('prefillClause') ?? '',
       type: searchParams.get('prefillType') ?? 'nc_minor',
+      auditId: auditId ? Number(auditId) : null,
+      auditSource: searchParams.get('prefillAuditSource') ?? 'internal',
+      auditReference: searchParams.get('prefillAuditReference') ?? '',
     })
     setFormOpen(true)
     setSearchParams({}, { replace: true })
