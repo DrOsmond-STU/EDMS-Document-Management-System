@@ -31,7 +31,8 @@ final class Permissions
     // Risiko & audit
     public const RISK_MANAGE = 'risk.manage';
     public const RISK_VIEW = 'risk.view';
-    public const AUDIT_VIEW = 'audit.view';
+    public const AUDIT_VIEW = 'audit.view'; // Audit Trail (jejak log sistem)
+    public const AUDIT_PROGRAM_VIEW = 'audit_program.view'; // Program Audit Internal/Eksternal
     public const AUDIT_PLAN = 'audit.plan';
     public const AUDIT_CONDUCT = 'audit.conduct';
     public const FINDING_MANAGE = 'finding.manage';
@@ -54,24 +55,29 @@ final class Permissions
         'approver' => [
             self::DOCUMENT_APPROVE, self::DOCUMENT_VIEW_RELEASED,
             self::RISK_VIEW, self::MGMT_REVIEW_VIEW,
+            self::AUDIT_PROGRAM_VIEW,
         ],
         'controller' => [
             self::DOCUMENT_CONTROL, self::DOCUMENT_VIEW_RELEASED, self::REPORTING_VIEW,
             self::RISK_VIEW, self::FINDING_MANAGE, self::MGMT_REVIEW_VIEW,
+            self::AUDIT_PROGRAM_VIEW,
         ],
         'ratifier' => [
             self::DOCUMENT_RATIFY, self::DOCUMENT_VIEW_RELEASED,
             self::MGMT_REVIEW_CHAIR, self::MGMT_REVIEW_VIEW,
+            self::AUDIT_PROGRAM_VIEW,
         ],
         'function_head' => [
             self::DOCUMENT_VIEW_RELEASED, self::REPORTING_VIEW, self::RISK_MANAGE,
             self::RISK_VIEW, self::FINDING_MANAGE, self::MGMT_REVIEW_VIEW,
+            self::AUDIT_PROGRAM_VIEW,
         ],
         'compliance_admin' => [
             self::COMPLIANCE_MANAGE, self::DOCUMENT_VIEW_RELEASED, self::REPORTING_VIEW,
             self::RISK_MANAGE, self::RISK_VIEW, self::AUDIT_PLAN, self::AUDIT_CONDUCT,
             self::FINDING_MANAGE, self::FINDING_CLOSE, self::MGMT_REVIEW_CHAIR,
             self::MGMT_REVIEW_VIEW,
+            self::AUDIT_PROGRAM_VIEW,
         ],
         'sysadmin' => [
             self::MASTERDATA_MANAGE, self::USERS_MANAGE, self::DOCUMENT_VIEW_RELEASED,
@@ -81,6 +87,7 @@ final class Permissions
             self::AUDIT_VIEW, self::DOCUMENT_VIEW_RELEASED, self::REPORTING_VIEW,
             self::RISK_VIEW, self::AUDIT_PLAN, self::AUDIT_CONDUCT,
             self::FINDING_MANAGE, self::MGMT_REVIEW_VIEW,
+            self::AUDIT_PROGRAM_VIEW,
         ],
         'viewer' => [
             self::DOCUMENT_VIEW_RELEASED, self::RISK_VIEW, self::MGMT_REVIEW_VIEW,

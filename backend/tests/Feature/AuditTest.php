@@ -63,6 +63,16 @@ class AuditTest extends TestCase
         $this->actingAs($viewer)->getJson('/api/audits')->assertStatus(403);
     }
 
+    public function test_audit_program_view_is_separate_from_audit_trail_permission(): void
+    {
+        $this->activateLicense();
+        $complianceAdmin = $this->makeUser('compliance_admin'); // merencanakan audit, bukan pemegang audit trail
+        $sysadmin = $this->makeUser('sysadmin'); // pemegang audit trail, bukan program audit
+
+        $this->actingAs($complianceAdmin)->getJson('/api/audits')->assertOk();
+        $this->actingAs($sysadmin)->getJson('/api/audits')->assertStatus(403);
+    }
+
     public function test_only_audit_plan_can_schedule_an_audit(): void
     {
         $this->activateLicense();

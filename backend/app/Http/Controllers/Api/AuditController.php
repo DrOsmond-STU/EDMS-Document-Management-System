@@ -28,7 +28,7 @@ class AuditController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        if (! $request->user()->hasPermission(Permissions::AUDIT_VIEW)) {
+        if (! $request->user()->hasPermission(Permissions::AUDIT_PROGRAM_VIEW)) {
             return response()->json(['message' => 'Anda tidak berwenang melihat program audit.'], 403);
         }
 

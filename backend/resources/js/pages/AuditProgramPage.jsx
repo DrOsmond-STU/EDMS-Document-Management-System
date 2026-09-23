@@ -244,7 +244,7 @@ function AuditFormModal({ open, onClose, type, functions, standards, users, onSa
 
 export default function AuditProgramPage({ type }) {
   const { hasPermission } = useAuth()
-  const canView = hasPermission('audit.view')
+  const canView = hasPermission('audit_program.view')
   const canPlan = hasPermission('audit.plan')
   const canConduct = hasPermission('audit.conduct')
 
