@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Support\Permissions;
 
 class Document extends Model
 {
@@ -60,6 +61,16 @@ class Document extends Model
         return $this->belongsToMany(Standard::class, 'document_standard', 'document_id', 'standard_code');
     }
 
+    public function categories(): BelongsToMany
+    {
+        return $this->belongsToMany(DocumentCategory::class, 'document_category', 'document_id', 'category_id');
+    }
+
+    public function folders(): BelongsToMany
+    {
+        return $this->belongsToMany(DocumentFolder::class, 'document_folder_items', 'document_id', 'folder_id');
+    }
+
     public function revisions(): HasMany
     {
         return $this->hasMany(DocumentRevision::class)->orderByDesc('revision_number');
@@ -106,6 +117,30 @@ class Document extends Model
         // suatu saat ada pemuatan yang lupa menyertakan validity, jangan
         // sampai seluruh respons API gagal karena TypeError.
         return $this->validity ?? '';
+    }
+
+    /** Peran yang terlibat siklus dokumen boleh melihat semua status; selainnya hanya Released. */
+    public const LIFECYCLE_PERMISSIONS = [
+        Permissions::DOCUMENT_DRAFT, Permissions::DOCUMENT_REVIEW,
+        Permissions::DOCUMENT_APPROVE, Permissions::DOCUMENT_CONTROL,
+        Permissions::DOCUMENT_RATIFY, Permissions::AUDIT_VIEW,
+    ];
+
+    /**
+     * Aturan visibilitas yang sama dengan daftar Register Dokumen
+     * (DocumentController::index) — dipakai modul lain yang ikut
+     * menampilkan dokumen (folder virtual, pencarian, diskusi) supaya
+     * tidak ada jalur samping untuk melihat draft yang bukan haknya.
+     */
+    public function scopeVisibleTo($query, User $user)
+    {
+        foreach (self::LIFECYCLE_PERMISSIONS as $permission) {
+            if ($user->hasPermission($permission)) {
+                return $query;
+            }
+        }
+
+        return $query->where('status', 'released');
     }
 
     public function scopeReleased($query)

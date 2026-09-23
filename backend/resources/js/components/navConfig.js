@@ -20,7 +20,7 @@ export const NAV_GROUPS = [
     label: 'Document Repository',
     items: [
       { label: 'Register Dokumen', path: '/documents', icon: FolderOpen },
-      { label: 'Folder Virtual & Kategori', path: null, icon: FolderTree },
+      { label: 'Folder Virtual & Kategori', path: '/folders', icon: FolderTree },
     ],
   },
   {

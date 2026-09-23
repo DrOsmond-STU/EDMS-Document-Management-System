@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\ComplianceMatrixController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\DocumentController;
 use App\Http\Controllers\Api\DocumentFileController;
+use App\Http\Controllers\Api\DocumentFolderController;
 use App\Http\Controllers\Api\FindingController;
 use App\Http\Controllers\Api\IntegrationSettingController;
 use App\Http\Controllers\Api\LegalRequirementController;
@@ -106,6 +107,19 @@ Route::middleware('auth')->group(function () {
         Route::post('findings/{finding}/verifications', [FindingController::class, 'addVerification']);
         Route::post('findings/{finding}/close', [FindingController::class, 'close']);
         Route::post('findings/{finding}/reject', [FindingController::class, 'reject']);
+
+        Route::get('folders', [DocumentFolderController::class, 'index']);
+        Route::post('folders', [DocumentFolderController::class, 'store']);
+        Route::patch('folders/{folder}', [DocumentFolderController::class, 'update']);
+        Route::delete('folders/{folder}', [DocumentFolderController::class, 'destroy']);
+        Route::get('folders/{folder}/documents', [DocumentFolderController::class, 'documents']);
+        Route::post('folders/{folder}/documents', [DocumentFolderController::class, 'addDocuments']);
+        Route::delete('folders/{folder}/documents/{document}', [DocumentFolderController::class, 'removeDocument']);
+        Route::post('document-categories', [DocumentFolderController::class, 'storeCategory']);
+        Route::patch('document-categories/{category}', [DocumentFolderController::class, 'updateCategory']);
+        Route::delete('document-categories/{category}', [DocumentFolderController::class, 'destroyCategory']);
+        Route::get('document-categories/{category}/documents', [DocumentFolderController::class, 'categoryDocuments']);
+        Route::put('documents/{document}/categories', [DocumentFolderController::class, 'syncDocumentCategories']);
 
         Route::get('documents', [DocumentController::class, 'index']);
         Route::post('documents', [DocumentController::class, 'store']);

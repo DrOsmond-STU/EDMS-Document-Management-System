@@ -20,6 +20,7 @@ import MgmtReviewPage from './pages/MgmtReviewPage'
 import LegalRegisterPage from './pages/LegalRegisterPage'
 import RecordsRegisterPage from './pages/RecordsRegisterPage'
 import RetentionArchivePage from './pages/RetentionArchivePage'
+import FoldersPage from './pages/FoldersPage'
 
 function FullScreenMessage({ text }) {
   return <div className="flex min-h-screen w-full items-center justify-center text-[13px] text-[var(--color-neutral-medium)]">{text}</div>
@@ -53,6 +54,7 @@ export default function App() {
       <Route path="/legal-register" element={<LegalRegisterPage />} />
       <Route path="/records" element={<RecordsRegisterPage />} />
       <Route path="/retention" element={<RetentionArchivePage />} />
+      <Route path="/folders" element={<FoldersPage />} />
       <Route path="/integrations" element={<IntegrationsPage />} />
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
