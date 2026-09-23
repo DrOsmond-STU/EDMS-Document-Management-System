@@ -1,35 +1,63 @@
+import { lazy, Suspense } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { useAuth } from './AuthContext'
+import { Layout } from './components/Layout'
 import LoginPage from './pages/LoginPage'
 import ChangePasswordPage from './pages/ChangePasswordPage'
-import DashboardPage from './pages/DashboardPage'
-import DocumentsPage from './pages/DocumentsPage'
-import DocumentDetailPage from './pages/DocumentDetailPage'
-import SettingsPage from './pages/SettingsPage'
-import NumberingSettingsPage from './pages/NumberingSettingsPage'
-import AuditTrailPage from './pages/AuditTrailPage'
-import UsersPage from './pages/UsersPage'
-import MasterDataPage from './pages/MasterDataPage'
-import ComplianceMatrixPage from './pages/ComplianceMatrixPage'
-import RegisterRisikoPage from './pages/RegisterRisikoPage'
-import RegisterTemuanCapaPage from './pages/RegisterTemuanCapaPage'
-import ApprovalBoardPage from './pages/ApprovalBoardPage'
-import IntegrationsPage from './pages/IntegrationsPage'
-import AuditProgramPage from './pages/AuditProgramPage'
-import MgmtReviewPage from './pages/MgmtReviewPage'
-import LegalRegisterPage from './pages/LegalRegisterPage'
-import RecordsRegisterPage from './pages/RecordsRegisterPage'
-import RetentionArchivePage from './pages/RetentionArchivePage'
-import FoldersPage from './pages/FoldersPage'
-import DraftingListPage from './pages/DraftingListPage'
-import DraftingDetailPage from './pages/DraftingDetailPage'
-import ReportingPage from './pages/ReportingPage'
-import DiscussionsPage from './pages/DiscussionsPage'
-import SystemAdminPage from './pages/SystemAdminPage'
-import KnowledgePage from './pages/KnowledgePage'
+
+/**
+ * Halaman dimuat per rute (code-splitting) supaya pengguna tidak mengunduh
+ * seluruh modul di awal. Jika berkas chunk gagal dimuat — biasanya karena
+ * tab sudah terbuka sebelum deploy baru dan nama berkas lama sudah tidak
+ * ada — muat ulang halaman SEKALI untuk mengambil versi terbaru.
+ */
+function page(loader) {
+  return lazy(() => loader().then(
+    (mod) => { sessionStorage.removeItem('chunk-reload'); return mod },
+    (err) => {
+      if (!sessionStorage.getItem('chunk-reload')) {
+        sessionStorage.setItem('chunk-reload', '1')
+        window.location.reload()
+        return new Promise(() => {})
+      }
+      throw err
+    },
+  ))
+}
+
+const DashboardPage = page(() => import('./pages/DashboardPage'))
+const DocumentsPage = page(() => import('./pages/DocumentsPage'))
+const DocumentDetailPage = page(() => import('./pages/DocumentDetailPage'))
+const SettingsPage = page(() => import('./pages/SettingsPage'))
+const NumberingSettingsPage = page(() => import('./pages/NumberingSettingsPage'))
+const AuditTrailPage = page(() => import('./pages/AuditTrailPage'))
+const UsersPage = page(() => import('./pages/UsersPage'))
+const MasterDataPage = page(() => import('./pages/MasterDataPage'))
+const ComplianceMatrixPage = page(() => import('./pages/ComplianceMatrixPage'))
+const RegisterRisikoPage = page(() => import('./pages/RegisterRisikoPage'))
+const RegisterTemuanCapaPage = page(() => import('./pages/RegisterTemuanCapaPage'))
+const ApprovalBoardPage = page(() => import('./pages/ApprovalBoardPage'))
+const IntegrationsPage = page(() => import('./pages/IntegrationsPage'))
+const AuditProgramPage = page(() => import('./pages/AuditProgramPage'))
+const MgmtReviewPage = page(() => import('./pages/MgmtReviewPage'))
+const LegalRegisterPage = page(() => import('./pages/LegalRegisterPage'))
+const RecordsRegisterPage = page(() => import('./pages/RecordsRegisterPage'))
+const RetentionArchivePage = page(() => import('./pages/RetentionArchivePage'))
+const FoldersPage = page(() => import('./pages/FoldersPage'))
+const DraftingListPage = page(() => import('./pages/DraftingListPage'))
+const DraftingDetailPage = page(() => import('./pages/DraftingDetailPage'))
+const ReportingPage = page(() => import('./pages/ReportingPage'))
+const DiscussionsPage = page(() => import('./pages/DiscussionsPage'))
+const SystemAdminPage = page(() => import('./pages/SystemAdminPage'))
+const KnowledgePage = page(() => import('./pages/KnowledgePage'))
 
 function FullScreenMessage({ text }) {
   return <div className="flex min-h-screen w-full items-center justify-center text-[13px] text-[var(--color-neutral-medium)]">{text}</div>
+}
+
+/** Fallback di DALAM Layout — sidebar & topbar tetap tampil selama chunk halaman dimuat. */
+function PageLoading() {
+  return <Layout><p className="text-[13px] text-[var(--color-neutral-medium)]">Memuat…</p></Layout>
 }
 
 export default function App() {
@@ -40,35 +68,37 @@ export default function App() {
   if (status === 'must_change_password') return <ChangePasswordPage />
 
   return (
-    <Routes>
-      <Route path="/" element={<Navigate to="/dashboard" replace />} />
-      <Route path="/dashboard" element={<DashboardPage />} />
-      <Route path="/documents" element={<DocumentsPage />} />
-      <Route path="/documents/:id" element={<DocumentDetailPage />} />
-      <Route path="/settings" element={<SettingsPage />} />
-      <Route path="/settings/numbering" element={<NumberingSettingsPage />} />
-      <Route path="/audit-trail" element={<AuditTrailPage />} />
-      <Route path="/users" element={<UsersPage />} />
-      <Route path="/master-data" element={<MasterDataPage />} />
-      <Route path="/compliance-matrix" element={<ComplianceMatrixPage />} />
-      <Route path="/risk-register" element={<RegisterRisikoPage />} />
-      <Route path="/findings" element={<RegisterTemuanCapaPage />} />
-      <Route path="/approval-board" element={<ApprovalBoardPage />} />
-      <Route path="/audit-internal" element={<AuditProgramPage type="internal" />} />
-      <Route path="/audit-external" element={<AuditProgramPage type="external" />} />
-      <Route path="/management-review" element={<MgmtReviewPage />} />
-      <Route path="/legal-register" element={<LegalRegisterPage />} />
-      <Route path="/records" element={<RecordsRegisterPage />} />
-      <Route path="/retention" element={<RetentionArchivePage />} />
-      <Route path="/folders" element={<FoldersPage />} />
-      <Route path="/drafting" element={<DraftingListPage />} />
-      <Route path="/drafting/:id" element={<DraftingDetailPage />} />
-      <Route path="/reporting" element={<ReportingPage />} />
-      <Route path="/discussions" element={<DiscussionsPage />} />
-      <Route path="/system" element={<SystemAdminPage />} />
-      <Route path="/knowledge" element={<KnowledgePage />} />
-      <Route path="/integrations" element={<IntegrationsPage />} />
-      <Route path="*" element={<Navigate to="/dashboard" replace />} />
-    </Routes>
+    <Suspense fallback={<PageLoading />}>
+      <Routes>
+        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        <Route path="/dashboard" element={<DashboardPage />} />
+        <Route path="/documents" element={<DocumentsPage />} />
+        <Route path="/documents/:id" element={<DocumentDetailPage />} />
+        <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/settings/numbering" element={<NumberingSettingsPage />} />
+        <Route path="/audit-trail" element={<AuditTrailPage />} />
+        <Route path="/users" element={<UsersPage />} />
+        <Route path="/master-data" element={<MasterDataPage />} />
+        <Route path="/compliance-matrix" element={<ComplianceMatrixPage />} />
+        <Route path="/risk-register" element={<RegisterRisikoPage />} />
+        <Route path="/findings" element={<RegisterTemuanCapaPage />} />
+        <Route path="/approval-board" element={<ApprovalBoardPage />} />
+        <Route path="/audit-internal" element={<AuditProgramPage type="internal" />} />
+        <Route path="/audit-external" element={<AuditProgramPage type="external" />} />
+        <Route path="/management-review" element={<MgmtReviewPage />} />
+        <Route path="/legal-register" element={<LegalRegisterPage />} />
+        <Route path="/records" element={<RecordsRegisterPage />} />
+        <Route path="/retention" element={<RetentionArchivePage />} />
+        <Route path="/folders" element={<FoldersPage />} />
+        <Route path="/drafting" element={<DraftingListPage />} />
+        <Route path="/drafting/:id" element={<DraftingDetailPage />} />
+        <Route path="/reporting" element={<ReportingPage />} />
+        <Route path="/discussions" element={<DiscussionsPage />} />
+        <Route path="/system" element={<SystemAdminPage />} />
+        <Route path="/knowledge" element={<KnowledgePage />} />
+        <Route path="/integrations" element={<IntegrationsPage />} />
+        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      </Routes>
+    </Suspense>
   )
 }

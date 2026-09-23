@@ -1,4 +1,130 @@
 {
+  "_arrow-left-CU45ukgW.js": {
+    "file": "assets/arrow-left-CU45ukgW.js",
+    "name": "arrow-left",
+    "imports": [
+      "resources/js/app.jsx"
+    ]
+  },
+  "_chevron-left-0UjaSTBS.js": {
+    "file": "assets/chevron-left-0UjaSTBS.js",
+    "name": "chevron-left",
+    "imports": [
+      "resources/js/app.jsx"
+    ]
+  },
+  "_chevron-right-Bdjv5H3c.js": {
+    "file": "assets/chevron-right-Bdjv5H3c.js",
+    "name": "chevron-right",
+    "imports": [
+      "resources/js/app.jsx"
+    ]
+  },
+  "_chevron-up-Ducl-faU.js": {
+    "file": "assets/chevron-up-Ducl-faU.js",
+    "name": "chevron-up",
+    "imports": [
+      "resources/js/app.jsx"
+    ]
+  },
+  "_circle-check-BEz-zSBJ.js": {
+    "file": "assets/circle-check-BEz-zSBJ.js",
+    "name": "circle-check",
+    "imports": [
+      "resources/js/app.jsx"
+    ]
+  },
+  "_circle-dashed-DUrJiHk5.js": {
+    "file": "assets/circle-dashed-DUrJiHk5.js",
+    "name": "circle-dashed",
+    "imports": [
+      "resources/js/app.jsx"
+    ]
+  },
+  "_circle-x-gQb5acki.js": {
+    "file": "assets/circle-x-gQb5acki.js",
+    "name": "circle-x",
+    "imports": [
+      "resources/js/app.jsx"
+    ]
+  },
+  "_clock-C7M6PyOY.js": {
+    "file": "assets/clock-C7M6PyOY.js",
+    "name": "clock",
+    "imports": [
+      "resources/js/app.jsx"
+    ]
+  },
+  "_download-Bd-NkWel.js": {
+    "file": "assets/download-Bd-NkWel.js",
+    "name": "download",
+    "imports": [
+      "resources/js/app.jsx"
+    ]
+  },
+  "_file-text-CTVe8_Zc.js": {
+    "file": "assets/file-text-CTVe8_Zc.js",
+    "name": "file-text",
+    "imports": [
+      "resources/js/app.jsx"
+    ]
+  },
+  "_info-C3dzzDrG.js": {
+    "file": "assets/info-C3dzzDrG.js",
+    "name": "info",
+    "imports": [
+      "resources/js/app.jsx"
+    ]
+  },
+  "_plus-DET8WOCF.js": {
+    "file": "assets/plus-DET8WOCF.js",
+    "name": "plus",
+    "imports": [
+      "resources/js/app.jsx"
+    ]
+  },
+  "_shared-9ntdbjJN.js": {
+    "file": "assets/shared-9ntdbjJN.js",
+    "name": "shared",
+    "imports": [
+      "resources/js/app.jsx"
+    ]
+  },
+  "_shared-CCJySiWX.js": {
+    "file": "assets/shared-CCJySiWX.js",
+    "name": "shared",
+    "imports": [
+      "resources/js/app.jsx"
+    ]
+  },
+  "_shield-off-BrgfWg-a.js": {
+    "file": "assets/shield-off-BrgfWg-a.js",
+    "name": "shield-off",
+    "imports": [
+      "resources/js/app.jsx"
+    ]
+  },
+  "_trash-Bk-EKEwk.js": {
+    "file": "assets/trash-Bk-EKEwk.js",
+    "name": "trash",
+    "imports": [
+      "resources/js/app.jsx"
+    ]
+  },
+  "_trending-up-DAS_s9xH.js": {
+    "file": "assets/trending-up-DAS_s9xH.js",
+    "name": "trending-up",
+    "imports": [
+      "resources/js/app.jsx"
+    ]
+  },
+  "_upload-rWAxUkLk.js": {
+    "file": "assets/upload-rWAxUkLk.js",
+    "name": "upload",
+    "imports": [
+      "resources/js/app.jsx"
+    ]
+  },
   "resources/css/app.css": {
     "file": "assets/app-DhSjaFHO.css",
     "name": "app",
@@ -9,12 +135,332 @@
     "isEntry": true
   },
   "resources/js/app.jsx": {
-    "file": "assets/app-D1jP7iyZ.js",
+    "file": "assets/app-CzcQAEq9.js",
     "name": "app",
     "src": "resources/js/app.jsx",
     "isEntry": true,
+    "dynamicImports": [
+      "resources/js/pages/DashboardPage.jsx",
+      "resources/js/pages/DocumentsPage.jsx",
+      "resources/js/pages/DocumentDetailPage.jsx",
+      "resources/js/pages/SettingsPage.jsx",
+      "resources/js/pages/NumberingSettingsPage.jsx",
+      "resources/js/pages/AuditTrailPage.jsx",
+      "resources/js/pages/UsersPage.jsx",
+      "resources/js/pages/MasterDataPage.jsx",
+      "resources/js/pages/ComplianceMatrixPage.jsx",
+      "resources/js/pages/RegisterRisikoPage.jsx",
+      "resources/js/pages/RegisterTemuanCapaPage.jsx",
+      "resources/js/pages/ApprovalBoardPage.jsx",
+      "resources/js/pages/IntegrationsPage.jsx",
+      "resources/js/pages/AuditProgramPage.jsx",
+      "resources/js/pages/MgmtReviewPage.jsx",
+      "resources/js/pages/LegalRegisterPage.jsx",
+      "resources/js/pages/RecordsRegisterPage.jsx",
+      "resources/js/pages/RetentionArchivePage.jsx",
+      "resources/js/pages/FoldersPage.jsx",
+      "resources/js/pages/DraftingListPage.jsx",
+      "resources/js/pages/DraftingDetailPage.jsx",
+      "resources/js/pages/ReportingPage.jsx",
+      "resources/js/pages/DiscussionsPage.jsx",
+      "resources/js/pages/SystemAdminPage.jsx",
+      "resources/js/pages/KnowledgePage.jsx"
+    ],
     "css": [
       "assets/app-DhSjaFHO.css"
+    ]
+  },
+  "resources/js/pages/ApprovalBoardPage.jsx": {
+    "file": "assets/ApprovalBoardPage-NqKFrkVG.js",
+    "name": "ApprovalBoardPage",
+    "src": "resources/js/pages/ApprovalBoardPage.jsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "_clock-C7M6PyOY.js",
+      "resources/js/app.jsx"
+    ]
+  },
+  "resources/js/pages/AuditProgramPage.jsx": {
+    "file": "assets/AuditProgramPage-CS7FfZqP.js",
+    "name": "AuditProgramPage",
+    "src": "resources/js/pages/AuditProgramPage.jsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "_chevron-up-Ducl-faU.js",
+      "_plus-DET8WOCF.js",
+      "resources/js/app.jsx"
+    ]
+  },
+  "resources/js/pages/AuditTrailPage.jsx": {
+    "file": "assets/AuditTrailPage-CSA99DHX.js",
+    "name": "AuditTrailPage",
+    "src": "resources/js/pages/AuditTrailPage.jsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "_chevron-left-0UjaSTBS.js",
+      "_chevron-right-Bdjv5H3c.js",
+      "resources/js/app.jsx"
+    ]
+  },
+  "resources/js/pages/ComplianceMatrixPage.jsx": {
+    "file": "assets/ComplianceMatrixPage-C2AlGh6c.js",
+    "name": "ComplianceMatrixPage",
+    "src": "resources/js/pages/ComplianceMatrixPage.jsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "_circle-check-BEz-zSBJ.js",
+      "_circle-x-gQb5acki.js",
+      "resources/js/app.jsx"
+    ]
+  },
+  "resources/js/pages/DashboardPage.jsx": {
+    "file": "assets/DashboardPage-ZLdGMOnk.js",
+    "name": "DashboardPage",
+    "src": "resources/js/pages/DashboardPage.jsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "_trending-up-DAS_s9xH.js",
+      "_circle-check-BEz-zSBJ.js",
+      "_file-text-CTVe8_Zc.js",
+      "resources/js/app.jsx"
+    ]
+  },
+  "resources/js/pages/DiscussionsPage.jsx": {
+    "file": "assets/DiscussionsPage-CfgrcXqQ.js",
+    "name": "DiscussionsPage",
+    "src": "resources/js/pages/DiscussionsPage.jsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "_circle-check-BEz-zSBJ.js",
+      "resources/js/app.jsx"
+    ]
+  },
+  "resources/js/pages/DocumentDetailPage.jsx": {
+    "file": "assets/DocumentDetailPage-Ch5b7aXB.js",
+    "name": "DocumentDetailPage",
+    "src": "resources/js/pages/DocumentDetailPage.jsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "_arrow-left-CU45ukgW.js",
+      "_circle-check-BEz-zSBJ.js",
+      "_circle-x-gQb5acki.js",
+      "_download-Bd-NkWel.js",
+      "_trash-Bk-EKEwk.js",
+      "_upload-rWAxUkLk.js",
+      "resources/js/app.jsx"
+    ]
+  },
+  "resources/js/pages/DocumentsPage.jsx": {
+    "file": "assets/DocumentsPage-BvAae6vs.js",
+    "name": "DocumentsPage",
+    "src": "resources/js/pages/DocumentsPage.jsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "_chevron-left-0UjaSTBS.js",
+      "_chevron-right-Bdjv5H3c.js",
+      "_file-text-CTVe8_Zc.js",
+      "_plus-DET8WOCF.js",
+      "resources/js/app.jsx"
+    ]
+  },
+  "resources/js/pages/DraftingDetailPage.jsx": {
+    "file": "assets/DraftingDetailPage-8ITUdXsC.js",
+    "name": "DraftingDetailPage",
+    "src": "resources/js/pages/DraftingDetailPage.jsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "_arrow-left-CU45ukgW.js",
+      "_shared-9ntdbjJN.js",
+      "_circle-check-BEz-zSBJ.js",
+      "_file-text-CTVe8_Zc.js",
+      "_plus-DET8WOCF.js",
+      "_upload-rWAxUkLk.js",
+      "resources/js/app.jsx"
+    ]
+  },
+  "resources/js/pages/DraftingListPage.jsx": {
+    "file": "assets/DraftingListPage-9RD0ewQj.js",
+    "name": "DraftingListPage",
+    "src": "resources/js/pages/DraftingListPage.jsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "_shared-9ntdbjJN.js",
+      "_plus-DET8WOCF.js",
+      "resources/js/app.jsx"
+    ]
+  },
+  "resources/js/pages/FoldersPage.jsx": {
+    "file": "assets/FoldersPage-DBdeWvVh.js",
+    "name": "FoldersPage",
+    "src": "resources/js/pages/FoldersPage.jsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "_chevron-right-Bdjv5H3c.js",
+      "_trash-Bk-EKEwk.js",
+      "_plus-DET8WOCF.js",
+      "resources/js/app.jsx"
+    ]
+  },
+  "resources/js/pages/IntegrationsPage.jsx": {
+    "file": "assets/IntegrationsPage-BH_ydpv0.js",
+    "name": "IntegrationsPage",
+    "src": "resources/js/pages/IntegrationsPage.jsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.jsx"
+    ]
+  },
+  "resources/js/pages/KnowledgePage.jsx": {
+    "file": "assets/KnowledgePage-CFGGwEWN.js",
+    "name": "KnowledgePage",
+    "src": "resources/js/pages/KnowledgePage.jsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "_trending-up-DAS_s9xH.js",
+      "_file-text-CTVe8_Zc.js",
+      "_info-C3dzzDrG.js",
+      "resources/js/app.jsx"
+    ]
+  },
+  "resources/js/pages/LegalRegisterPage.jsx": {
+    "file": "assets/LegalRegisterPage-BPj37R4p.js",
+    "name": "LegalRegisterPage",
+    "src": "resources/js/pages/LegalRegisterPage.jsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "_chevron-up-Ducl-faU.js",
+      "_circle-check-BEz-zSBJ.js",
+      "_circle-dashed-DUrJiHk5.js",
+      "_circle-x-gQb5acki.js",
+      "_clock-C7M6PyOY.js",
+      "_plus-DET8WOCF.js",
+      "resources/js/app.jsx"
+    ]
+  },
+  "resources/js/pages/MasterDataPage.jsx": {
+    "file": "assets/MasterDataPage-CYHuKDsa.js",
+    "name": "MasterDataPage",
+    "src": "resources/js/pages/MasterDataPage.jsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "_file-text-CTVe8_Zc.js",
+      "_plus-DET8WOCF.js",
+      "_shield-off-BrgfWg-a.js",
+      "resources/js/app.jsx"
+    ]
+  },
+  "resources/js/pages/MgmtReviewPage.jsx": {
+    "file": "assets/MgmtReviewPage-xDLYqmbq.js",
+    "name": "MgmtReviewPage",
+    "src": "resources/js/pages/MgmtReviewPage.jsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "_chevron-up-Ducl-faU.js",
+      "_plus-DET8WOCF.js",
+      "resources/js/app.jsx"
+    ]
+  },
+  "resources/js/pages/NumberingSettingsPage.jsx": {
+    "file": "assets/NumberingSettingsPage-zwx74EN0.js",
+    "name": "NumberingSettingsPage",
+    "src": "resources/js/pages/NumberingSettingsPage.jsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "resources/js/app.jsx"
+    ]
+  },
+  "resources/js/pages/RecordsRegisterPage.jsx": {
+    "file": "assets/RecordsRegisterPage-OG8oHUmX.js",
+    "name": "RecordsRegisterPage",
+    "src": "resources/js/pages/RecordsRegisterPage.jsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "_chevron-up-Ducl-faU.js",
+      "_plus-DET8WOCF.js",
+      "resources/js/app.jsx",
+      "_shared-CCJySiWX.js"
+    ]
+  },
+  "resources/js/pages/RegisterRisikoPage.jsx": {
+    "file": "assets/RegisterRisikoPage-CutbbLuj.js",
+    "name": "RegisterRisikoPage",
+    "src": "resources/js/pages/RegisterRisikoPage.jsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "_chevron-up-Ducl-faU.js",
+      "_plus-DET8WOCF.js",
+      "resources/js/app.jsx"
+    ]
+  },
+  "resources/js/pages/RegisterTemuanCapaPage.jsx": {
+    "file": "assets/RegisterTemuanCapaPage-BmyfGtKc.js",
+    "name": "RegisterTemuanCapaPage",
+    "src": "resources/js/pages/RegisterTemuanCapaPage.jsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "_chevron-up-Ducl-faU.js",
+      "_plus-DET8WOCF.js",
+      "resources/js/app.jsx"
+    ]
+  },
+  "resources/js/pages/ReportingPage.jsx": {
+    "file": "assets/ReportingPage-BanBERfL.js",
+    "name": "ReportingPage",
+    "src": "resources/js/pages/ReportingPage.jsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "_circle-check-BEz-zSBJ.js",
+      "_circle-dashed-DUrJiHk5.js",
+      "_circle-x-gQb5acki.js",
+      "_download-Bd-NkWel.js",
+      "_info-C3dzzDrG.js",
+      "resources/js/app.jsx"
+    ]
+  },
+  "resources/js/pages/RetentionArchivePage.jsx": {
+    "file": "assets/RetentionArchivePage-D-yAL0Pj.js",
+    "name": "RetentionArchivePage",
+    "src": "resources/js/pages/RetentionArchivePage.jsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "_trash-Bk-EKEwk.js",
+      "_plus-DET8WOCF.js",
+      "resources/js/app.jsx",
+      "_shared-CCJySiWX.js"
+    ]
+  },
+  "resources/js/pages/SettingsPage.jsx": {
+    "file": "assets/SettingsPage-D1BclQ8F.js",
+    "name": "SettingsPage",
+    "src": "resources/js/pages/SettingsPage.jsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "_upload-rWAxUkLk.js",
+      "resources/js/app.jsx"
+    ]
+  },
+  "resources/js/pages/SystemAdminPage.jsx": {
+    "file": "assets/SystemAdminPage-DF7tL9Hj.js",
+    "name": "SystemAdminPage",
+    "src": "resources/js/pages/SystemAdminPage.jsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "_circle-check-BEz-zSBJ.js",
+      "_circle-x-gQb5acki.js",
+      "resources/js/app.jsx"
+    ]
+  },
+  "resources/js/pages/UsersPage.jsx": {
+    "file": "assets/UsersPage-B1V14Jmm.js",
+    "name": "UsersPage",
+    "src": "resources/js/pages/UsersPage.jsx",
+    "isDynamicEntry": true,
+    "imports": [
+      "_chevron-left-0UjaSTBS.js",
+      "_chevron-right-Bdjv5H3c.js",
+      "_plus-DET8WOCF.js",
+      "_shield-off-BrgfWg-a.js",
+      "resources/js/app.jsx"
     ]
   }
 }
