@@ -140,6 +140,9 @@ class RecordController extends Controller
 
     public function action(Request $request, Record $record): JsonResponse
     {
+        if (! $request->user()->hasPermission(Permissions::RECORDS_MANAGE) && ! $request->user()->hasPermission(Permissions::RECORDS_DISPOSE)) {
+            return response()->json(['message' => 'Anda tidak berwenang melakukan aksi ini.'], 403);
+        }
         $data = $request->validate([
             'action' => ['required', 'string', Rule::in(['deactivate', 'hold', 'release', 'dispose', 'archive_permanent'])],
             'reason' => ['nullable', 'string', 'max:255'],

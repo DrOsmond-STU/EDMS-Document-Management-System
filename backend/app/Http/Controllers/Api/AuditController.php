@@ -131,6 +131,9 @@ class AuditController extends Controller
 
     public function transition(Request $request, Audit $audit): JsonResponse
     {
+        if (! $request->user()->hasPermission(Permissions::AUDIT_PLAN) && ! $request->user()->hasPermission(Permissions::AUDIT_CONDUCT)) {
+            return response()->json(['message' => 'Anda tidak berwenang mengubah status audit.'], 403);
+        }
         $data = $request->validate([
             'action' => ['required', 'string', Rule::in(['start', 'complete', 'cancel'])],
             'summary' => ['nullable', 'string', 'max:5000'],

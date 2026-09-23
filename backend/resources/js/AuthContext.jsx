@@ -24,6 +24,11 @@ export function AuthProvider({ children }) {
   }, [])
 
   useEffect(() => { refresh() }, [refresh])
+  useEffect(() => {
+    const expire = () => { setUser(null); setStatus('guest') }
+    window.addEventListener('auth:expired', expire)
+    return () => window.removeEventListener('auth:expired', expire)
+  }, [])
 
   const login = useCallback(async (email, password) => {
     const me = await api('auth/login', { method: 'POST', body: { email, password } })

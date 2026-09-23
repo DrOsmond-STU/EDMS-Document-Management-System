@@ -35,7 +35,7 @@ use Illuminate\Support\Facades\Route;
 // pun untuk layar blokir, dan apply harus tetap bisa dipanggil tool vendor
 // bahkan saat lisensi sedang tidak aktif, karena itulah cara memperbaikinya.
 Route::get('license-status', [LicenseController::class, 'status']);
-Route::post('license/apply', [LicenseController::class, 'apply']);
+Route::post('license/apply', [LicenseController::class, 'apply'])->middleware('throttle:10,1');
 
 // Memancing cookie XSRF-TOKEN sebelum frontend mengirim permintaan tulis.
 Route::get('csrf-cookie', fn () => response()->noContent());
@@ -49,7 +49,7 @@ Route::get('company-settings', [CompanySettingController::class, 'show']);
 Route::get('company-settings/logo', [CompanySettingController::class, 'logo'])->name('company-settings.logo');
 Route::get('company-settings/sidebar-logo', [CompanySettingController::class, 'sidebarLogo'])->name('company-settings.sidebar-logo');
 
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'account.active'])->group(function () {
     Route::post('auth/logout', [AuthController::class, 'logout']);
     Route::get('auth/me', [AuthController::class, 'me']);
 

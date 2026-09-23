@@ -35,6 +35,9 @@ class DocumentController extends Controller
         // dokumen yang sudah Released. Disaring di SQL, bukan di frontend.
         if (! $this->involvedInLifecycle($request)) {
             $query->where('status', 'released');
+            if (! $user->hasPermission(Permissions::DOCUMENT_VIEW_RELEASED)) {
+                $query->whereRaw('1 = 0');
+            }
         }
 
         foreach (['status', 'type', 'function_id', 'classification'] as $filter) {

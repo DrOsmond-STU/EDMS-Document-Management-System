@@ -39,6 +39,11 @@ export async function api(path, { method = 'GET', body, isForm = false } = {}) {
   let data = null
   try { data = await res.json() } catch { /* respons kosong (mis. unduhan) */ }
 
+  // Sesi berakhir/akun dinonaktifkan di tengah pemakaian → kembali ke login.
+  if (res.status === 401 && !path.startsWith('auth/')) {
+    window.dispatchEvent(new Event('auth:expired'))
+  }
+
   if (!res.ok) {
     throw new ApiError(data?.message || `Permintaan gagal (HTTP ${res.status})`, res.status, data)
   }

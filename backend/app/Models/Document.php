@@ -140,6 +140,12 @@ class Document extends Model
             }
         }
 
+        // Tanpa hak lihat dokumen terbit pun, tidak ada yang boleh terlihat —
+        // selaras dengan DocumentPolicy::view().
+        if (! $user->hasPermission(Permissions::DOCUMENT_VIEW_RELEASED)) {
+            return $query->whereRaw('1 = 0');
+        }
+
         return $query->where('status', 'released');
     }
 

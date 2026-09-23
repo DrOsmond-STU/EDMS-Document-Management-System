@@ -13,6 +13,9 @@ use Illuminate\Validation\Rules\Password;
 
 class AuthController extends Controller
 {
+    /** Hash bcrypt acak (bukan password siapa pun) untuk menyamakan waktu respons login. */
+    private const DUMMY_HASH = '$2y$12$Qm7d8nKq1Yx3r9Vb0Zc5euJpLw2HkS6tF4aG8iD1oN3pR5sT7uV9W';
+
     /** Gagal berturut-turut sebelum akun dikunci sementara. */
     private const MAX_FAILED_ATTEMPTS = 5;
 
@@ -34,6 +37,9 @@ class AuthController extends Controller
         $generic = ['message' => 'Email atau password salah.'];
 
         if (! $user) {
+            // Tetap jalankan verifikasi hash supaya waktu respons tidak membedakan
+            // email terdaftar vs tidak (anti user-enumeration lewat timing).
+            Hash::check($data['password'], self::DUMMY_HASH);
             $this->audit->log(null, 'login_failed', 'Session', null, $data['email'], 'Percobaan login dengan email tidak dikenal');
 
             return response()->json($generic, 401);

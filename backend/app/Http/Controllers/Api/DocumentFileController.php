@@ -10,6 +10,7 @@ use App\Services\WatermarkService;
 use App\Support\Permissions;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\HeaderUtils;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -160,7 +161,7 @@ class DocumentFileController extends Controller
             // Tampilkan apa adanya, tanpa watermark.
             return response(Storage::disk($file->disk)->get($file->stored_path))
                 ->header('Content-Type', $file->mime_type)
-                ->header('Content-Disposition', 'inline; filename="'.$file->original_name.'"')
+                ->header('Content-Disposition', $this->inline($file->original_name))
                 ->header('Cache-Control', 'no-store, private');
         }
 
@@ -177,7 +178,7 @@ class DocumentFileController extends Controller
 
         return response($result['content'])
             ->header('Content-Type', $result['mime'])
-            ->header('Content-Disposition', 'inline; filename="uncontrolled-copy-'.$file->original_name.'"')
+            ->header('Content-Disposition', $this->inline('uncontrolled-copy-'.$file->original_name))
             ->header('Cache-Control', 'no-store, private');
     }
 
@@ -214,4 +215,13 @@ class DocumentFileController extends Controller
 
         return response()->json(['message' => 'Berkas dihapus dari dokumen.']);
     }
+
+    /** Header disposisi aman: nama berkas dari pengguna tidak bisa menyisipkan kutip/baris baru ke header. */
+    private function inline(string $name): string
+    {
+        $fallback = preg_replace('/[^A-Za-z0-9._-]+/', '_', $name) ?: 'berkas';
+
+        return HeaderUtils::makeDisposition(HeaderUtils::DISPOSITION_INLINE, str_replace(['/', '\\'], '_', $name), $fallback);
+    }
+
 }

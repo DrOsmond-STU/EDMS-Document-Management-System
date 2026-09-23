@@ -139,6 +139,11 @@ class UserController extends Controller
         }
         $user->save();
 
+        // Akun dinonaktifkan: akhiri semua sesinya sekarang juga.
+        if (in_array('active', $changed, true) && ! $user->active && config('session.driver') === 'database') {
+            DB::table(config('session.table', 'sessions'))->where('user_id', $user->id)->delete();
+        }
+
         if (array_key_exists('roles', $data)) {
             $user->roles()->sync($data['roles']);
             $changed[] = 'roles';

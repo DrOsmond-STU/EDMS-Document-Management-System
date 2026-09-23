@@ -1,7 +1,9 @@
 <?php
 
+use App\Http\Middleware\EnsureAccountActive;
 use App\Http\Middleware\EnsureLicenseActive;
 use App\Http\Middleware\EnsurePasswordChanged;
+use App\Http\Middleware\SecurityHeaders;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -18,7 +20,9 @@ return Application::configure(basePath: dirname(__DIR__))
             // Frontend React disajikan dari origin yang sama dengan API, jadi
             // cookie sesi httpOnly lebih aman daripada menyimpan token di
             // localStorage yang bisa terbaca skrip pihak ketiga.
-            Route::middleware('web')
+            // throttle:api membatasi banjir permintaan (brute force/scraping)
+            // per pengguna/IP — lihat AppServiceProvider.
+            Route::middleware(['web', 'throttle:api'])
                 ->prefix('api')
                 ->group(base_path('routes/api.php'));
         },
@@ -26,7 +30,11 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'password.changed' => EnsurePasswordChanged::class,
+            'account.active' => EnsureAccountActive::class,
         ]);
+
+        // Header keamanan (CSP, anti-clickjacking, HSTS, nosniff) untuk semua respons.
+        $middleware->append(SecurityHeaders::class);
 
         // Gerbang lisensi didaftarkan GLOBAL & PALING DEPAN (bukan alias yang
         // ditempel di grup rute) — supaya tidak ada middleware bawaan Laravel

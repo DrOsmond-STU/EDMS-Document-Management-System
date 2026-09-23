@@ -63,7 +63,7 @@ class ReportingController extends Controller
             fwrite($out, "\xEF\xBB\xBF"); // BOM supaya Excel membaca UTF-8 dengan benar
             fputcsv($out, ['Periode', 'KPI', 'Nilai', 'Satuan', 'Target', 'Status', 'Keterangan'], ';');
             foreach ($rows as $k) {
-                fputcsv($out, [$year, $k['label'], $k['value'] ?? '-', $k['unit'] ?? '', $k['target'] ?? '', $k['status'], $k['description']], ';');
+                fputcsv($out, array_map([self::class, 'csvCell'], [$year, $k['label'], $k['value'] ?? '-', $k['unit'] ?? '', $k['target'] ?? '', $k['status'], $k['description']]), ';');
             }
             fclose($out);
         }, "kpi-edms-{$year}.csv", ['Content-Type' => 'text/csv; charset=UTF-8']);
@@ -267,4 +267,11 @@ class ReportingController extends Controller
             ->selectRaw('entity_label as code, count(*) as hits')->groupBy('entity_label')
             ->orderByDesc('hits')->limit(5)->get()->toArray();
     }
+
+    /** Cegah CSV/formula injection: sel teks yang diawali = + - @ tidak dieksekusi Excel sebagai rumus. */
+    private static function csvCell(mixed $value): mixed
+    {
+        return is_string($value) && preg_match('/^[=+\-@\t\r]./s', $value) ? "'".$value : $value;
+    }
+
 }
