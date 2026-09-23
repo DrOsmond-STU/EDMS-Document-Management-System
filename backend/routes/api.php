@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\DocumentController;
 use App\Http\Controllers\Api\DocumentFileController;
 use App\Http\Controllers\Api\FindingController;
 use App\Http\Controllers\Api\IntegrationSettingController;
+use App\Http\Controllers\Api\LegalRequirementController;
 use App\Http\Controllers\Api\LicenseController;
 use App\Http\Controllers\Api\MasterDataController;
 use App\Http\Controllers\Api\MgmtReviewController;
@@ -68,6 +69,11 @@ Route::middleware('auth')->group(function () {
         Route::post('risks', [RiskController::class, 'store']);
         Route::patch('risks/{risk}', [RiskController::class, 'update']);
         Route::post('risks/{risk}/controls', [RiskController::class, 'addControl']);
+
+        Route::get('legal-requirements', [LegalRequirementController::class, 'index']);
+        Route::post('legal-requirements', [LegalRequirementController::class, 'store']);
+        Route::patch('legal-requirements/{legalRequirement}', [LegalRequirementController::class, 'update']);
+        Route::post('legal-requirements/{legalRequirement}/evaluations', [LegalRequirementController::class, 'evaluate']);
 
         Route::get('audits', [AuditController::class, 'index']);
         Route::post('audits', [AuditController::class, 'store']);

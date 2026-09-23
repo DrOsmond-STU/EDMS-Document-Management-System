@@ -40,37 +40,48 @@ final class Permissions
     public const MGMT_REVIEW_CHAIR = 'mgmt_review.chair';
     public const MGMT_REVIEW_VIEW = 'mgmt_review.view';
 
+    // Legal Register — kewajiban kepatuhan (ISO 14001/45001 6.1.3)
+    public const LEGAL_VIEW = 'legal.view';
+    public const LEGAL_MANAGE = 'legal.manage';
+
     /** @var array<string, list<string>> */
     private const ROLE_PERMISSIONS = [
         'requester' => [
             self::DOCUMENT_REQUEST, self::DOCUMENT_VIEW_RELEASED,
             self::RISK_VIEW, self::MGMT_REVIEW_VIEW,
+            self::LEGAL_VIEW,
         ],
         'drafter' => [
             self::DOCUMENT_DRAFT, self::DOCUMENT_VIEW_RELEASED, self::RISK_VIEW,
+            self::LEGAL_VIEW,
         ],
         'reviewer' => [
             self::DOCUMENT_REVIEW, self::DOCUMENT_VIEW_RELEASED, self::RISK_VIEW,
+            self::LEGAL_VIEW,
         ],
         'approver' => [
             self::DOCUMENT_APPROVE, self::DOCUMENT_VIEW_RELEASED,
             self::RISK_VIEW, self::MGMT_REVIEW_VIEW,
             self::AUDIT_PROGRAM_VIEW,
+            self::LEGAL_VIEW,
         ],
         'controller' => [
             self::DOCUMENT_CONTROL, self::DOCUMENT_VIEW_RELEASED, self::REPORTING_VIEW,
             self::RISK_VIEW, self::FINDING_MANAGE, self::MGMT_REVIEW_VIEW,
             self::AUDIT_PROGRAM_VIEW,
+            self::LEGAL_VIEW,
         ],
         'ratifier' => [
             self::DOCUMENT_RATIFY, self::DOCUMENT_VIEW_RELEASED,
             self::MGMT_REVIEW_CHAIR, self::MGMT_REVIEW_VIEW,
             self::AUDIT_PROGRAM_VIEW,
+            self::LEGAL_VIEW,
         ],
         'function_head' => [
             self::DOCUMENT_VIEW_RELEASED, self::REPORTING_VIEW, self::RISK_MANAGE,
             self::RISK_VIEW, self::FINDING_MANAGE, self::MGMT_REVIEW_VIEW,
             self::AUDIT_PROGRAM_VIEW,
+            self::LEGAL_VIEW,
         ],
         'compliance_admin' => [
             self::COMPLIANCE_MANAGE, self::DOCUMENT_VIEW_RELEASED, self::REPORTING_VIEW,
@@ -78,19 +89,23 @@ final class Permissions
             self::FINDING_MANAGE, self::FINDING_CLOSE, self::MGMT_REVIEW_CHAIR,
             self::MGMT_REVIEW_VIEW,
             self::AUDIT_PROGRAM_VIEW,
+            self::LEGAL_VIEW, self::LEGAL_MANAGE,
         ],
         'sysadmin' => [
             self::MASTERDATA_MANAGE, self::USERS_MANAGE, self::DOCUMENT_VIEW_RELEASED,
             self::AUDIT_VIEW, self::RISK_VIEW, self::MGMT_REVIEW_VIEW,
+            self::LEGAL_VIEW,
         ],
         'auditor' => [
             self::AUDIT_VIEW, self::DOCUMENT_VIEW_RELEASED, self::REPORTING_VIEW,
             self::RISK_VIEW, self::AUDIT_PLAN, self::AUDIT_CONDUCT,
             self::FINDING_MANAGE, self::MGMT_REVIEW_VIEW,
             self::AUDIT_PROGRAM_VIEW,
+            self::LEGAL_VIEW,
         ],
         'viewer' => [
             self::DOCUMENT_VIEW_RELEASED, self::RISK_VIEW, self::MGMT_REVIEW_VIEW,
+            self::LEGAL_VIEW,
         ],
     ];
 
