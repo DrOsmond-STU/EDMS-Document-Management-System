@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\AiGeneration;
 use App\Models\Document;
 use App\Models\DocumentFile;
 use App\Models\DocumentRevision;
@@ -125,16 +126,26 @@ class DraftingProjectController extends Controller
             'reason' => ['required', 'string', 'max:5000'],
             'standards' => ['sometimes', 'array'],
             'standards.*' => ['string', 'exists:standards,code'],
+            'ai_generation_id' => ['sometimes', 'nullable', 'integer'],
         ]);
 
-        $project = DB::transaction(function () use ($data, $user) {
+        // Permintaan yang berasal dari Asisten AI: rancangan AI (hanya milik
+        // pengguna ini) dipakai sebagai draf awal, dan hasil AI ditandai
+        // "ditindaklanjuti" untuk KPI adopsi.
+        $generation = isset($data['ai_generation_id'])
+            ? AiGeneration::whereKey($data['ai_generation_id'])->where('user_id', $user->id)->first()
+            : null;
+
+        $project = DB::transaction(function () use ($data, $user, $generation) {
             $project = DraftingProject::create([
                 'code' => DraftingProject::nextCode(),
                 'status' => 'requested',
                 'requester_id' => $user->id,
-                ...collect($data)->except('standards')->all(),
+                'final_content' => $generation?->kind === 'draft' ? AiAssistantController::renderDraft($generation->result ?? []) : null,
+                ...collect($data)->except(['standards', 'ai_generation_id'])->all(),
             ]);
             $project->standards()->sync($data['standards'] ?? []);
+            AiGeneration::markFollowedUp($generation?->id, $user->id, $project->code);
 
             return $project;
         });

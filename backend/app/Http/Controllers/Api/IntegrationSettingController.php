@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Mail\IntegrationTestMail;
 use App\Models\IntegrationSetting;
+use App\Services\AiAssistant;
 use App\Services\AuditLogger;
 use App\Support\Permissions;
 use Illuminate\Http\JsonResponse;
@@ -15,7 +16,7 @@ use Illuminate\Validation\ValidationException;
 
 /**
  * Integration & API — hub pengaturan koneksi ke sistem eksternal (Email/
- * SMTP, Active Directory/LDAP, DocuSign, Google Drive). Kredensial rahasia
+ * SMTP, Active Directory/LDAP, DocuSign, Google Drive, Asisten AI). Kredensial rahasia
  * (password/client_secret) disimpan terenkripsi dan TIDAK PERNAH dikirim
  * balik ke frontend — hanya penanda `secrets_present` per field. Baru
  * SMTP & LDAP yang punya uji koneksi sungguhan (SMTP: kirim email uji;
@@ -78,6 +79,19 @@ class IntegrationSettingController extends Controller
                 ['key' => 'folder_id', 'label' => 'Folder ID Tujuan', 'input' => 'text', 'required' => false, 'secret' => false],
             ],
         ],
+        'ai' => [
+            'label' => 'Asisten AI (Claude)',
+            'description' => 'Rekomendasi dokumen & regulasi serta rancangan awal dokumen baru di menu Asisten AI. Pemakaian dikenakan biaya per token oleh Anthropic.',
+            'test_supported' => true,
+            'fields' => [
+                ['key' => 'api_key', 'label' => 'Anthropic API Key', 'input' => 'password', 'required' => true, 'secret' => true],
+                ['key' => 'model', 'label' => 'Model', 'input' => 'select', 'options' => AiAssistant::MODELS, 'option_labels' => [
+                    'claude-opus-5' => 'Claude Opus 5 — kualitas terbaik',
+                    'claude-sonnet-5' => 'Claude Sonnet 5 — seimbang',
+                    'claude-haiku-4-5' => 'Claude Haiku 4.5 — tercepat & termurah',
+                ], 'required' => false, 'secret' => false, 'default' => AiAssistant::DEFAULT_MODEL],
+            ],
+        ],
     ];
 
     public function __construct(private AuditLogger $audit) {}
@@ -111,9 +125,11 @@ class IntegrationSettingController extends Controller
         $rules = ['enabled' => ['sometimes', 'boolean']];
         foreach ($schema['fields'] as $field) {
             $bucket = $field['secret'] ? 'secrets' : 'config';
-            $rules["{$bucket}.{$field['key']}"] = $field['input'] === 'number'
-                ? ['sometimes', 'nullable', 'numeric']
-                : ['sometimes', 'nullable', 'string', 'max:500'];
+            $rules["{$bucket}.{$field['key']}"] = match ($field['input']) {
+                'number' => ['sometimes', 'nullable', 'numeric'],
+                'select' => ['sometimes', 'nullable', Rule::in($field['options'])],
+                default => ['sometimes', 'nullable', 'string', 'max:500'],
+            };
         }
         $data = $request->validate($rules);
 
@@ -165,6 +181,7 @@ class IntegrationSettingController extends Controller
         [$success, $message] = match ($type) {
             'smtp' => $this->testSmtp($setting, $request),
             'ldap' => $this->testLdap($setting),
+            'ai' => app(AiAssistant::class)->testConnection($setting),
             default => [false, 'Tidak didukung.'],
         };
 

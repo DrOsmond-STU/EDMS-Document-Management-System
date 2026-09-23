@@ -28,6 +28,7 @@ final class Permissions
     public const REPORTING_VIEW = 'reporting.view';
     public const COMPLIANCE_MANAGE = 'compliance.manage';
     public const SYSTEM_ADMIN = 'system.admin'; // panel System Administration
+    public const AI_USE = 'ai.use'; // Asisten AI (memakai kuota API berbayar)
 
     // Risiko & audit
     public const RISK_MANAGE = 'risk.manage';
@@ -57,11 +58,13 @@ final class Permissions
             self::RISK_VIEW, self::MGMT_REVIEW_VIEW,
             self::LEGAL_VIEW,
             self::RECORDS_VIEW,
+            self::AI_USE,
         ],
         'drafter' => [
             self::DOCUMENT_DRAFT, self::DOCUMENT_VIEW_RELEASED, self::RISK_VIEW,
             self::LEGAL_VIEW,
             self::RECORDS_VIEW,
+            self::AI_USE,
         ],
         'reviewer' => [
             self::DOCUMENT_REVIEW, self::DOCUMENT_VIEW_RELEASED, self::RISK_VIEW,
@@ -81,6 +84,7 @@ final class Permissions
             self::AUDIT_PROGRAM_VIEW,
             self::LEGAL_VIEW,
             self::RECORDS_VIEW, self::RECORDS_MANAGE,
+            self::AI_USE,
         ],
         'ratifier' => [
             self::DOCUMENT_RATIFY, self::DOCUMENT_VIEW_RELEASED,
@@ -95,6 +99,7 @@ final class Permissions
             self::AUDIT_PROGRAM_VIEW,
             self::LEGAL_VIEW,
             self::RECORDS_VIEW,
+            self::AI_USE,
         ],
         'compliance_admin' => [
             self::COMPLIANCE_MANAGE, self::DOCUMENT_VIEW_RELEASED, self::REPORTING_VIEW,
@@ -104,6 +109,7 @@ final class Permissions
             self::AUDIT_PROGRAM_VIEW,
             self::LEGAL_VIEW, self::LEGAL_MANAGE,
             self::RECORDS_VIEW, self::RECORDS_MANAGE, self::RECORDS_DISPOSE,
+            self::AI_USE,
         ],
         'sysadmin' => [
             self::MASTERDATA_MANAGE, self::USERS_MANAGE, self::DOCUMENT_VIEW_RELEASED,

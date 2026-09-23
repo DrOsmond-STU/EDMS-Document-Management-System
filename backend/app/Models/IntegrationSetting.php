@@ -14,7 +14,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class IntegrationSetting extends Model
 {
-    public const TYPES = ['smtp', 'ldap', 'docusign', 'google_drive'];
+    public const TYPES = ['smtp', 'ldap', 'docusign', 'google_drive', 'ai'];
 
     protected $fillable = ['type', 'config', 'secrets', 'enabled', 'status', 'last_tested_at', 'last_test_message', 'updated_by'];
 

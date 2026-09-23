@@ -53,7 +53,7 @@ class IntegrationSettingTest extends TestCase
         $this->actingAs($viewer)->postJson('/api/integrations/smtp/test')->assertStatus(403);
     }
 
-    public function test_sysadmin_sees_all_four_integrations_with_no_secrets_exposed(): void
+    public function test_sysadmin_sees_all_integrations_with_no_secrets_exposed(): void
     {
         $this->activateLicense();
         $sysadmin = $this->makeUser('sysadmin');
@@ -62,7 +62,7 @@ class IntegrationSettingTest extends TestCase
 
         $response->assertOk();
         $types = collect($response->json('integrations'))->pluck('type');
-        $this->assertEqualsCanonicalizing(['smtp', 'ldap', 'docusign', 'google_drive'], $types->all());
+        $this->assertEqualsCanonicalizing(['smtp', 'ldap', 'docusign', 'google_drive', 'ai'], $types->all());
 
         $smtp = collect($response->json('integrations'))->firstWhere('type', 'smtp');
         $this->assertFalse($smtp['secrets_present']['password']);

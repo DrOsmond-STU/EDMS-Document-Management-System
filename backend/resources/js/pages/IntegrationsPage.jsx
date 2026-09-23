@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react'
-import { Cable, Mail, PlugZap, ShieldCheck, Users } from 'lucide-react'
+import { Cable, Mail, PlugZap, ShieldCheck, Sparkles, Users } from 'lucide-react'
 import { Layout } from '../components/Layout'
 import { api, ApiError } from '../api'
 import { useAuth } from '../AuthContext'
 import { BasePill, Button, Card, Field, inputClass } from '../components/ui'
 
-const ICONS = { smtp: Mail, ldap: Users, docusign: ShieldCheck, google_drive: Cable }
+const ICONS = { smtp: Mail, ldap: Users, docusign: ShieldCheck, google_drive: Cable, ai: Sparkles }
 
 const STATUS_STYLE = {
   connected: { bg: '#E5F5EC', text: '#1E8E5A', label: 'Terhubung' },
@@ -122,7 +122,7 @@ function IntegrationCard({ integration, currentUserEmail, onSaved }) {
                 value={config[f.key] ?? f.default ?? ''}
                 onChange={(e) => setConfig((c) => ({ ...c, [f.key]: e.target.value }))}
               >
-                {f.options.map((o) => <option key={o} value={o}>{o === 'none' ? 'Tidak ada / STARTTLS otomatis' : o.toUpperCase()}</option>)}
+                {f.options.map((o) => <option key={o} value={o}>{f.option_labels?.[o] ?? (o === 'none' ? 'Tidak ada / STARTTLS otomatis' : o.toUpperCase())}</option>)}
               </select>
             ) : (
               <input

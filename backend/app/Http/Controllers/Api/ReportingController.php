@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\AiGeneration;
 use App\Models\Audit;
 use App\Models\AuditLog;
 use App\Models\ClauseAssessment;
@@ -128,6 +129,11 @@ class ReportingController extends Controller
         $newDocs = Document::whereBetween('created_at', [$from, $to])->count();
         $viaDrafting = Document::whereBetween('created_at', [$from, $to])->whereIn('id', $draftingDocs)->count();
 
+        // 6. Adopsi Asisten AI: porsi hasil AI yang ditindaklanjuti menjadi permintaan penyusunan
+        $aiTotal = AiGeneration::whereBetween('created_at', [$from, $to])->count();
+        $aiUsed = AiGeneration::whereBetween('created_at', [$from, $to])->whereNotNull('followed_up_at')->count();
+        $aiPct = $this->pct($aiUsed, $aiTotal);
+
         // 8. Indikator keamanan
         $failedLogins = AuditLog::whereIn('action', ['login_failed', 'account_locked'])->whereBetween('created_at', [$from, $to])->count();
 
@@ -145,7 +151,10 @@ class ReportingController extends Controller
             $this->kpi('document_utilization', 'Pemanfaatan dokumen', $usage, 'akses',
                 'info', 'Jumlah lihat/unduh berkas dokumen tercatat di audit trail pada periode ini.'),
             $this->na('distribution_ack', 'Kepatuhan distribusi (acknowledgement)', 'Belum terukur — modul Distribution Management/konfirmasi baca belum tersedia.'),
-            $this->na('ai_adoption', 'Adopsi Asisten AI', 'Belum terukur — modul Asisten AI belum aktif (memerlukan konfigurasi layanan AI).'),
+            $this->kpi('ai_adoption', 'Adopsi Asisten AI', $aiPct, '%',
+                $aiPct === null ? 'na' : ($aiPct >= 50 ? 'ok' : ($aiPct >= 25 ? 'warn' : 'bad')),
+                $aiTotal ? "{$aiUsed} dari {$aiTotal} hasil Asisten AI pada periode ini ditindaklanjuti menjadi permintaan penyusunan."
+                    : 'Belum ada pemakaian Asisten AI pada periode ini.', '≥ 50%'),
             $this->kpi('drafting_trail', 'Kelengkapan jejak penyusunan', $this->pct($viaDrafting, $newDocs), '%',
                 $newDocs === 0 ? 'na' : ($this->pct($viaDrafting, $newDocs) >= 80 ? 'ok' : ($this->pct($viaDrafting, $newDocs) >= 40 ? 'warn' : 'bad')),
                 $newDocs ? "{$viaDrafting} dari {$newDocs} dokumen baru pada periode ini lahir dari proyek penyusunan yang disahkan." : 'Belum ada dokumen baru pada periode ini.', '≥ 80%'),

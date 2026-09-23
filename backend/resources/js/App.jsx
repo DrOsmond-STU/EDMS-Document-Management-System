@@ -50,6 +50,7 @@ const ReportingPage = page(() => import('./pages/ReportingPage'))
 const DiscussionsPage = page(() => import('./pages/DiscussionsPage'))
 const SystemAdminPage = page(() => import('./pages/SystemAdminPage'))
 const KnowledgePage = page(() => import('./pages/KnowledgePage'))
+const AiAssistantPage = page(() => import('./pages/AiAssistantPage'))
 
 function FullScreenMessage({ text }) {
   return <div className="flex min-h-screen w-full items-center justify-center text-[13px] text-[var(--color-neutral-medium)]">{text}</div>
@@ -96,6 +97,7 @@ export default function App() {
         <Route path="/discussions" element={<DiscussionsPage />} />
         <Route path="/system" element={<SystemAdminPage />} />
         <Route path="/knowledge" element={<KnowledgePage />} />
+        <Route path="/assistant" element={<AiAssistantPage />} />
         <Route path="/integrations" element={<IntegrationsPage />} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>

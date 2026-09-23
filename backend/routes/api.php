@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\AiAssistantController;
 use App\Http\Controllers\Api\ApprovalBoardController;
 use App\Http\Controllers\Api\AuditController;
 use App\Http\Controllers\Api\AuditLogController;
@@ -192,6 +193,11 @@ Route::middleware('auth')->group(function () {
 
         Route::get('system/info', [SystemAdminController::class, 'index']);
         Route::post('system/cache-clear', [SystemAdminController::class, 'clearCache']);
+
+        Route::get('ai/status', [AiAssistantController::class, 'status']);
+        Route::get('ai/generations/{generation}', [AiAssistantController::class, 'show']);
+        Route::post('ai/discover', [AiAssistantController::class, 'discover']);
+        Route::post('ai/draft', [AiAssistantController::class, 'draft']);
 
         Route::get('integrations', [IntegrationSettingController::class, 'index']);
         Route::patch('integrations/{type}', [IntegrationSettingController::class, 'update']);
