@@ -33,8 +33,8 @@ export const NAV_GROUPS = [
   {
     label: 'Records Management',
     items: [
-      { label: 'Records Register', path: null, icon: Archive },
-      { label: 'Retention & Archive', path: null, icon: Timer },
+      { label: 'Records Register', path: '/records', icon: Archive, perm: 'records.view' },
+      { label: 'Retention & Archive', path: '/retention', icon: Timer, perm: 'records.view' },
     ],
   },
   {

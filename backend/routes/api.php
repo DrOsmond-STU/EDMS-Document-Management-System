@@ -16,6 +16,8 @@ use App\Http\Controllers\Api\LicenseController;
 use App\Http\Controllers\Api\MasterDataController;
 use App\Http\Controllers\Api\MgmtReviewController;
 use App\Http\Controllers\Api\NumberingSettingController;
+use App\Http\Controllers\Api\RecordController;
+use App\Http\Controllers\Api\RecordSeriesController;
 use App\Http\Controllers\Api\RiskController;
 use App\Http\Controllers\Api\UserController;
 use Illuminate\Support\Facades\Route;
@@ -69,6 +71,14 @@ Route::middleware('auth')->group(function () {
         Route::post('risks', [RiskController::class, 'store']);
         Route::patch('risks/{risk}', [RiskController::class, 'update']);
         Route::post('risks/{risk}/controls', [RiskController::class, 'addControl']);
+
+        Route::get('record-series', [RecordSeriesController::class, 'index']);
+        Route::post('record-series', [RecordSeriesController::class, 'store']);
+        Route::patch('record-series/{recordSeries}', [RecordSeriesController::class, 'update']);
+        Route::get('records', [RecordController::class, 'index']);
+        Route::post('records', [RecordController::class, 'store']);
+        Route::patch('records/{record}', [RecordController::class, 'update']);
+        Route::post('records/{record}/action', [RecordController::class, 'action']);
 
         Route::get('legal-requirements', [LegalRequirementController::class, 'index']);
         Route::post('legal-requirements', [LegalRequirementController::class, 'store']);

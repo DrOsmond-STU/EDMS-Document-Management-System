@@ -18,6 +18,8 @@ import IntegrationsPage from './pages/IntegrationsPage'
 import AuditProgramPage from './pages/AuditProgramPage'
 import MgmtReviewPage from './pages/MgmtReviewPage'
 import LegalRegisterPage from './pages/LegalRegisterPage'
+import RecordsRegisterPage from './pages/RecordsRegisterPage'
+import RetentionArchivePage from './pages/RetentionArchivePage'
 
 function FullScreenMessage({ text }) {
   return <div className="flex min-h-screen w-full items-center justify-center text-[13px] text-[var(--color-neutral-medium)]">{text}</div>
@@ -49,6 +51,8 @@ export default function App() {
       <Route path="/audit-external" element={<AuditProgramPage type="external" />} />
       <Route path="/management-review" element={<MgmtReviewPage />} />
       <Route path="/legal-register" element={<LegalRegisterPage />} />
+      <Route path="/records" element={<RecordsRegisterPage />} />
+      <Route path="/retention" element={<RetentionArchivePage />} />
       <Route path="/integrations" element={<IntegrationsPage />} />
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>

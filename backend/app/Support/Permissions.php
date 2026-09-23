@@ -44,44 +44,56 @@ final class Permissions
     public const LEGAL_VIEW = 'legal.view';
     public const LEGAL_MANAGE = 'legal.manage';
 
+    // Records Management — register rekaman & jadwal retensi (JRA)
+    public const RECORDS_VIEW = 'records.view';
+    public const RECORDS_MANAGE = 'records.manage';
+    public const RECORDS_DISPOSE = 'records.dispose'; // pemusnahan/penyerahan permanen — tak bisa dibatalkan
+
     /** @var array<string, list<string>> */
     private const ROLE_PERMISSIONS = [
         'requester' => [
             self::DOCUMENT_REQUEST, self::DOCUMENT_VIEW_RELEASED,
             self::RISK_VIEW, self::MGMT_REVIEW_VIEW,
             self::LEGAL_VIEW,
+            self::RECORDS_VIEW,
         ],
         'drafter' => [
             self::DOCUMENT_DRAFT, self::DOCUMENT_VIEW_RELEASED, self::RISK_VIEW,
             self::LEGAL_VIEW,
+            self::RECORDS_VIEW,
         ],
         'reviewer' => [
             self::DOCUMENT_REVIEW, self::DOCUMENT_VIEW_RELEASED, self::RISK_VIEW,
             self::LEGAL_VIEW,
+            self::RECORDS_VIEW,
         ],
         'approver' => [
             self::DOCUMENT_APPROVE, self::DOCUMENT_VIEW_RELEASED,
             self::RISK_VIEW, self::MGMT_REVIEW_VIEW,
             self::AUDIT_PROGRAM_VIEW,
             self::LEGAL_VIEW,
+            self::RECORDS_VIEW,
         ],
         'controller' => [
             self::DOCUMENT_CONTROL, self::DOCUMENT_VIEW_RELEASED, self::REPORTING_VIEW,
             self::RISK_VIEW, self::FINDING_MANAGE, self::MGMT_REVIEW_VIEW,
             self::AUDIT_PROGRAM_VIEW,
             self::LEGAL_VIEW,
+            self::RECORDS_VIEW, self::RECORDS_MANAGE,
         ],
         'ratifier' => [
             self::DOCUMENT_RATIFY, self::DOCUMENT_VIEW_RELEASED,
             self::MGMT_REVIEW_CHAIR, self::MGMT_REVIEW_VIEW,
             self::AUDIT_PROGRAM_VIEW,
             self::LEGAL_VIEW,
+            self::RECORDS_VIEW, self::RECORDS_DISPOSE,
         ],
         'function_head' => [
             self::DOCUMENT_VIEW_RELEASED, self::REPORTING_VIEW, self::RISK_MANAGE,
             self::RISK_VIEW, self::FINDING_MANAGE, self::MGMT_REVIEW_VIEW,
             self::AUDIT_PROGRAM_VIEW,
             self::LEGAL_VIEW,
+            self::RECORDS_VIEW,
         ],
         'compliance_admin' => [
             self::COMPLIANCE_MANAGE, self::DOCUMENT_VIEW_RELEASED, self::REPORTING_VIEW,
@@ -90,11 +102,13 @@ final class Permissions
             self::MGMT_REVIEW_VIEW,
             self::AUDIT_PROGRAM_VIEW,
             self::LEGAL_VIEW, self::LEGAL_MANAGE,
+            self::RECORDS_VIEW, self::RECORDS_MANAGE, self::RECORDS_DISPOSE,
         ],
         'sysadmin' => [
             self::MASTERDATA_MANAGE, self::USERS_MANAGE, self::DOCUMENT_VIEW_RELEASED,
             self::AUDIT_VIEW, self::RISK_VIEW, self::MGMT_REVIEW_VIEW,
             self::LEGAL_VIEW,
+            self::RECORDS_VIEW,
         ],
         'auditor' => [
             self::AUDIT_VIEW, self::DOCUMENT_VIEW_RELEASED, self::REPORTING_VIEW,
@@ -102,10 +116,12 @@ final class Permissions
             self::FINDING_MANAGE, self::MGMT_REVIEW_VIEW,
             self::AUDIT_PROGRAM_VIEW,
             self::LEGAL_VIEW,
+            self::RECORDS_VIEW,
         ],
         'viewer' => [
             self::DOCUMENT_VIEW_RELEASED, self::RISK_VIEW, self::MGMT_REVIEW_VIEW,
             self::LEGAL_VIEW,
+            self::RECORDS_VIEW,
         ],
     ];
 
