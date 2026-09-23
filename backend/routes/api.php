@@ -24,6 +24,7 @@ use App\Http\Controllers\Api\RecordController;
 use App\Http\Controllers\Api\RecordSeriesController;
 use App\Http\Controllers\Api\ReportingController;
 use App\Http\Controllers\Api\RiskController;
+use App\Http\Controllers\Api\SystemAdminController;
 use App\Http\Controllers\Api\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -184,6 +185,9 @@ Route::middleware('auth')->group(function () {
         Route::post('users', [UserController::class, 'store']);
         Route::patch('users/{user}', [UserController::class, 'update']);
         Route::post('users/{user}/reset-password', [UserController::class, 'resetPassword']);
+
+        Route::get('system/info', [SystemAdminController::class, 'index']);
+        Route::post('system/cache-clear', [SystemAdminController::class, 'clearCache']);
 
         Route::get('integrations', [IntegrationSettingController::class, 'index']);
         Route::patch('integrations/{type}', [IntegrationSettingController::class, 'update']);

@@ -27,6 +27,7 @@ final class Permissions
     public const USERS_MANAGE = 'users.manage';
     public const REPORTING_VIEW = 'reporting.view';
     public const COMPLIANCE_MANAGE = 'compliance.manage';
+    public const SYSTEM_ADMIN = 'system.admin'; // panel System Administration
 
     // Risiko & audit
     public const RISK_MANAGE = 'risk.manage';
@@ -109,6 +110,7 @@ final class Permissions
             self::AUDIT_VIEW, self::RISK_VIEW, self::MGMT_REVIEW_VIEW,
             self::LEGAL_VIEW,
             self::RECORDS_VIEW,
+            self::SYSTEM_ADMIN,
         ],
         'auditor' => [
             self::AUDIT_VIEW, self::DOCUMENT_VIEW_RELEASED, self::REPORTING_VIEW,
