@@ -4,8 +4,14 @@ import { ChevronDown, ChevronUp, ClipboardCheck, Pencil, Plus, Building2, Trash2
 import { Layout } from '../components/Layout'
 import { api, ApiError } from '../api'
 import { useAuth } from '../AuthContext'
-import { Button, Card, ConfirmDelete, Field, IconAction, inputClass, Modal, StandardChip, useConfirmDelete } from '../components/ui'
+import { Button, Card, ConfirmDelete, Field, IconAction, inputClass, Modal, ReadOnlyNotice, StandardChip, useConfirmDelete } from '../components/ui'
+import { ChecklistPanel, SessionsPanel } from './audit/AuditContent'
 
+const KIND_LABEL = {
+  system: 'Audit sistem', process: 'Audit proses', product: 'Audit produk/layanan', follow_up: 'Audit tindak lanjut',
+  certification: 'Sertifikasi (tahap 1/2)', surveillance: 'Surveilen', recertification: 'Resertifikasi',
+  customer: 'Audit pelanggan', regulator: 'Audit regulator/pemerintah', supplier: 'Audit ke pemasok',
+}
 const STATUS_LABEL = { planned: 'Terjadwal', in_progress: 'Berlangsung', completed: 'Selesai', cancelled: 'Dibatalkan' }
 const STATUS_COLOR = {
   planned: { bg: '#e4ecf7', text: '#2f5aa3' },
@@ -40,7 +46,7 @@ function StatCard({ status, count }) {
   )
 }
 
-function AuditRow({ audit, functionLabel, canConduct, canPlan, onReload, onEdit, onDelete }) {
+function AuditRow({ audit, functionLabel, canConduct, canPlan, canFinding, functions, results, onReload, onEdit, onDelete }) {
   const [open, setOpen] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
@@ -94,6 +100,14 @@ function AuditRow({ audit, functionLabel, canConduct, canPlan, onReload, onEdit,
           <td colSpan={canPlan ? 8 : 7} className="px-3 pb-4 pt-3" onClick={(e) => e.stopPropagation()}>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div>
+                {(audit.audit_kind || audit.external_body || audit.external_reference) && (
+                  <div className="mb-3 rounded-md border border-[var(--color-neutral-border)] bg-white px-3 py-2 text-[12.5px]">
+                    {audit.audit_kind && <div><span className="text-[var(--color-neutral-medium)]">Jenis:</span> {KIND_LABEL[audit.audit_kind] ?? audit.audit_kind}</div>}
+                    {audit.external_body && <div><span className="text-[var(--color-neutral-medium)]">{audit.type === 'external' ? 'Lembaga/Pihak:' : 'Pihak terkait:'}</span> {audit.external_body}</div>}
+                    {audit.external_reference && <div><span className="text-[var(--color-neutral-medium)]">Referensi:</span> {audit.external_reference}</div>}
+                    {(audit.actual_start || audit.actual_end) && <div><span className="text-[var(--color-neutral-medium)]">Realisasi:</span> {audit.actual_start?.slice(0, 10) ?? '—'} s/d {audit.actual_end?.slice(0, 10) ?? '—'}</div>}
+                  </div>
+                )}
                 <div className="mb-2 text-[11px] font-bold uppercase tracking-wide text-[var(--color-neutral-medium)]">Tujuan</div>
                 <p className="mb-3 text-[13px] leading-relaxed text-[var(--color-neutral-dark)]">{audit.objective || '—'}</p>
                 <div className="mb-2 text-[11px] font-bold uppercase tracking-wide text-[var(--color-neutral-medium)]">Ruang Lingkup</div>
@@ -109,7 +123,9 @@ function AuditRow({ audit, functionLabel, canConduct, canPlan, onReload, onEdit,
                   <ul className="mb-3 space-y-1.5">
                     {audit.findings.map((f) => (
                       <li key={f.id} className="rounded-md border border-[var(--color-neutral-border)] bg-white px-3 py-2 text-[12.5px]">
-                        <span className="font-mono text-[11px] text-[var(--color-neutral-medium)]">{f.code}</span> — {f.title}
+                        <Link to={`/findings?q=${encodeURIComponent(f.code)}`} className="hover:text-[var(--color-brand-primary)]">
+                          <span className="font-mono text-[11px] text-[var(--color-neutral-medium)]">{f.code}</span> — {f.title}
+                        </Link>
                       </li>
                     ))}
                   </ul>
@@ -146,6 +162,11 @@ function AuditRow({ audit, functionLabel, canConduct, canPlan, onReload, onEdit,
                 {error && <p className="mt-1.5 text-[11.5px] text-[#b23b3a]">{error}</p>}
               </div>
             </div>
+            <div className="mt-5 grid grid-cols-1 gap-5 border-t border-[var(--color-neutral-border)] pt-4 xl:grid-cols-2">
+              <SessionsPanel audit={audit} functions={functions} canEdit={(canPlan || canConduct) && !['completed', 'cancelled'].includes(audit.status)} onChanged={onReload} />
+              <ChecklistPanel audit={audit} results={results} canEdit={(canPlan || canConduct) && !['completed', 'cancelled'].includes(audit.status)}
+                canRaiseFinding={canFinding && audit.status !== 'cancelled'} onChanged={onReload} />
+            </div>
           </td>
         </tr>
       )}
@@ -153,7 +174,7 @@ function AuditRow({ audit, functionLabel, canConduct, canPlan, onReload, onEdit,
   )
 }
 
-function AuditFormModal({ open, onClose, type, functions, standards, users, onSaved, audit = null }) {
+function AuditFormModal({ open, onClose, type, functions, standards, users, kinds, onSaved, audit = null }) {
   const [form, setForm] = useState(null)
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -165,9 +186,10 @@ function AuditFormModal({ open, onClose, type, functions, standards, users, onSa
       lead_auditor_id: audit.lead_auditor_id ?? '', audit_team: audit.audit_team ?? '',
       planned_start: audit.planned_start?.slice(0, 10) ?? '', planned_end: audit.planned_end?.slice(0, 10) ?? '',
       standards: (audit.standards ?? []).map((st) => st.code),
+      audit_kind: audit.audit_kind ?? '', external_body: audit.external_body ?? '', external_reference: audit.external_reference ?? '',
     } : {
       title: '', objective: '', scope: '', function_id: '', lead_auditor_id: '', audit_team: '',
-      planned_start: '', planned_end: '', standards: [],
+      planned_start: '', planned_end: '', standards: [], audit_kind: '', external_body: '', external_reference: '',
     })
     setError('')
   }, [open, audit])
@@ -187,7 +209,7 @@ function AuditFormModal({ open, onClose, type, functions, standards, users, onSa
     setSubmitting(true)
     setError('')
     try {
-      const body = { ...form, lead_auditor_id: form.lead_auditor_id || null, function_id: form.function_id || null }
+      const body = { ...form, lead_auditor_id: form.lead_auditor_id || null, function_id: form.function_id || null, audit_kind: form.audit_kind || null }
       const result = audit
         ? await api(`audits/${audit.id}`, { method: 'PATCH', body })
         : await api('audits', { method: 'POST', body: { ...body, type } })
@@ -201,8 +223,25 @@ function AuditFormModal({ open, onClose, type, functions, standards, users, onSa
 
   return (
     <Modal open={open} onClose={onClose} title={audit ? `Ubah Audit ${audit.code}` : type === 'external' ? 'Jadwalkan Audit Eksternal' : 'Jadwalkan Audit Internal'}>
-      <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+      <form onSubmit={handleSubmit} className="flex max-h-[75vh] flex-col gap-3 overflow-y-auto pr-1">
         <Field label="Judul Audit"><input className={inputClass} value={form.title} onChange={(e) => set('title')(e.target.value)} required /></Field>
+        <div className="grid grid-cols-2 gap-2">
+          <Field label="Jenis Audit" hint="Opsional">
+            <select className={inputClass} value={form.audit_kind} onChange={(e) => set('audit_kind')(e.target.value)}>
+              <option value="">— Pilih —</option>
+              {(kinds?.[type] ?? []).map((k) => <option key={k} value={k}>{KIND_LABEL[k] ?? k}</option>)}
+            </select>
+          </Field>
+          <Field label={type === 'external' ? 'Lembaga / Pihak Eksternal' : 'Pihak Terkait'} hint="Opsional">
+            <input className={inputClass} value={form.external_body} onChange={(e) => set('external_body')(e.target.value)} maxLength={255}
+              placeholder={type === 'external' ? 'mis. PT Sucofindo ICS, TÜV, pelanggan X' : ''} />
+          </Field>
+        </div>
+        {type === 'external' && (
+          <Field label="No. Referensi" hint="Opsional — no. kontrak/surat penugasan/sertifikat">
+            <input className={inputClass} value={form.external_reference} onChange={(e) => set('external_reference')(e.target.value)} maxLength={255} />
+          </Field>
+        )}
         <Field label="Tujuan" hint="Opsional"><textarea className={inputClass} rows={2} value={form.objective} onChange={(e) => set('objective')(e.target.value)} /></Field>
         <Field label="Ruang Lingkup" hint="Opsional"><textarea className={inputClass} rows={2} value={form.scope} onChange={(e) => set('scope')(e.target.value)} /></Field>
 
@@ -266,6 +305,8 @@ export default function AuditProgramPage({ type }) {
   const [functions, setFunctions] = useState([])
   const [standards, setStandards] = useState([])
   const [users, setUsers] = useState([])
+  const [meta, setMeta] = useState({ kinds: {}, results: [] })
+  const canFinding = hasPermission('finding.manage')
   const [error, setError] = useState('')
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState(null)
@@ -282,7 +323,7 @@ export default function AuditProgramPage({ type }) {
     if (functionId) qs.set('function_id', functionId)
     if (q.trim()) qs.set('q', q.trim())
     api(`audits?${qs.toString()}`)
-      .then((r) => setAudits(r.audits))
+      .then((r) => { setAudits(r.audits); if (r.meta) setMeta(r.meta) })
       .catch((err) => setError(err instanceof ApiError ? err.message : 'Gagal memuat program audit.'))
   }, [canView, type, status, functionId, q])
 
@@ -335,6 +376,7 @@ export default function AuditProgramPage({ type }) {
       </div>
 
       {error && <div className="mb-4 rounded-md border border-[#f3c9c8] bg-[#fbe7e6] px-3 py-2 text-[12px] text-[#7d2c2b]">{error}</div>}
+      {!canPlan && <ReadOnlyNotice roles="Auditor atau Compliance & Risk Admin" />}
 
       <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
         {Object.keys(STATUS_LABEL).map((s) => <StatCard key={s} status={s} count={statusCounts[s]} />)}
@@ -381,6 +423,7 @@ export default function AuditProgramPage({ type }) {
               <tbody className="divide-y divide-[var(--color-neutral-border)]">
                 {audits.map((a) => (
                   <AuditRow key={a.id} audit={a} functionLabel={functionLabel(a.function_id)} canConduct={canConduct} canPlan={canPlan} onReload={load}
+                    canFinding={canFinding} functions={functions} results={meta.results ?? []}
                     onEdit={(x) => { setEditing(x); setFormOpen(true) }} onDelete={del.ask} />
                 ))}
               </tbody>
@@ -397,6 +440,7 @@ export default function AuditProgramPage({ type }) {
         functions={functions}
         standards={standards}
         users={users}
+        kinds={meta.kinds}
         onSaved={() => { setFormOpen(false); setEditing(null); load() }}
       />
       <ConfirmDelete

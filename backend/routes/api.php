@@ -69,6 +69,10 @@ Route::middleware(['auth', 'account.active'])->group(function () {
         Route::post('master-data/standards', [MasterDataController::class, 'storeStandard']);
         Route::patch('master-data/standards/{standard}', [MasterDataController::class, 'updateStandard']);
         Route::delete('master-data/standards/{standard}', [MasterDataController::class, 'destroyStandard']);
+        Route::get('master-data/standards/{standard}/clauses', [MasterDataController::class, 'clauses']);
+        Route::post('master-data/standards/{standard}/clauses', [MasterDataController::class, 'storeClause']);
+        Route::patch('master-data/standards/{standard}/clauses/{clause}', [MasterDataController::class, 'updateClause']);
+        Route::delete('master-data/standards/{standard}/clauses/{clause}', [MasterDataController::class, 'destroyClause']);
         Route::post('company-settings', [CompanySettingController::class, 'update']);
 
         Route::get('dashboard', [DashboardController::class, 'index']);
@@ -111,6 +115,13 @@ Route::middleware(['auth', 'account.active'])->group(function () {
         Route::patch('audits/{audit}', [AuditController::class, 'update']);
         Route::delete('audits/{audit}', [AuditController::class, 'destroy']);
         Route::post('audits/{audit}/transition', [AuditController::class, 'transition']);
+        Route::post('audits/{audit}/sessions', [AuditController::class, 'storeSession']);
+        Route::patch('audits/{audit}/sessions/{session}', [AuditController::class, 'updateSession']);
+        Route::delete('audits/{audit}/sessions/{session}', [AuditController::class, 'destroySession']);
+        Route::post('audits/{audit}/checklist', [AuditController::class, 'storeChecklist']);
+        Route::patch('audits/{audit}/checklist/{item}', [AuditController::class, 'updateChecklist']);
+        Route::delete('audits/{audit}/checklist/{item}', [AuditController::class, 'destroyChecklist']);
+        Route::post('audits/{audit}/checklist/{item}/finding', [AuditController::class, 'raiseFinding']);
 
         Route::get('mgmt-reviews', [MgmtReviewController::class, 'index']);
         Route::post('mgmt-reviews', [MgmtReviewController::class, 'store']);
@@ -152,6 +163,7 @@ Route::middleware(['auth', 'account.active'])->group(function () {
             Route::get('{project}/meetings/{meeting}/minutes-file', 'minutesFile');
             Route::post('{project}/meetings/{meeting}/photos', 'uploadPhoto');
             Route::get('{project}/meetings/{meeting}/photos/{photo}', 'photo');
+            Route::delete('{project}/meetings/{meeting}/photos/{photo}', 'destroyPhoto');
             Route::post('{project}/meetings/{meeting}/attendees', 'storeAttendee');
             Route::patch('{project}/meetings/{meeting}/attendees/{attendee}', 'signAttendee');
             Route::put('{project}/meetings/{meeting}/attendees/{attendee}', 'updateAttendee');

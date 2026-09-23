@@ -520,6 +520,21 @@ class DraftingProjectController extends Controller
         return response()->json($photo, 201);
     }
 
+    public function destroyPhoto(Request $request, DraftingProject $project, DraftingMeeting $meeting, DraftingMeetingPhoto $photo): JsonResponse
+    {
+        $this->assertMeeting($project, $meeting);
+        abort_unless($photo->drafting_meeting_id === $meeting->id, 404);
+        if (! $this->canWork($request->user(), $project)) {
+            return $this->forbidden('Anda tidak berwenang menghapus foto rapat.');
+        }
+
+        Storage::disk('documents')->delete($photo->path);
+        $photo->delete();
+        $this->log($request->user(), $project, 'update', "Menghapus foto \"{$photo->original_name}\" dari rapat ke-{$meeting->session_no} {$project->code}.");
+
+        return response()->json(['message' => 'Foto dihapus.']);
+    }
+
     public function photo(Request $request, DraftingProject $project, DraftingMeeting $meeting, DraftingMeetingPhoto $photo): Response
     {
         $this->assertMeeting($project, $meeting);

@@ -3,7 +3,7 @@ import { AlertTriangle, CalendarCheck, ChevronDown, ChevronUp, ClipboardCheck, C
 import { Layout } from '../components/Layout'
 import { api, ApiError } from '../api'
 import { useAuth } from '../AuthContext'
-import { Button, Card, ConfirmDelete, Field, IconAction, inputClass, Modal, useConfirmDelete } from '../components/ui'
+import { Button, Card, ConfirmDelete, Field, IconAction, inputClass, Modal, useConfirmDelete, ReadOnlyNotice } from '../components/ui'
 
 const STATUS_LABEL = { scheduled: 'Terjadwal', completed: 'Selesai', cancelled: 'Dibatalkan' }
 const STATUS_COLOR = {
@@ -395,6 +395,7 @@ export default function MgmtReviewPage() {
       </div>
 
       {error && <div className="mb-4 rounded-md border border-[#f3c9c8] bg-[#fbe7e6] px-3 py-2 text-[12px] text-[#7d2c2b]">{error}</div>}
+      {!canChair && <ReadOnlyNotice roles="Ratifier atau Compliance & Risk Admin" />}
 
       {snapshot && (
         <>

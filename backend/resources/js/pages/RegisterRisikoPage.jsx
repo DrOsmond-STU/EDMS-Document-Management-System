@@ -3,7 +3,7 @@ import { AlertTriangle, Check, ChevronDown, ChevronUp, Pencil, Plus, Shield, Tra
 import { Layout } from '../components/Layout'
 import { api, ApiError } from '../api'
 import { useAuth } from '../AuthContext'
-import { Button, Card, ConfirmDelete, Field, IconAction, inputClass, Modal, StandardChip, useConfirmDelete } from '../components/ui'
+import { Button, Card, ConfirmDelete, Field, IconAction, inputClass, Modal, StandardChip, useConfirmDelete, ReadOnlyNotice } from '../components/ui'
 
 // Label & warna diambil dari purwarupa lama (halaman Register Risiko di
 // dms.semestateknologiutama.com) supaya istilah & tampilan konsisten —
@@ -460,6 +460,7 @@ export default function RegisterRisikoPage() {
       </div>
 
       {error && <div className="mb-4 rounded-md border border-[#f3c9c8] bg-[#fbe7e6] px-3 py-2 text-[12px] text-[#7d2c2b]">{error}</div>}
+      {!canManage && <ReadOnlyNotice roles="Function/Department Head atau Compliance & Risk Admin" />}
 
       <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
         {LEVELS.map((l) => <StatCard key={l} level={l} count={levelCounts[l]} />)}

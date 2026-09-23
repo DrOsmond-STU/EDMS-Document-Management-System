@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Database, FileText, Layers, Plus, ShieldCheck, ShieldOff, Trash2 } from 'lucide-react'
+import { Database, FileText, Layers, ListTree, Pencil, Plus, ShieldCheck, ShieldOff, Trash2 } from 'lucide-react'
 import { Layout } from '../components/Layout'
 import { api, ApiError } from '../api'
 import { useAuth } from '../AuthContext'
-import { BasePill, Button, Card, ConfirmDelete, Field, inputClass, Modal, useConfirmDelete } from '../components/ui'
+import { BasePill, Button, Card, ConfirmDelete, Field, IconAction, inputClass, Modal, useConfirmDelete } from '../components/ui'
 
 const TABS = [
   { key: 'functions', label: 'Fungsi & Departemen' },
@@ -70,7 +70,7 @@ function EntryFormModal({ open, onClose, idLabel, idHint, editing, onSaved, endp
   )
 }
 
-function EntryTable({ rows, idKey, countColumns, onEdit, onToggleActive, onDelete, busyId }) {
+function EntryTable({ rows, idKey, countColumns, onEdit, onToggleActive, onDelete, onClauses, busyId }) {
   if (rows.length === 0) {
     return (
       <Card className="flex flex-col items-center gap-2 py-14 text-center">
@@ -107,6 +107,7 @@ function EntryTable({ rows, idKey, countColumns, onEdit, onToggleActive, onDelet
               </td>
               <td className="px-3 py-2.5">
                 <div className="flex justify-end gap-1">
+                  {onClauses && <Button variant="ghost" size="sm" title="Kelola klausul" onClick={() => onClauses(row)}><ListTree size={13} /> Klausul</Button>}
                   <Button variant="ghost" size="sm" onClick={() => onEdit(row)}>Ubah</Button>
                   <Button
                     variant="ghost" size="sm" disabled={busyId === row[idKey]}
@@ -128,6 +129,66 @@ function EntryTable({ rows, idKey, countColumns, onEdit, onToggleActive, onDelet
   )
 }
 
+/** CRUD klausul sebuah standar — baris-baris Compliance Matrix. */
+function ClausesModal({ standard, onClose }) {
+  const [data, setData] = useState(null)
+  const [form, setForm] = useState({ code: '', title: '' })
+  const [editing, setEditing] = useState(null)
+  const [error, setError] = useState('')
+  const del = useConfirmDelete()
+  const base = `master-data/standards/${encodeURIComponent(standard.code)}/clauses`
+  const load = useCallback(() => { api(base).then(setData).catch((e) => setError(e.message)) }, [base])
+  useEffect(() => { load() }, [load])
+
+  async function save(e) {
+    e.preventDefault()
+    setError('')
+    try {
+      if (editing) await api(`${base}/${editing.id}`, { method: 'PATCH', body: { code: editing.code, title: editing.title } })
+      else await api(base, { method: 'POST', body: form })
+      setForm({ code: '', title: '' }); setEditing(null); load()
+    } catch (err) {
+      setError(err instanceof ApiError ? (err.body?.errors ? Object.values(err.body.errors).flat().join(' ') : err.message) : 'Gagal menyimpan.')
+    }
+  }
+
+  return (
+    <Modal open onClose={onClose} title={`Klausul ${standard.code}`}>
+      <div className="flex max-h-[70vh] flex-col gap-3">
+        <form onSubmit={save} className="grid grid-cols-[90px_1fr_auto] gap-1.5">
+          <input className={inputClass} placeholder="No." value={editing ? editing.code : form.code} required maxLength={32}
+            onChange={(e) => (editing ? setEditing({ ...editing, code: e.target.value }) : setForm({ ...form, code: e.target.value }))} />
+          <input className={inputClass} placeholder="Judul klausul" value={editing ? editing.title : form.title} required maxLength={255}
+            onChange={(e) => (editing ? setEditing({ ...editing, title: e.target.value }) : setForm({ ...form, title: e.target.value }))} />
+          <Button type="submit" variant="primary" size="sm">{editing ? 'Simpan' : 'Tambah'}</Button>
+        </form>
+        {editing && <button type="button" className="self-start text-[11.5px] font-semibold text-[var(--color-neutral-medium)] hover:underline" onClick={() => setEditing(null)}>Batal ubah</button>}
+        {error && <div className="rounded-md border border-[#f3c9c8] bg-[#fbe7e6] px-3 py-2 text-[12px] text-[#7d2c2b]">{error}</div>}
+        <div className="overflow-y-auto rounded-md border border-[var(--color-neutral-border)]">
+          {!data ? <p className="p-3 text-[12px] text-[var(--color-neutral-medium)]">Memuat…</p> : data.clauses.length === 0 ? (
+            <p className="p-3 text-[12px] text-[var(--color-neutral-medium)]">Belum ada klausul.</p>
+          ) : (
+            <ul className="divide-y divide-[var(--color-neutral-border)]">
+              {data.clauses.map((c) => (
+                <li key={c.id} className="flex items-center gap-2 px-3 py-1.5 text-[12.5px]">
+                  <span className="w-12 shrink-0 font-mono text-[11.5px] font-bold">{c.code}</span>
+                  <span className="flex-1">{c.title}</span>
+                  {c.assessments_count > 0 && <span className="text-[10.5px] text-[var(--color-neutral-medium)]">{c.assessments_count} penilaian</span>}
+                  <IconAction icon={Pencil} label="Ubah klausul" onClick={() => setEditing({ id: c.id, code: c.code, title: c.title })} />
+                  <IconAction icon={Trash2} label="Hapus klausul" danger onClick={() => del.ask(c)} />
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
+      <ConfirmDelete open={del.open} onClose={del.close} title="Hapus klausul?" what={del.target && `${standard.code} ${del.target.code} — ${del.target.title}`}
+        note="Klausul yang sudah punya penilaian di Compliance Matrix tidak bisa dihapus."
+        onConfirm={() => api(`${base}/${del.target.id}`, { method: 'DELETE' })} onDone={load} />
+    </Modal>
+  )
+}
+
 export default function MasterDataPage() {
   const { hasPermission } = useAuth()
   const canManage = hasPermission('masterdata.manage')
@@ -139,6 +200,7 @@ export default function MasterDataPage() {
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState(null)
   const [busyId, setBusyId] = useState(null)
+  const [clausesOf, setClausesOf] = useState(null)
   const del = useConfirmDelete()
 
   const load = useCallback(() => {
@@ -246,10 +308,11 @@ export default function MasterDataPage() {
           <EntryTable
             rows={standards}
             idKey="code"
-            countColumns={[{ key: 'documents_count', label: 'Dokumen' }]}
+            countColumns={[{ key: 'documents_count', label: 'Dokumen' }, { key: 'clauses_count', label: 'Klausul' }]}
             onEdit={openEdit}
             onToggleActive={(row) => handleToggleActive(row, 'master-data/standards', 'code')}
             onDelete={(row) => del.ask({ path: `master-data/standards/${row.code}`, label: `${row.code} — ${row.name}` })}
+            onClauses={setClausesOf}
             busyId={busyId}
           />
         )
@@ -264,6 +327,7 @@ export default function MasterDataPage() {
         endpoint={isFunctions ? 'master-data/org-functions' : 'master-data/standards'}
         onSaved={handleSaved}
       />
+      {clausesOf && <ClausesModal standard={clausesOf} onClose={() => { setClausesOf(null); load() }} />}
       <ConfirmDelete
         open={del.open} onClose={del.close} title={isFunctions ? 'Hapus fungsi/departemen?' : 'Hapus standar?'} what={del.target?.label}
         note="Hanya bisa dihapus bila belum dipakai di dokumen, pengguna, risiko, temuan, audit, dll. Bila sudah dipakai, gunakan Nonaktifkan agar riwayat tetap utuh."

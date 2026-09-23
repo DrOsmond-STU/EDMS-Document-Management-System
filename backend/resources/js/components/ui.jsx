@@ -249,3 +249,20 @@ export function useConfirmDelete() {
   const [target, setTarget] = useState(null)
   return { target, ask: setTarget, close: () => setTarget(null), open: target !== null }
 }
+
+/**
+ * Keterangan bila pengguna hanya punya akses baca di sebuah modul — supaya
+ * jelas kenapa tombol Tambah/Ubah/Hapus tidak tampil dan peran apa yang
+ * dibutuhkan (diberikan lewat Manajemen Pengguna).
+ */
+export function ReadOnlyNotice({ roles }) {
+  return (
+    <div className="mb-4 flex items-start gap-2 rounded-lg border border-[var(--color-neutral-border)] bg-[var(--color-neutral-bg-soft)] px-3.5 py-2.5 text-[12px] text-[var(--color-neutral-medium)]">
+      <Lock size={13} className="mt-0.5 shrink-0" />
+      <span>
+        Anda hanya punya <b>akses baca</b> di modul ini. Tambah/ubah/hapus tersedia untuk peran: <b className="text-[var(--color-neutral-dark)]">{roles}</b>.
+        {' '}Peran diberikan administrator di menu Manajemen Pengguna & Hak Akses.
+      </span>
+    </div>
+  )
+}

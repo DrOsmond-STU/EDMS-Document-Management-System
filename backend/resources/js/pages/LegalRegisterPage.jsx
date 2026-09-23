@@ -4,7 +4,7 @@ import { AlertTriangle, CheckCircle2, ChevronDown, ChevronUp, CircleDashed, Cloc
 import { Layout } from '../components/Layout'
 import { api, ApiError } from '../api'
 import { useAuth } from '../AuthContext'
-import { Button, Card, ConfirmDelete, Field, IconAction, inputClass, Modal, useConfirmDelete } from '../components/ui'
+import { Button, Card, ConfirmDelete, Field, IconAction, inputClass, Modal, useConfirmDelete, ReadOnlyNotice } from '../components/ui'
 
 const TYPE_LABEL = {
   uu: 'Undang-Undang', pp: 'Peraturan Pemerintah', perpres: 'Peraturan Presiden', permen: 'Peraturan Menteri',
@@ -352,6 +352,7 @@ export default function LegalRegisterPage() {
       </div>
 
       {error && <div className="mb-4 rounded-md border border-[#f3c9c8] bg-[#fbe7e6] px-3 py-2 text-[12px] text-[#7d2c2b]">{error}</div>}
+      {!canManage && <ReadOnlyNotice roles="Compliance & Risk Admin" />}
 
       {stats && (
         <div className="mb-5 grid grid-cols-2 gap-3 md:grid-cols-5">

@@ -34,6 +34,7 @@ function MeetingCard({ project, meeting, canWork, onChanged, setError, onEditMee
   const [editingAttendee, setEditingAttendee] = useState(null)
   const delMeeting = useConfirmDelete()
   const delAttendee = useConfirmDelete()
+  const delPhoto = useConfirmDelete()
 
   useEffect(() => { setMinutes(meeting.minutes ?? ''); setBudget(meeting.budget ?? '') }, [meeting])
 
@@ -110,9 +111,17 @@ function MeetingCard({ project, meeting, canWork, onChanged, setError, onEditMee
               {meeting.photos.length > 0 ? (
                 <div className="grid grid-cols-3 gap-1.5">
                   {meeting.photos.map((p) => (
-                    <a key={p.id} href={`/api/${base}/photos/${p.id}`} target="_blank" rel="noreferrer">
-                      <img src={`/api/${base}/photos/${p.id}`} alt={p.caption || p.original_name} className="aspect-video w-full rounded-md border border-[var(--color-neutral-border)] object-cover" />
-                    </a>
+                    <div key={p.id} className="group relative">
+                      <a href={`/api/${base}/photos/${p.id}`} target="_blank" rel="noreferrer">
+                        <img src={`/api/${base}/photos/${p.id}`} alt={p.caption || p.original_name} className="aspect-video w-full rounded-md border border-[var(--color-neutral-border)] object-cover" />
+                      </a>
+                      {canWork && (
+                        <button type="button" title="Hapus foto" onClick={() => delPhoto.ask(p)}
+                          className="absolute right-1 top-1 rounded-md bg-white/90 p-1 text-[#b23b3a] shadow-sm hover:bg-white">
+                          <Trash2 size={12} />
+                        </button>
+                      )}
+                    </div>
                   ))}
                 </div>
               ) : <p className="text-[12px] text-[var(--color-neutral-medium)]">Belum ada foto.</p>}
@@ -181,6 +190,11 @@ function MeetingCard({ project, meeting, canWork, onChanged, setError, onEditMee
         open={delMeeting.open} onClose={delMeeting.close} title="Hapus rapat?" what={`Rapat Pembahasan ${meeting.session_no} — ${meeting.agenda}`}
         note="Rapat yang daftar hadirnya sudah ditandatangani tidak bisa dihapus."
         onConfirm={() => api(base, { method: 'DELETE' })} onDone={onChanged}
+      />
+      <ConfirmDelete
+        open={delPhoto.open} onClose={delPhoto.close} title="Hapus foto rapat?" what={delPhoto.target?.original_name}
+        note="Berkas foto dihapus permanen dari penyimpanan; penghapusannya tercatat di Audit Trail."
+        onConfirm={() => api(`${base}/photos/${delPhoto.target.id}`, { method: 'DELETE' })} onDone={onChanged}
       />
       <ConfirmDelete
         open={delAttendee.open} onClose={delAttendee.close} title="Hapus peserta?" what={delAttendee.target?.name}

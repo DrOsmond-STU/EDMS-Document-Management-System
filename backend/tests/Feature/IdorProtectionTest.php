@@ -142,4 +142,23 @@ class IdorProtectionTest extends TestCase
         $login = $this->postJson('/api/auth/login', ['email' => 'req@example.com', 'password' => 'diganti-lewat-patch']);
         $this->assertContains($login->status(), [401, 422], 'Password tidak boleh bisa diganti lewat PATCH data pengguna.');
     }
+
+    public function test_meeting_photo_delete_requires_project_worker_and_matching_meeting(): void
+    {
+        \Illuminate\Support\Facades\Storage::fake('documents');
+        \Illuminate\Support\Facades\Storage::disk('documents')->put('drafting/p.png', 'png');
+        $drafter = $this->user('drafter@example.com', ['drafter']);
+        $outsider = $this->user('outsider@example.com', ['drafter']);
+        $project = $this->project($drafter, 'in_progress');
+        $project->update(['drafter_id' => $drafter->id]);
+        $m1 = DraftingMeeting::create(['drafting_project_id' => $project->id, 'session_no' => 1, 'agenda' => 'x', 'scheduled_at' => now()]);
+        $m2 = DraftingMeeting::create(['drafting_project_id' => $project->id, 'session_no' => 2, 'agenda' => 'y', 'scheduled_at' => now()]);
+        $photo = \App\Models\DraftingMeetingPhoto::create(['drafting_meeting_id' => $m1->id, 'path' => 'drafting/p.png', 'original_name' => 'p.png', 'mime_type' => 'image/png']);
+
+        $this->actingAs($outsider)->deleteJson("/api/drafting-projects/{$project->id}/meetings/{$m1->id}/photos/{$photo->id}")->assertForbidden();
+        $this->actingAs($drafter)->deleteJson("/api/drafting-projects/{$project->id}/meetings/{$m2->id}/photos/{$photo->id}")->assertNotFound();
+        $this->actingAs($drafter)->deleteJson("/api/drafting-projects/{$project->id}/meetings/{$m1->id}/photos/{$photo->id}")->assertOk();
+        $this->assertNull($photo->fresh());
+        \Illuminate\Support\Facades\Storage::disk('documents')->assertMissing('drafting/p.png');
+    }
 }

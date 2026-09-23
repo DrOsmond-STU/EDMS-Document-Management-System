@@ -5,12 +5,14 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\OrgFunction;
 use App\Models\Standard;
+use App\Models\StandardClause;
 use App\Models\User;
 use App\Services\AuditLogger;
 use App\Support\Permissions;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 /**
  * Master Data — kelola daftar acuan bersama (fungsi/departemen & standar)
@@ -108,7 +110,7 @@ class MasterDataController extends Controller
         }
 
         return response()->json(
-            Standard::withCount('documents')->orderBy('code')->get()
+            Standard::withCount(['documents', 'clauses'])->orderBy('code')->get()
         );
     }
 
@@ -206,6 +208,85 @@ class MasterDataController extends Controller
             "Menghapus standar \"{$model->name}\" ({$model->code}) beserta taksonomi klausulnya.");
 
         return response()->json(['message' => 'Standar dihapus.']);
+    }
+
+    // ---- Klausul standar (taksonomi Compliance Matrix) -----------------
+
+    public function clauses(Request $request, string $standard): JsonResponse
+    {
+        if (! $this->canManageClauses($request)) {
+            return $this->forbidden();
+        }
+        $model = Standard::findOrFail($standard);
+
+        return response()->json([
+            'standard' => $model->only(['code', 'name']),
+            'clauses' => StandardClause::where('standard_code', $model->code)->withCount('assessments')
+                ->orderBy('sort_order')->orderBy('code')->get(['id', 'standard_code', 'code', 'title', 'sort_order']),
+        ]);
+    }
+
+    public function storeClause(Request $request, string $standard): JsonResponse
+    {
+        if (! $this->canManageClauses($request)) {
+            return $this->forbidden();
+        }
+        $model = Standard::findOrFail($standard);
+        $data = $request->validate([
+            'code' => ['required', 'string', 'max:32', Rule::unique('standard_clauses', 'code')->where('standard_code', $model->code)],
+            'title' => ['required', 'string', 'max:255'],
+            'sort_order' => ['sometimes', 'nullable', 'integer', 'min:0', 'max:100000'],
+        ], ['code.unique' => 'Nomor klausul ini sudah ada pada standar tersebut.']);
+
+        $clause = StandardClause::create([
+            'standard_code' => $model->code, 'code' => $data['code'], 'title' => $data['title'],
+            'sort_order' => $data['sort_order'] ?? ((int) StandardClause::where('standard_code', $model->code)->max('sort_order') + 1),
+        ]);
+        $this->audit->log($request->user(), 'create', 'StandardClause', "{$model->code} {$clause->code}", $clause->title,
+            "Menambah klausul {$model->code} {$clause->code} \"{$clause->title}\".");
+
+        return response()->json($clause, 201);
+    }
+
+    public function updateClause(Request $request, string $standard, StandardClause $clause): JsonResponse
+    {
+        if (! $this->canManageClauses($request)) {
+            return $this->forbidden();
+        }
+        abort_unless($clause->standard_code === $standard, 404);
+        $data = $request->validate([
+            'code' => ['sometimes', 'string', 'max:32', Rule::unique('standard_clauses', 'code')->where('standard_code', $standard)->ignore($clause->id)],
+            'title' => ['sometimes', 'string', 'max:255'],
+            'sort_order' => ['sometimes', 'nullable', 'integer', 'min:0', 'max:100000'],
+        ], ['code.unique' => 'Nomor klausul ini sudah ada pada standar tersebut.']);
+        $clause->update($data);
+        $this->audit->log($request->user(), 'update', 'StandardClause', "{$standard} {$clause->code}", $clause->title,
+            "Mengubah klausul {$standard} {$clause->code}.");
+
+        return response()->json($clause->fresh());
+    }
+
+    public function destroyClause(Request $request, string $standard, StandardClause $clause): JsonResponse
+    {
+        if (! $this->canManageClauses($request)) {
+            return $this->forbidden();
+        }
+        abort_unless($clause->standard_code === $standard, 404);
+        $used = DB::table('clause_assessments')->where('clause_id', $clause->id)->count();
+        if ($used > 0) {
+            return response()->json(['message' => "Klausul ini sudah punya {$used} penilaian di Compliance Matrix — hapus penilaiannya dulu, atau ubah saja judulnya."], 422);
+        }
+        $clause->delete();
+        $this->audit->log($request->user(), 'delete', 'StandardClause', "{$standard} {$clause->code}", $clause->title,
+            "Menghapus klausul {$standard} {$clause->code} \"{$clause->title}\".");
+
+        return response()->json(['message' => 'Klausul dihapus.']);
+    }
+
+    /** Taksonomi klausul dikelola admin master data maupun Compliance & Risk Admin. */
+    private function canManageClauses(Request $request): bool
+    {
+        return $this->authorized($request) || $request->user()->hasPermission(Permissions::COMPLIANCE_MANAGE);
     }
 
     private function authorized(Request $request): bool

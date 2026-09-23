@@ -13,7 +13,7 @@ class Audit extends Model
     use SoftDeletes;
 
     protected $fillable = [
-        'code', 'type', 'title', 'objective', 'scope', 'function_id',
+        'code', 'type', 'audit_kind', 'external_body', 'external_reference', 'title', 'objective', 'scope', 'function_id',
         'lead_auditor_id', 'audit_team', 'planned_start', 'planned_end',
         'actual_start', 'actual_end', 'status', 'summary', 'created_by',
     ];
@@ -51,6 +51,22 @@ class Audit extends Model
     public function findings(): HasMany
     {
         return $this->hasMany(Finding::class)->orderByDesc('id');
+    }
+
+    public function sessions(): HasMany
+    {
+        return $this->hasMany(AuditSession::class)->orderBy('starts_at');
+    }
+
+    public function checklist(): HasMany
+    {
+        return $this->hasMany(AuditChecklistItem::class)->orderBy('sort_order')->orderBy('id');
+    }
+
+    /** Isi audit (jadwal & checklist) hanya bisa diubah selama audit belum selesai/dibatalkan. */
+    public function isLocked(): bool
+    {
+        return in_array($this->status, ['completed', 'cancelled'], true);
     }
 
     /** Kode berurut per jenis (AUD-INT-0001 / AUD-EXT-0001). */

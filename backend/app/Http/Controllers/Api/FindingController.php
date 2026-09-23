@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\AuditChecklistItem;
 use App\Models\Finding;
 use App\Models\FindingAction;
 use App\Models\FindingVerification;
@@ -286,6 +287,8 @@ class FindingController extends Controller
         DB::transaction(function () use ($finding) {
             $finding->actions()->delete();
             $finding->delete();
+            // Butir checklist audit asalnya bisa dijadikan temuan lagi.
+            AuditChecklistItem::where('finding_id', $finding->id)->update(['finding_id' => null]);
         });
         $this->audit->log($request->user(), 'delete', 'Finding', $finding->code, $finding->title,
             "Menghapus temuan \"{$finding->title}\" ({$finding->code}).");

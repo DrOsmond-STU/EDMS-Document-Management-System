@@ -4,7 +4,7 @@ import { AlertTriangle, Check, ChevronDown, ChevronUp, ClipboardEdit, Pencil, Pl
 import { Layout } from '../components/Layout'
 import { api, ApiError } from '../api'
 import { useAuth } from '../AuthContext'
-import { BasePill, Button, Card, ConfirmDelete, Field, IconAction, inputClass, Modal, StandardChip, useConfirmDelete } from '../components/ui'
+import { BasePill, Button, Card, ConfirmDelete, Field, IconAction, inputClass, Modal, StandardChip, useConfirmDelete, ReadOnlyNotice } from '../components/ui'
 
 // Label & warna diambil dari purwarupa lama (halaman Register Temuan & CAPA
 // di dms.semestateknologiutama.com) — lihat catatan ekstraksi di riwayat
@@ -644,6 +644,7 @@ export default function RegisterTemuanCapaPage() {
       </div>
 
       {error && <div className="mb-4 rounded-md border border-[#f3c9c8] bg-[#fbe7e6] px-3 py-2 text-[12px] text-[#7d2c2b]">{error}</div>}
+      {!canManage && <ReadOnlyNotice roles="Document Controller, Function/Department Head, Compliance & Risk Admin, atau Auditor" />}
 
       <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <StatCard icon={AlertTriangle} label="Terbuka" value={stats.open} accent="#e24b4a" />

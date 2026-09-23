@@ -4,7 +4,7 @@ import { Archive, Lock, Pencil, Plus, Timer, Trash2 } from 'lucide-react'
 import { Layout } from '../components/Layout'
 import { api } from '../api'
 import { useAuth } from '../AuthContext'
-import { Button, Card, ConfirmDelete, Field, IconAction, inputClass, Modal, useConfirmDelete } from '../components/ui'
+import { Button, Card, ConfirmDelete, Field, IconAction, inputClass, Modal, useConfirmDelete, ReadOnlyNotice } from '../components/ui'
 import { DISPOSITION_LABEL, RecordStatusBadge, d, errorText } from './records/shared'
 
 const WORKLISTS = {
@@ -192,6 +192,7 @@ export default function RetentionArchivePage() {
       </div>
 
       {error && <div className="mb-4 rounded-md border border-[#f3c9c8] bg-[#fbe7e6] px-3 py-2 text-[12px] text-[#7d2c2b]">{error}</div>}
+      {!canManage && <ReadOnlyNotice roles="Document Controller atau Compliance & Risk Admin (pemusnahan: Ratifier/Compliance & Risk Admin)" />}
 
       <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
         {Object.entries(WORKLISTS).map(([key, w]) => {
