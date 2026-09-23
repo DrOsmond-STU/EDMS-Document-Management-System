@@ -20,6 +20,7 @@ use App\Http\Controllers\Api\MgmtReviewController;
 use App\Http\Controllers\Api\NumberingSettingController;
 use App\Http\Controllers\Api\RecordController;
 use App\Http\Controllers\Api\RecordSeriesController;
+use App\Http\Controllers\Api\ReportingController;
 use App\Http\Controllers\Api\RiskController;
 use App\Http\Controllers\Api\UserController;
 use Illuminate\Support\Facades\Route;
@@ -64,6 +65,8 @@ Route::middleware('auth')->group(function () {
         Route::post('company-settings', [CompanySettingController::class, 'update']);
 
         Route::get('dashboard', [DashboardController::class, 'index']);
+        Route::get('reporting/kpi', [ReportingController::class, 'index']);
+        Route::get('reporting/kpi.csv', [ReportingController::class, 'export']);
         Route::get('compliance-matrix', [ComplianceMatrixController::class, 'index']);
         Route::patch('compliance-matrix/assessments', [ComplianceMatrixController::class, 'upsertAssessment']);
 
