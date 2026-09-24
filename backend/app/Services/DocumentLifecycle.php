@@ -38,7 +38,7 @@ class DocumentLifecycle
         'supersede' => ['from' => ['released'], 'to' => 'obsolete', 'label' => 'Ditandai digantikan'],
     ];
 
-    public function __construct(private AuditLogger $audit) {}
+    public function __construct(private AuditLogger $audit, private WorkflowNotifier $notifier) {}
 
     /** @return list<string> status berikutnya yang sah dari status sekarang (rantai maju resmi saja) */
     public function allowedNext(string $status): array
@@ -76,7 +76,7 @@ class DocumentLifecycle
             $this->assertReadyForRelease($document);
         }
 
-        return DB::transaction(function () use ($document, $to, $actor, $note) {
+        $document = DB::transaction(function () use ($document, $to, $actor, $note) {
             $from = $document->status;
 
             $document->status = $to;
@@ -97,6 +97,10 @@ class DocumentLifecycle
 
             return $document;
         });
+
+        $this->notifier->documentTransitioned($document, $to, $actor);
+
+        return $document;
     }
 
     /**

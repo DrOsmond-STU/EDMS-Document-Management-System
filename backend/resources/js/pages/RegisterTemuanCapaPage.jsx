@@ -578,6 +578,9 @@ export default function RegisterTemuanCapaPage() {
   }, [])
 
   const [q, setQ] = useState(() => new URLSearchParams(window.location.search).get('q') ?? '')
+  // Tautan notifikasi/audit (/findings?q=FIND-xxxx) juga saat halaman ini sudah terbuka.
+  const linkedQ = searchParams.get('q')
+  useEffect(() => { if (linkedQ !== null) setQ(linkedQ) }, [linkedQ])
   const [source, setSource] = useState('')
   const [type, setType] = useState('')
   const [status, setStatus] = useState('')
@@ -611,7 +614,7 @@ export default function RegisterTemuanCapaPage() {
   const stats = useMemo(() => {
     const list = findings ?? []
     return {
-      open: list.filter((f) => f.status === 'open').length,
+      open: list.filter((f) => ['open', 'root_cause_analysis'].includes(f.status)).length,
       overdue: list.filter(isOverdue).length,
       verifying: list.filter((f) => ['verification', 'capa_in_progress'].includes(f.status)).length,
       closed: list.filter((f) => f.status === 'closed').length,
@@ -649,7 +652,7 @@ export default function RegisterTemuanCapaPage() {
       <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <StatCard icon={AlertTriangle} label="Terbuka" value={stats.open} accent="#e24b4a" />
         <StatCard icon={AlertTriangle} label="Terlambat" value={stats.overdue} accent="#ef9f27" />
-        <StatCard icon={ClipboardEdit} label="Verifikasi Berjalan" value={stats.verifying} accent="#7f77df" />
+        <StatCard icon={ClipboardEdit} label="CAPA & Verifikasi" value={stats.verifying} accent="#7f77df" />
         <StatCard icon={ClipboardEdit} label="Tertutup" value={stats.closed} accent="#1d6e48" />
       </div>
 

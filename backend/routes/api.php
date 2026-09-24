@@ -41,7 +41,7 @@ Route::post('license/apply', [LicenseController::class, 'apply'])->middleware('t
 Route::get('csrf-cookie', fn () => response()->noContent());
 
 Route::post('auth/login', [AuthController::class, 'login'])
-    ->middleware('throttle:10,1');
+    ->middleware('throttle:login');
 
 // Publik (tanpa sesi) — nama & logo perusahaan wajib tampil di halaman
 // login sebelum siapa pun masuk.

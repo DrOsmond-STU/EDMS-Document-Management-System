@@ -100,4 +100,23 @@ class SecurityHardeningTest extends TestCase
         }
         $this->assertContains(429, $statuses, 'Permintaan beruntun tanpa batas harus dihentikan (429).');
     }
+
+    public function test_login_is_throttled_per_account_but_colleagues_on_same_ip_can_still_log_in(): void
+    {
+        for ($i = 1; $i <= 12; $i++) {
+            $this->user("staf{$i}@example.com", ['viewer']);
+        }
+        $statuses = [];
+        for ($i = 0; $i < 6; $i++) {
+            $statuses[] = $this->postJson('/api/auth/login', ['email' => 'staf1@example.com', 'password' => 'salah-sekali-123'])->status();
+        }
+        $this->assertSame(429, end($statuses), 'Tebak sandi berulang pada satu akun harus dihentikan.');
+
+        // Satu kantor = satu IP: rekan kerja lain tetap bisa login walau staf1 terkunci.
+        for ($i = 2; $i <= 12; $i++) {
+            $this->app['auth']->forgetGuards();
+            $this->postJson('/api/auth/login', ['email' => "staf{$i}@example.com", 'password' => 'rahasia-panjang-sekali'])->assertOk();
+            $this->postJson('/api/auth/logout');
+        }
+    }
 }

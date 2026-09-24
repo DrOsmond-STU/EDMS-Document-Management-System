@@ -26,5 +26,14 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('api', fn (Request $request) => $request->user()
             ? Limit::perMinute(600)->by('user:'.$request->user()->id)
             : Limit::perMinute(120)->by('ip:'.$request->ip()));
+
+        // Login: 5 percobaan/menit per akun+IP menghentikan tebak sandi satu
+        // akun; 60/menit per IP menahan credential stuffing. Tidak dibatasi
+        // per IP saja — satu kantor di balik satu IP publik harus tetap bisa
+        // login bersamaan (mis. sesi pelatihan/demo).
+        RateLimiter::for('login', fn (Request $request) => [
+            Limit::perMinute(5)->by('login:'.mb_strtolower((string) $request->input('email')).'|'.$request->ip()),
+            Limit::perMinute(60)->by('login-ip:'.$request->ip()),
+        ]);
     }
 }

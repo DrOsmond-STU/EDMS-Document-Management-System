@@ -13,6 +13,7 @@ use App\Models\DraftingMeetingPhoto;
 use App\Models\DraftingProject;
 use App\Models\User;
 use App\Services\AuditLogger;
+use App\Services\WorkflowNotifier;
 use App\Services\DocumentNumbering;
 use App\Support\Permissions;
 use Illuminate\Http\JsonResponse;
@@ -46,7 +47,7 @@ class DraftingProjectController extends Controller
     ];
     private const MAX_KB = 25600;
 
-    public function __construct(private AuditLogger $audit, private DocumentNumbering $numbering) {}
+    public function __construct(private AuditLogger $audit, private DocumentNumbering $numbering, private WorkflowNotifier $notifier) {}
 
     // ---- Proyek ---------------------------------------------------------
 
@@ -239,6 +240,7 @@ class DraftingProjectController extends Controller
 
         $project->update(['drafter_id' => $drafter->id, 'status' => 'in_progress']);
         $this->log($user, $project, 'update', "Menetapkan {$drafter->name} sebagai penyusun {$project->code}.");
+        $this->notifier->draftingAssigned($project, $drafter, $user);
 
         return response()->json($this->present($project->fresh()));
     }
@@ -255,6 +257,7 @@ class DraftingProjectController extends Controller
 
         $project->update(['status' => 'rejected', 'rejection_reason' => $data['reason']]);
         $this->log($request->user(), $project, 'update', "Menolak permintaan {$project->code}: {$data['reason']}");
+        $this->notifier->draftingDecided($project, 'rejected', $request->user(), $data['reason']);
 
         return response()->json($this->present($project->fresh()));
     }
@@ -294,6 +297,7 @@ class DraftingProjectController extends Controller
         ])->save();
 
         $this->log($request->user(), $project, 'update', "Memfinalisasi draf {$project->code}.");
+        $this->notifier->draftingFinalized($project, $request->user());
 
         return response()->json($this->present($project->fresh()));
     }
@@ -310,6 +314,7 @@ class DraftingProjectController extends Controller
 
         $project->update(['status' => 'in_progress', 'return_note' => $data['note'], 'finalized_at' => null]);
         $this->log($request->user(), $project, 'update', "Mengembalikan {$project->code} ke penyusun: {$data['note']}");
+        $this->notifier->draftingDecided($project, 'returned', $request->user(), $data['note']);
 
         return response()->json($this->present($project->fresh()));
     }
@@ -389,6 +394,8 @@ class DraftingProjectController extends Controller
 
             return $document;
         });
+
+        $this->notifier->draftingDecided($project->fresh(), 'ratified', $user, "Terbit sebagai dokumen {$document->code}.");
 
         return response()->json(['project' => $this->present($project->fresh()), 'document' => $document->only(['id', 'code', 'title'])]);
     }

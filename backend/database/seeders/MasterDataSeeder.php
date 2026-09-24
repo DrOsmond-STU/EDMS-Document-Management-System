@@ -22,12 +22,12 @@ class MasterDataSeeder extends Seeder
             ['id' => 'drafter', 'label' => 'Document Drafter', 'summary' => 'Menyusun draf, mengelola rapat pembahasan'],
             ['id' => 'reviewer', 'label' => 'Reviewer', 'summary' => 'Meninjau dan memberi catatan pada draf dokumen'],
             ['id' => 'approver', 'label' => 'Approver', 'summary' => 'Menyetujui dokumen untuk dirilis'],
-            ['id' => 'controller', 'label' => 'Document Controller', 'summary' => 'Mengelola penomoran, register, dan status dokumen lintas fungsi'],
-            ['id' => 'ratifier', 'label' => 'Ratifier', 'summary' => 'Mengesahkan dokumen final menjadi dokumen resmi'],
-            ['id' => 'function_head', 'label' => 'Function/Department Head', 'summary' => 'Melihat dan mengawasi dokumen fungsinya'],
-            ['id' => 'compliance_admin', 'label' => 'Compliance & Risk Admin', 'summary' => 'Mengelola pemetaan kepatuhan multi-standar'],
+            ['id' => 'controller', 'label' => 'Document Controller', 'summary' => 'Mengelola register, status, dan records dokumen lintas fungsi'],
+            ['id' => 'ratifier', 'label' => 'Ratifier', 'summary' => 'Mengesahkan dokumen final, memimpin tinjauan manajemen'],
+            ['id' => 'function_head', 'label' => 'Function/Department Head', 'summary' => 'Mengawasi dokumen fungsinya, mengelola risiko dan temuan/CAPA'],
+            ['id' => 'compliance_admin', 'label' => 'Compliance & Risk Admin', 'summary' => 'Mengelola compliance matrix, risiko, legal register, audit, temuan, dan records'],
             ['id' => 'sysadmin', 'label' => 'System Administrator', 'summary' => 'Mengelola pengguna, master data, dan konfigurasi sistem'],
-            ['id' => 'auditor', 'label' => 'Auditor', 'summary' => 'Melihat seluruh dokumen dan audit trail (read-only)'],
+            ['id' => 'auditor', 'label' => 'Auditor', 'summary' => 'Merencanakan dan melaksanakan audit, mencatat temuan, melihat audit trail'],
             ['id' => 'viewer', 'label' => 'Viewer', 'summary' => 'Melihat dokumen berstatus Released sesuai hak akses'],
         ];
 

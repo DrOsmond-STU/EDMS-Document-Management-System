@@ -8,6 +8,7 @@ use App\Models\Finding;
 use App\Models\FindingAction;
 use App\Models\FindingVerification;
 use App\Services\AuditLogger;
+use App\Services\WorkflowNotifier;
 use App\Support\Permissions;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -30,7 +31,7 @@ class FindingController extends Controller
     private const ACTION_STATUSES = ['open', 'in_progress', 'completed'];
     private const VERIFICATION_METHODS = ['document_review', 'interview', 'observation', 'sampling'];
 
-    public function __construct(private AuditLogger $audit) {}
+    public function __construct(private AuditLogger $audit, private WorkflowNotifier $notifier) {}
 
     public function index(Request $request): JsonResponse
     {
@@ -106,6 +107,7 @@ class FindingController extends Controller
                 'status' => 'open',
                 'created_by' => $request->user()->id,
                 ...collect($data)->except('standards')->all(),
+                'raised_by' => ($data['raised_by'] ?? null) ?: $request->user()->name,
             ]);
             $finding->standards()->sync($data['standards'] ?? []);
 
@@ -114,6 +116,7 @@ class FindingController extends Controller
 
         $this->audit->log($request->user(), 'create', 'Finding', $finding->code, $finding->title,
             "Menambahkan temuan \"{$finding->title}\" ({$finding->code}).");
+        $this->notifier->findingRaised($finding, $request->user());
 
         return response()->json($this->present($finding), 201);
     }

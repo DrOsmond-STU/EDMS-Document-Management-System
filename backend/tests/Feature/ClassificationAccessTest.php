@@ -139,4 +139,18 @@ class ClassificationAccessTest extends TestCase
         $board = $this->actingAs($this->user('controller'))->getJson('/api/approval-board')->assertOk()->getContent();
         $this->assertStringNotContainsString('Dokumen top_secret', $board);
     }
+
+    public function test_dashboard_counts_only_documents_the_user_may_see(): void
+    {
+        $this->docs['public']->update(['status' => 'draft']);
+        $viewer = $this->user('viewer');
+        $visible = count($this->visibleLevels($viewer));
+        $dash = $this->actingAs($viewer)->getJson('/api/dashboard')->assertOk();
+        $this->assertSame($visible, $dash->json('totals.documents'), 'Angka dashboard harus sama dengan isi Register Dokumen pengguna.');
+        $byClass = collect($dash->json('classification_breakdown'))->pluck('count', 'key');
+        $this->assertSame(0, $byClass['top_secret']);
+        $this->assertSame(0, $byClass['confidential']);
+
+        $this->assertSame(6, $this->actingAs($this->user('ratifier'))->getJson('/api/dashboard')->json('totals.documents'));
+    }
 }

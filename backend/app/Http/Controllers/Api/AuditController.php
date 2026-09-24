@@ -8,6 +8,7 @@ use App\Models\AuditChecklistItem;
 use App\Models\AuditSession;
 use App\Models\Finding;
 use App\Services\AuditLogger;
+use App\Services\WorkflowNotifier;
 use App\Support\Permissions;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -32,7 +33,7 @@ class AuditController extends Controller
         'external' => ['certification', 'surveillance', 'recertification', 'customer', 'regulator', 'supplier'],
     ];
 
-    public function __construct(private AuditLogger $audit) {}
+    public function __construct(private AuditLogger $audit, private WorkflowNotifier $notifier) {}
 
     public function index(Request $request): JsonResponse
     {
@@ -88,6 +89,7 @@ class AuditController extends Controller
 
         $this->audit->log($request->user(), 'create', 'Audit', $auditRecord->code, $auditRecord->title,
             "Menjadwalkan audit \"{$auditRecord->title}\" ({$auditRecord->code}).");
+        $this->notifier->auditScheduled($auditRecord, $request->user());
 
         return response()->json($this->present($auditRecord), 201);
     }
@@ -353,6 +355,7 @@ class AuditController extends Controller
 
         $this->audit->log($user, 'create', 'Finding', $finding->code, $finding->title,
             "Mengangkat temuan {$finding->code} dari checklist audit {$audit->code}.");
+        $this->notifier->findingRaised($finding, $user);
 
         return response()->json($this->present($audit->fresh()), 201);
     }

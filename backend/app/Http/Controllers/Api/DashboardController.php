@@ -37,15 +37,19 @@ class DashboardController extends Controller
         $user = $request->user();
         $roleIds = $user->roleIds();
 
-        $statusCounts = Document::query()->selectRaw('status, count(*) as c')->groupBy('status')->pluck('c', 'status');
-        $classificationCounts = Document::query()->selectRaw('classification, count(*) as c')->groupBy('classification')->pluck('c', 'classification');
-        $typeCounts = Document::query()->selectRaw('type, count(*) as c')->groupBy('type')->pluck('c', 'type');
+        // Semua angka dihitung hanya dari dokumen yang boleh dilihat pengguna
+        // (status & klasifikasi) — sama persis dengan isi Register Dokumennya.
+        $visible = fn () => Document::query()->visibleTo($user);
+
+        $statusCounts = $visible()->selectRaw('status, count(*) as c')->groupBy('status')->pluck('c', 'status');
+        $classificationCounts = $visible()->selectRaw('classification, count(*) as c')->groupBy('classification')->pluck('c', 'classification');
+        $typeCounts = $visible()->selectRaw('type, count(*) as c')->groupBy('type')->pluck('c', 'type');
 
         $totalDocuments = (int) $statusCounts->sum();
         $pendingCount = (int) collect(self::BOARD_STATUSES)->sum(fn ($s) => (int) ($statusCounts[$s] ?? 0));
 
-        $overdueReview = Document::released()->whereNotNull('review_date')->where('review_date', '<', now())->count();
-        $upcomingReview = Document::released()->whereNotNull('review_date')
+        $overdueReview = $visible()->released()->whereNotNull('review_date')->where('review_date', '<', now())->count();
+        $upcomingReview = $visible()->released()->whereNotNull('review_date')
             ->whereBetween('review_date', [now(), now()->addDays(30)])
             ->count();
 
@@ -55,7 +59,7 @@ class DashboardController extends Controller
         ));
         $myActionableCount = $myActionableStatuses === []
             ? 0
-            : Document::whereIn('status', $myActionableStatuses)->count();
+            : $visible()->whereIn('status', $myActionableStatuses)->count();
 
         $payload = [
             'totals' => [
@@ -104,7 +108,7 @@ class DashboardController extends Controller
         }
 
         if ($user->hasPermission(Permissions::REPORTING_VIEW)) {
-            $payload['monthly_trend'] = $this->monthlyTrend();
+            $payload['monthly_trend'] = $this->monthlyTrend($user);
         }
 
         return response()->json($payload);
@@ -118,11 +122,11 @@ class DashboardController extends Controller
      *
      * @return list<array{month: string, count: int}>
      */
-    private function monthlyTrend(): array
+    private function monthlyTrend(User $user): array
     {
         $start = now()->subMonths(5)->startOfMonth();
 
-        $counts = Document::query()
+        $counts = Document::query()->visibleTo($user)
             ->where('created_at', '>=', $start)
             ->pluck('created_at')
             ->countBy(fn ($date) => $date->format('Y-m'));

@@ -64,13 +64,14 @@ class DashboardTest extends TestCase
     public function test_status_and_classification_breakdown_counts_are_correct(): void
     {
         $this->activateLicense();
-        $viewer = $this->makeUser('viewer');
+        // Document Controller melihat semua status; Viewer hanya dokumen terbit (lihat ClassificationAccessTest).
+        $controller = $this->makeUser('controller');
         $this->makeDocument('draft');
         $this->makeDocument('review');
         $this->makeDocument('released');
         $this->makeDocument('released');
 
-        $response = $this->actingAs($viewer)->getJson('/api/dashboard');
+        $response = $this->actingAs($controller)->getJson('/api/dashboard');
 
         $response->assertOk();
         $this->assertSame(4, $response->json('totals.documents'));
