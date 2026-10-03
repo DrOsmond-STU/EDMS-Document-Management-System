@@ -129,7 +129,8 @@ class CompanySettingController extends Controller
 
     private function storeLogo(CompanySetting $setting, UploadedFile $upload, string $folder, string $nameField, string $pathField, string $mimeField): void
     {
-        $storedPath = sprintf('%s/%s.%s', $folder, Str::ulid(), strtolower($upload->getClientOriginalExtension() ?: 'png'));
+        // Ekstensi dari isi berkas (MIME terdeteksi server), bukan dari nama kiriman pengguna.
+        $storedPath = sprintf('%s/%s.%s', $folder, Str::ulid(), $upload->guessExtension() ?: 'bin');
         Storage::disk('company')->put($storedPath, file_get_contents($upload->getRealPath()));
 
         $setting->{$nameField} = $upload->getClientOriginalName();

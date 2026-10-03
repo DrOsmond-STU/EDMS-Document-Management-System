@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Classified;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -12,6 +13,7 @@ use App\Support\Permissions;
 
 class Document extends Model
 {
+    use Classified;
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
@@ -152,39 +154,8 @@ class Document extends Model
         return $query->where('status', 'released');
     }
 
-    /**
-     * Saring berdasarkan izin klasifikasi pengguna (Permissions::ROLE_CLEARANCE):
-     * tingkat peran, +1 tingkat untuk dokumen fungsinya sendiri, dan pemilik/
-     * pembuat selalu boleh melihat dokumennya.
-     */
-    public function scopeClassifiedFor($query, User $user)
-    {
-        $roleIds = $user->roleIds();
-        $general = Permissions::classificationsUpTo(Permissions::clearanceFor($roleIds));
-        $ownFunction = Permissions::classificationsUpTo(Permissions::clearanceFor($roleIds, ownFunction: true));
-
-        return $query->where(function ($q) use ($user, $general, $ownFunction) {
-            $q->whereIn('classification', $general)
-                ->orWhere('owner_id', $user->id)
-                ->orWhere('created_by', $user->id);
-            if ($user->function_id) {
-                $q->orWhere(fn ($w) => $w->where('function_id', $user->function_id)->whereIn('classification', $ownFunction));
-            }
-        });
-    }
-
-    /** Versi satu-dokumen dari scopeClassifiedFor — dipakai DocumentPolicy. */
-    public function classificationAllows(User $user): bool
-    {
-        if (($this->owner_id !== null && (int) $this->owner_id === (int) $user->id)
-            || ($this->created_by !== null && (int) $this->created_by === (int) $user->id)) {
-            return true;
-        }
-        $level = Permissions::CLASSIFICATION_LEVELS[$this->classification] ?? Permissions::CLASSIFICATION_LEVELS['top_secret'];
-        $own = $user->function_id !== null && $user->function_id === $this->function_id;
-
-        return $level <= Permissions::clearanceFor($user->roleIds(), ownFunction: $own);
-    }
+    /** Pemilik & pembuat selalu boleh melihat dokumennya — lihat Concerns\Classified. */
+    public const CLASSIFICATION_OWNER_COLUMNS = ['owner_id', 'created_by'];
 
     public function scopeReleased($query)
     {

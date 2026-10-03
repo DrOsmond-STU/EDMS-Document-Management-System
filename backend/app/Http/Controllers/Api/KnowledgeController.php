@@ -49,7 +49,7 @@ class KnowledgeController extends Controller
 
         $groups = collect([
             $this->documents($user, $q, $like),
-            $user->hasPermission(Permissions::RECORDS_VIEW) ? $this->records($q, $like) : null,
+            $user->hasPermission(Permissions::RECORDS_VIEW) ? $this->records($user, $q, $like) : null,
             $user->hasPermission(Permissions::RISK_VIEW) ? $this->risks($q, $like) : null,
             $this->canViewFindings($user) ? $this->findings($q, $like) : null,
             $user->hasPermission(Permissions::LEGAL_VIEW) ? $this->legal($q, $like) : null,
@@ -208,9 +208,9 @@ class KnowledgeController extends Controller
             ['url' => "/documents/{$d->id}", 'meta' => trim("{$d->type} · ".($d->orgFunction?->name ?? '')." · {$d->status}", ' ·')])));
     }
 
-    private function records(string $q, string $like): array
+    private function records(User $user, string $q, string $like): array
     {
-        $rows = Record::where(fn ($w) => $w->whereRaw("code LIKE ? ESCAPE '!'", [$like])->orWhereRaw("title LIKE ? ESCAPE '!'", [$like])
+        $rows = Record::classifiedFor($user)->where(fn ($w) => $w->whereRaw("code LIKE ? ESCAPE '!'", [$like])->orWhereRaw("title LIKE ? ESCAPE '!'", [$like])
             ->orWhereRaw("description LIKE ? ESCAPE '!'", [$like])->orWhereRaw("location LIKE ? ESCAPE '!'", [$like]))
             ->with('series:id,code')->limit(40)->get(['id', 'code', 'title', 'description', 'location', 'status', 'series_id']);
 
@@ -266,7 +266,7 @@ class KnowledgeController extends Controller
             return null;
         }
 
-        $rows = DraftingProject::where(fn ($w) => $w->whereRaw("code LIKE ? ESCAPE '!'", [$like])->orWhereRaw("title LIKE ? ESCAPE '!'", [$like])->orWhereRaw("reason LIKE ? ESCAPE '!'", [$like]))
+        $rows = DraftingProject::classifiedFor($user)->where(fn ($w) => $w->whereRaw("code LIKE ? ESCAPE '!'", [$like])->orWhereRaw("title LIKE ? ESCAPE '!'", [$like])->orWhereRaw("reason LIKE ? ESCAPE '!'", [$like]))
             ->when(! $involved, fn ($w) => $w->where('requester_id', $user->id))
             ->limit(40)->get(['id', 'code', 'title', 'reason', 'status', 'doc_type']);
 

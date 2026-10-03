@@ -78,6 +78,7 @@ class AuthController extends Controller
 
         $request->session()->regenerate();
         auth()->login($user, remember: false);
+        $request->session()->put('auth_at', now()->getTimestamp()); // lihat EnsureAccountActive
 
         $user->forceFill([
             'failed_login_count' => 0,
@@ -126,14 +127,17 @@ class AuthController extends Controller
             return response()->json(['message' => 'Password baru harus berbeda dari password lama.'], 422);
         }
 
+        $now = now();
         $user->forceFill([
             'password' => $data['password'],
             'must_change_password' => false,
-            'password_changed_at' => now(),
+            'password_changed_at' => $now,
+            'sessions_valid_after' => $now,
         ])->save();
 
-        // Sesi lain milik pengguna ini dianggap tidak lagi tepercaya.
-        auth()->logoutOtherDevices($data['password']);
+        // Sesi lain milik pengguna ini dianggap tidak lagi tepercaya (EnsureAccountActive
+        // menolak sesi yang dibuat sebelum sessions_valid_after); sesi ini tetap berlaku.
+        $request->session()->put('auth_at', $now->getTimestamp());
 
         $this->audit->log($user, 'password_change', 'User', (string) $user->id, $user->name, 'Mengganti password sendiri');
 

@@ -62,7 +62,7 @@ class DocumentFileController extends Controller
             now()->format('Y'),
             $document->id,
             Str::ulid(),
-            strtolower($upload->getClientOriginalExtension() ?: 'bin'),
+            $upload->guessExtension() ?: 'bin', // dari isi berkas (MIME terdeteksi), bukan nama kiriman pengguna
         );
 
         $checksum = hash_file('sha256', $upload->getRealPath());

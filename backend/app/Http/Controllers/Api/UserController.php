@@ -205,6 +205,7 @@ class UserController extends Controller
             'must_change_password' => true,
             'failed_login_count' => 0,
             'locked_until' => null,
+            'sessions_valid_after' => now(), // putus semua sesi lama pengguna ini
         ])->save();
 
         $this->audit->log($request->user(), 'password_reset', 'User', (string) $user->id, $user->name,

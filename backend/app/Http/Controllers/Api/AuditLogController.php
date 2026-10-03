@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
+use App\Services\AuditTrailVisibility;
 use App\Support\Permissions;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -14,6 +15,8 @@ use Illuminate\Http\Request;
  */
 class AuditLogController extends Controller
 {
+    public function __construct(private AuditTrailVisibility $visibility) {}
+
     public function index(Request $request): JsonResponse
     {
         if (! $this->authorized($request)) {
@@ -33,6 +36,8 @@ class AuditLogController extends Controller
         }
 
         if ($request->filled('q')) {
+            // Baris atas data berklasifikasi di atas izin pembaca tidak ikut dicari teksnya.
+            $this->visibility->onlyReadable($query, $request->user());
             $term = '%'.$request->string('q').'%';
             $query->where(fn ($q) => $q->where('detail', 'like', $term)
                 ->orWhere('entity_label', 'like', $term)
@@ -46,9 +51,10 @@ class AuditLogController extends Controller
             $query->whereDate('created_at', '<=', $request->string('date_to'));
         }
 
-        return response()->json(
-            $query->paginate((int) $request->integer('per_page', 25))
-        );
+        $page = $query->paginate(min(100, max(1, (int) $request->integer('per_page', 25))));
+        $page->getCollection()->each(fn (AuditLog $log) => $this->visibility->mask($log, $request->user()));
+
+        return response()->json($page);
     }
 
     /** Nilai unik untuk dropdown filter — dihitung dari data yang benar-benar ada, bukan daftar statis. */

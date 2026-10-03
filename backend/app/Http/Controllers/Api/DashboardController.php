@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
+use App\Services\AuditTrailVisibility;
 use App\Models\Document;
 use App\Models\User;
 use App\Support\Permissions;
@@ -96,6 +97,7 @@ class DashboardController extends Controller
                 ->latest()
                 ->limit(8)
                 ->get()
+                ->map(fn (AuditLog $log) => app(AuditTrailVisibility::class)->mask($log, $user))
                 ->map(fn (AuditLog $log) => [
                     'id' => $log->id,
                     'actor_name' => $log->actor?->name ?? $log->actor_name,

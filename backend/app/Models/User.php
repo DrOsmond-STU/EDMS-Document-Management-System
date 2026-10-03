@@ -34,6 +34,7 @@ class User extends Authenticatable
             'last_login_at' => 'datetime',
             'deleted_at' => 'datetime',
             'locked_until' => 'datetime',
+            'sessions_valid_after' => 'datetime',
         ];
     }
 

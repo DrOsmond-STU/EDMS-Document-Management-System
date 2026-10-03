@@ -119,4 +119,33 @@ class SecurityHardeningTest extends TestCase
             $this->postJson('/api/auth/logout');
         }
     }
+
+    public function test_sessions_created_before_a_password_reset_are_terminated(): void
+    {
+        $user = $this->user('korban@example.com', ['viewer']);
+        $admin = $this->user('admin@example.com', ['sysadmin']);
+
+        // Sesi lama (mis. dicuri) dibuat sebelum admin me-reset password.
+        $user->forceFill(['sessions_valid_after' => now()])->save();
+        $this->actingAs($user)->withSession(['auth_at' => now()->subHour()->getTimestamp()])
+            ->getJson('/api/auth/me')->assertUnauthorized();
+
+        // Reset oleh admin mengisi sessions_valid_after.
+        $this->actingAs($admin)->postJson("/api/users/{$user->id}/reset-password")->assertOk();
+        $this->assertNotNull($user->fresh()->sessions_valid_after);
+    }
+
+    public function test_changing_own_password_keeps_this_session_but_ends_older_ones(): void
+    {
+        $this->user('saya@example.com', ['viewer']);
+        $this->postJson('/api/auth/login', ['email' => 'saya@example.com', 'password' => 'rahasia-panjang-sekali'])->assertOk();
+        $this->travel(2)->seconds();
+        $this->postJson('/api/auth/change-password', ['current_password' => 'rahasia-panjang-sekali',
+            'password' => 'SandiBaru12345', 'password_confirmation' => 'SandiBaru12345'])->assertOk();
+        $this->getJson('/api/auth/me')->assertOk(); // sesi yang dipakai untuk mengganti tetap berlaku
+
+        $user = User::where('email', 'saya@example.com')->first();
+        $this->actingAs($user)->withSession(['auth_at' => now()->subMinutes(5)->getTimestamp()])
+            ->getJson('/api/auth/me')->assertUnauthorized(); // sesi lain yang lebih lama terputus
+    }
 }

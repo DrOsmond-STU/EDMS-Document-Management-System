@@ -35,7 +35,10 @@ class RecordController extends Controller
             return response()->json(['message' => 'Anda tidak berwenang melihat Records Register.'], 403);
         }
 
-        $query = Record::query()->with(['series:id,code,name,disposition', 'orgFunction:id,name', 'disposer:id,name', ...$this->documentRelation($request->user())]);
+        $user = $request->user();
+        // Label klasifikasi rekaman membatasi siapa yang boleh melihatnya — aturan sama dengan dokumen.
+        $visible = fn () => Record::query()->classifiedFor($user);
+        $query = $visible()->with(['series:id,code,name,disposition', 'orgFunction:id,name', 'disposer:id,name', ...$this->documentRelation($request->user())]);
 
         if ($q = trim((string) $request->string('q'))) {
             $query->where(fn ($w) => $w
@@ -55,13 +58,13 @@ class RecordController extends Controller
         return response()->json([
             'records' => $query->orderByDesc('record_date')->orderByDesc('id')->get(),
             'stats' => [
-                'active' => Record::where('status', 'active')->count(),
-                'inactive' => Record::where('status', 'inactive')->count(),
-                'destroyed' => Record::where('status', 'destroyed')->count(),
-                'archived_permanent' => Record::where('status', 'archived_permanent')->count(),
-                'due_to_inactive' => $this->applyDue(Record::query(), 'to_inactive')->count(),
-                'due_to_dispose' => $this->applyDue(Record::query(), 'to_dispose')->count(),
-                'on_hold' => $this->applyDue(Record::query(), 'on_hold')->count(),
+                'active' => $visible()->where('status', 'active')->count(),
+                'inactive' => $visible()->where('status', 'inactive')->count(),
+                'destroyed' => $visible()->where('status', 'destroyed')->count(),
+                'archived_permanent' => $visible()->where('status', 'archived_permanent')->count(),
+                'due_to_inactive' => $this->applyDue($visible(), 'to_inactive')->count(),
+                'due_to_dispose' => $this->applyDue($visible(), 'to_dispose')->count(),
+                'on_hold' => $this->applyDue($visible(), 'on_hold')->count(),
             ],
             'meta' => ['mediums' => self::MEDIUMS, 'classifications' => self::CLASSIFICATIONS, 'statuses' => self::STATUSES],
         ]);
@@ -98,6 +101,9 @@ class RecordController extends Controller
         if (! $request->user()->hasPermission(Permissions::RECORDS_MANAGE)) {
             return response()->json(['message' => 'Anda tidak berwenang mengubah rekaman.'], 403);
         }
+        if ($denied = $this->denyClassified($request, $record)) {
+            return $denied;
+        }
         if (in_array($record->status, Record::FINAL_STATUSES, true)) {
             return response()->json(['message' => 'Rekaman yang sudah dimusnahkan/diserahkan permanen tidak bisa diubah.'], 422);
         }
@@ -125,6 +131,9 @@ class RecordController extends Controller
         if (! $request->user()->hasPermission(Permissions::RECORDS_MANAGE)) {
             return response()->json(['message' => 'Anda tidak berwenang menghapus rekaman.'], 403);
         }
+        if ($denied = $this->denyClassified($request, $record)) {
+            return $denied;
+        }
         if (in_array($record->status, Record::FINAL_STATUSES, true)) {
             return response()->json(['message' => 'Rekaman yang sudah dimusnahkan/diserahkan permanen adalah bukti disposisi dan tidak bisa dihapus.'], 422);
         }
@@ -151,6 +160,9 @@ class RecordController extends Controller
         ]);
         $action = $data['action'];
         $user = $request->user();
+        if ($denied = $this->denyClassified($request, $record)) {
+            return $denied;
+        }
 
         $needed = in_array($action, ['dispose', 'archive_permanent'], true) ? Permissions::RECORDS_DISPOSE : Permissions::RECORDS_MANAGE;
         if (! $user->hasPermission($needed)) {
@@ -244,6 +256,12 @@ class RecordController extends Controller
             'classification' => ['sometimes', 'string', Rule::in(self::CLASSIFICATIONS)],
             'document_id' => ['sometimes', 'nullable', 'integer', 'exists:documents,id'],
         ]);
+    }
+
+    private function denyClassified(Request $request, Record $record): ?JsonResponse
+    {
+        return $record->classificationAllows($request->user()) ? null
+            : response()->json(['message' => 'Klasifikasi rekaman ini di atas izin Anda.'], 403);
     }
 
     private function present(Record $record): Record

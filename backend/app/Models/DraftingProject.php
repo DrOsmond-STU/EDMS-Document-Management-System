@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Classified;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -10,7 +11,10 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class DraftingProject extends Model
 {
-    use SoftDeletes;
+    use Classified, SoftDeletes;
+
+    /** Pemohon & penyusun yang ditugaskan selalu boleh melihat proyeknya — lihat Concerns\Classified. */
+    public const CLASSIFICATION_OWNER_COLUMNS = ['requester_id', 'drafter_id'];
 
     public const STAGE_LABELS = [
         'Permintaan', 'Undangan Rapat', 'Rapat (anggaran & foto)', 'Bukti Notulen',

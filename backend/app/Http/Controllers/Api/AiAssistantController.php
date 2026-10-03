@@ -305,7 +305,7 @@ class AiAssistantController extends Controller
         $involved = collect([Permissions::DOCUMENT_DRAFT, Permissions::DOCUMENT_CONTROL, Permissions::DOCUMENT_RATIFY])
             ->contains(fn ($p) => $user->hasPermission($p));
 
-        return DraftingProject::whereNotIn('status', ['ratified', 'rejected'])
+        return DraftingProject::classifiedFor($user)->whereNotIn('status', ['ratified', 'rejected'])
             ->where(function ($w) use ($keywords) {
                 foreach ($keywords as $k) {
                     $w->orWhereRaw("title LIKE ? ESCAPE '!'", [$this->like($k)]);

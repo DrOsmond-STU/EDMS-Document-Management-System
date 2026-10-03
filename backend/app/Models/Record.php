@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\Classified;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -9,7 +10,10 @@ use Illuminate\Support\Carbon;
 
 class Record extends Model
 {
-    use SoftDeletes;
+    use Classified, SoftDeletes;
+
+    /** Pendaftar rekaman selalu boleh melihat rekamannya — lihat Concerns\Classified. */
+    public const CLASSIFICATION_OWNER_COLUMNS = ['created_by'];
 
     /** Status akhir — rekaman di status ini tidak bisa diubah lagi. */
     public const FINAL_STATUSES = ['destroyed', 'archived_permanent'];

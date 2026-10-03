@@ -19,6 +19,8 @@ use App\Support\Permissions;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -37,8 +39,26 @@ use Symfony\Component\HttpFoundation\Response;
  * finalisasi menjadi berkas utamanya, sehingga aturan "terkontrol wajib
  * PDF" (DocumentLifecycle::assertReadyForRelease) tetap terpenuhi.
  */
-class DraftingProjectController extends Controller
+class DraftingProjectController extends Controller implements HasMiddleware
 {
+    /**
+     * Label klasifikasi proyek berlaku untuk SEMUA endpoint yang menerima
+     * {project} (detail, rapat, foto, notulen, tanda tangan, berkas final):
+     * satu penjaga di sini, bukan pemeriksaan per method yang bisa terlewat.
+     * Pemohon & penyusun yang ditugaskan selalu lolos (Concerns\Classified).
+     */
+    public static function middleware(): array
+    {
+        return [new Middleware(function (Request $request, \Closure $next) {
+            $project = $request->route('project');
+            if ($project instanceof DraftingProject && ! $project->classificationAllows($request->user())) {
+                return response()->json(['message' => 'Klasifikasi proyek ini di atas izin Anda.'], 403);
+            }
+
+            return $next($request);
+        })];
+    }
+
     private const DOC_TYPES = ['Kebijakan', 'Manual', 'SOP', 'Work Instruction', 'Formulir'];
     private const CLASSIFICATIONS = ['public', 'internal', 'restricted', 'confidential', 'secret', 'top_secret'];
     private const INVOLVED = [
@@ -66,6 +86,7 @@ class DraftingProjectController extends Controller
         if (! $involved) {
             $query->where('requester_id', $user->id); // pemohon murni hanya melihat permintaannya sendiri
         }
+        $query->classifiedFor($user);
         if ($status = $request->string('status')->toString()) {
             $query->where('status', $status);
         }
@@ -642,7 +663,8 @@ class DraftingProjectController extends Controller
 
     private function storeUpload(UploadedFile $file, string $dir): string
     {
-        $path = sprintf('%s/%s.%s', $dir, Str::ulid(), strtolower($file->getClientOriginalExtension() ?: 'bin'));
+        // Ekstensi dari isi berkas (MIME terdeteksi server), bukan dari nama kiriman pengguna.
+        $path = sprintf('%s/%s.%s', $dir, Str::ulid(), $file->guessExtension() ?: 'bin');
         Storage::disk('documents')->put($path, file_get_contents($file->getRealPath()));
 
         return $path;
