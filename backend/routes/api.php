@@ -233,6 +233,6 @@ Route::middleware(['auth', 'account.active'])->group(function () {
 
         Route::get('integrations', [IntegrationSettingController::class, 'index']);
         Route::patch('integrations/{type}', [IntegrationSettingController::class, 'update']);
-        Route::post('integrations/{type}/test', [IntegrationSettingController::class, 'test']);
+        Route::post('integrations/{type}/test', [IntegrationSettingController::class, 'test'])->middleware('throttle:5,1');
     });
 });

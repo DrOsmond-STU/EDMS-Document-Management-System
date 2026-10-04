@@ -15,6 +15,12 @@ class SendDocumentReviewRemindersTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->fakeOutboundDns(['smtp.example.com' => ['93.184.215.14'], 'smtp.internal.example.com' => ['10.0.0.5']]);
+    }
+
     private function makeOwner(): User
     {
         return User::create([
@@ -87,6 +93,22 @@ class SendDocumentReviewRemindersTest extends TestCase
             ->expectsOutputToContain('Tidak ada dokumen')
             ->assertExitCode(0);
 
+        Mail::assertNothingSent();
+    }
+
+    public function test_reminders_are_not_sent_through_an_internal_smtp_host(): void
+    {
+        Mail::fake();
+        $owner = $this->makeOwner();
+        $this->makeDueDocument($owner);
+        IntegrationSetting::create([
+            'type' => 'smtp',
+            'config' => ['host' => 'smtp.internal.example.com', 'port' => 587, 'from_address' => 'edms@example.com'],
+            'secrets' => [],
+            'enabled' => true,
+        ]);
+
+        $this->artisan('documents:send-review-reminders', ['--days' => 30])->assertExitCode(0);
         Mail::assertNothingSent();
     }
 }

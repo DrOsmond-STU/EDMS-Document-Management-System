@@ -6,10 +6,13 @@ use App\Http\Controllers\Controller;
 use App\Mail\IntegrationTestMail;
 use App\Models\IntegrationSetting;
 use App\Services\AiAssistant;
+use App\Models\User;
 use App\Services\AuditLogger;
+use App\Support\OutboundHostGuard;
 use App\Support\Permissions;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -94,7 +97,12 @@ class IntegrationSettingController extends Controller
         ],
     ];
 
-    public function __construct(private AuditLogger $audit) {}
+    /** Integrasi yang host-nya bebas diisi admin → wajib lolos OutboundHostGuard. */
+    private const GUARDED_PORTS = ['smtp' => OutboundHostGuard::SMTP_PORTS, 'ldap' => OutboundHostGuard::LDAP_PORTS];
+
+    private const DEFAULT_PORTS = ['smtp' => 587, 'ldap' => 389];
+
+    public function __construct(private AuditLogger $audit, private OutboundHostGuard $guard) {}
 
     public function index(Request $request): JsonResponse
     {
@@ -137,6 +145,12 @@ class IntegrationSettingController extends Controller
 
         $config = array_merge($setting->config ?? [], array_intersect_key($data['config'] ?? [], array_flip($configFields)));
 
+        // Host/port baru diperiksa SEBELUM disimpan, supaya tujuan terlarang
+        // tidak pernah tersimpan (dan tidak dipakai saat mengirim email).
+        if ($blocked = $this->blockedDestination($type, $config)) {
+            throw ValidationException::withMessages(['config.host' => $blocked]);
+        }
+
         // Secret KOSONG berarti "biarkan yang sudah tersimpan" — supaya admin
         // tidak perlu ketik ulang password tiap kali menyimpan field lain.
         $incomingSecrets = array_filter(
@@ -178,6 +192,10 @@ class IntegrationSettingController extends Controller
             ], 422);
         }
 
+        if ($blocked = $this->blockedDestination($type, $setting->config ?? [])) {
+            return response()->json(['message' => $blocked, 'integration' => $this->payload($setting)], 422);
+        }
+
         [$success, $message] = match ($type) {
             'smtp' => $this->testSmtp($setting, $request),
             'ldap' => $this->testLdap($setting),
@@ -199,9 +217,14 @@ class IntegrationSettingController extends Controller
     /** @return array{0: bool, 1: string} */
     private function testSmtp(IntegrationSetting $setting, Request $request): array
     {
-        $recipient = $request->string('recipient')->trim()->toString() ?: $request->user()->email;
+        $recipient = mb_strtolower($request->string('recipient')->trim()->toString() ?: $request->user()->email);
         if (! filter_var($recipient, FILTER_VALIDATE_EMAIL)) {
             return [false, 'Alamat email penerima uji tidak valid.'];
+        }
+        // Email uji hanya ke pengguna aktif aplikasi ini — fitur uji tidak boleh
+        // jadi jalan pintas mengirim email ke alamat sembarang (spam/phishing).
+        if (! User::where('active', true)->whereNull('deleted_at')->whereRaw('LOWER(email) = ?', [$recipient])->exists()) {
+            return [false, 'Email uji hanya bisa dikirim ke alamat pengguna aktif EDMS (mis. email Anda sendiri).'];
         }
 
         $host = $setting->value('host');
@@ -227,7 +250,14 @@ class IntegrationSettingController extends Controller
 
             return [true, "Email uji berhasil dikirim ke {$recipient}."];
         } catch (\Throwable $e) {
-            return [false, 'Gagal mengirim email uji: '.$e->getMessage()];
+            // Rincian mentah (banner server, IP, kode jaringan) hanya ke log server —
+            // pesan ke pengguna sengaja umum supaya tidak bisa dipakai memindai jaringan.
+            Log::warning('Uji SMTP gagal', ['host' => $host, 'error' => $e->getMessage()]);
+            $auth = preg_match('/\b(535|534|530)\b|authenticat/i', $e->getMessage());
+
+            return [false, $auth
+                ? 'Gagal mengirim email uji: server SMTP menolak username/password.'
+                : 'Gagal mengirim email uji: tidak dapat terhubung atau server SMTP menolak koneksi. Periksa host, port, dan enkripsi.'];
         }
     }
 
@@ -265,15 +295,28 @@ class IntegrationSettingController extends Controller
         }
 
         if (! $bound) {
-            $error = ldap_error($connection);
+            $errno = ldap_errno($connection);
+            Log::warning('Uji LDAP gagal', ['host' => $host, 'error' => ldap_error($connection)]);
             ldap_unbind($connection);
 
-            return [false, "Bind LDAP gagal: {$error}."];
+            return [false, $errno === 49 // LDAP_INVALID_CREDENTIALS
+                ? 'Bind LDAP gagal: Bind DN atau password salah.'
+                : 'Bind LDAP gagal: tidak dapat terhubung ke server LDAP. Periksa host dan port.'];
         }
 
         ldap_unbind($connection);
 
         return [true, "Berhasil terhubung & bind ke {$host}:{$port}."];
+    }
+
+    /** Pesan penolakan bila host/port integrasi ini menuju tujuan terlarang. */
+    private function blockedDestination(string $type, array $config): ?string
+    {
+        if (! isset(self::GUARDED_PORTS[$type]) || blank($config['host'] ?? null)) {
+            return null;
+        }
+
+        return $this->guard->check((string) $config['host'], (int) (($config['port'] ?? null) ?: self::DEFAULT_PORTS[$type]), self::GUARDED_PORTS[$type]);
     }
 
     private function payload(IntegrationSetting $setting): array
